@@ -8,10 +8,13 @@ object AppCoordinates {
 }
 
 object LibraryAndroidCoordinates {
-    const val LIBRARY_VERSION = "1.0"
-    const val LIBRARY_VERSION_CODE = 1
+  // All parts of versioning can be up to 2 digits: 0-99
+  private const val versionMajor = 0
+  private const val versionMinor = 0
+  private const val versionPatch = 1
+  private const val versionBuild = 0
+
+  const val LIBRARY_VERSION_CODE = versionMajor * 1000000 + versionMinor * 10000 + versionPatch * 100 + versionBuild
+  const val LIBRARY_VERSION = "${versionMajor}.${versionMinor}.${versionPatch}-${versionBuild}"
 }
 
-object LibraryKotlinCoordinates {
-    const val LIBRARY_VERSION = "1.0"
-}

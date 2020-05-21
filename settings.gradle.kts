@@ -17,10 +17,9 @@ pluginManagement {
     }
 }
 
-rootProject.name = ("kotlin-android-template")
+rootProject.name = ("welite")
 
 include(
     "app",
-    "library-android",
-    "library-kotlin"
+    "library-android"
 )
