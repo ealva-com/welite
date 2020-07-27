@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="WeLite" uuid="175ff753-0f9e-4258-a428-81e9f6136d1c">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$USER_HOME$/.cache/JetBrains/IntelliJIdea2020.1/android/databases/SERIAL_NUMBER_R58M350BSZZ/com.ealva.welite/internal/WeLiteTest</jdbc-url>
+    </data-source>
+  </component>
+</project>
