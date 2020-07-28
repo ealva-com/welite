@@ -90,8 +90,7 @@ object PrimaryKeyConstraint : ColumnConstraint() {
   override fun allowedToFollow(
     others: List<ColumnConstraint>,
     persistentType: PersistentType<*>
-  ) =
-    notAllowed { "$this must be first column constraint. Current=[${others.joinAsString()}]" }
+  ) = notAllowed { "$this must be first column constraint. Current=[${others.joinAsString()}]" }
 
 }
 

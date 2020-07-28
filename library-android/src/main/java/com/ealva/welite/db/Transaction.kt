@@ -120,13 +120,13 @@ interface Queryable {
    * Does an integrity check of the entire database. Looks for out-of-order records, missing pages,
    * malformed records, missing index entries, and UNIQUE, CHECK, and NOT NULL constraint errors.
    * Returns a list of strings describe any problems found. Will return at
-   * most [n] errors before the analysis quits, with n defaulting to 100. If integrity check
+   * most [maxErrors] errors (default 100) before the analysis quits. If integrity check
    * finds no errors, a single string with the value 'ok' is returned.
    *
    * Does not find FOREIGN KEY errors. Use [foreignKeyCheck] command for to find errors in FOREIGN
    * KEY constraints.
    */
-  fun tegridyCheck(n: Int = 100): List<String>
+  fun tegridyCheck(maxErrors: Int = 100): List<String>
 
   val Table.foreignKeyList: List<ForeignKeyInfo>
     @RequiresApi(Build.VERSION_CODES.O) get
@@ -208,30 +208,33 @@ interface TransactionInProgress : Queryable {
    * [SQLite INSERT](https://sqlite.org/lang_insert.html)
    * @see InsertStatement
    */
-  fun Table.insertValues(
+  fun <T : Table> T.insertValues(
     onConflict: OnConflict = Unspecified,
-    bind: (ColumnValues) -> Unit
+    bind: T.(ColumnValues) -> Unit
   ): InsertStatement
 
   /**
    * Does a single insert into the table.
    */
-  fun Table.insert(
+  fun <T : Table> T.insert(
     onConflict: OnConflict = Unspecified,
     paramBindings: (ParamBindings) -> Unit = NO_BIND,
-    bind: (ColumnValues) -> Unit
+    bind: T.(ColumnValues) -> Unit
   ): Long = insertValues(onConflict, bind).insert(paramBindings)
 
-  fun Table.update(
+  fun <T : Table> T.update(
     onConflict: OnConflict = Unspecified,
-    bind: (ColumnValues) -> Unit
-  ): UpdateBuilder
+    bind: T.(ColumnValues) -> Unit
+  ): UpdateBuilder<T>
 
-  fun Table.updateAll(onConflict: OnConflict, bind: (ColumnValues) -> Unit): UpdateStatement
+  fun <T : Table> T.updateAll(
+    onConflict: OnConflict,
+    bind: T.(ColumnValues) -> Unit
+  ): UpdateStatement
 
-  fun Table.deleteWhere(where: ExpressionBuilder.() -> Op<Boolean>): DeleteStatement
+  fun <T : Table> T.deleteWhere(where: ExpressionBuilder.() -> Op<Boolean>): DeleteStatement
 
-  fun Table.deleteAll(): DeleteStatement
+  fun <T : Table> T.deleteAll(): DeleteStatement
 
   /**
    * The [VACUUM](https://www.sqlite.org/lang_vacuum.html) command rebuilds the database file,
@@ -252,27 +255,30 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
 
   override fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(db, this, where)
 
-  override fun Table.insertValues(
+  override fun <T : Table> T.insertValues(
     onConflict: OnConflict,
-    bind: (ColumnValues) -> Unit
+    bind: T.(ColumnValues) -> Unit
   ): InsertStatement = InsertStatement(db, this, onConflict, bind)
 
-  override fun Table.update(onConflict: OnConflict, bind: (ColumnValues) -> Unit): UpdateBuilder {
+  override fun <T : Table> T.update(
+    onConflict: OnConflict,
+    bind: T.(ColumnValues) -> Unit
+  ): UpdateBuilder<T> {
     return UpdateBuilder(db, this, onConflict, bind)
   }
 
-  override fun Table.updateAll(
+  override fun <T : Table> T.updateAll(
     onConflict: OnConflict,
-    bind: (ColumnValues) -> Unit
+    bind: T.(ColumnValues) -> Unit
   ): UpdateStatement {
     return UpdateStatement(db, this, onConflict, bind)
   }
 
-  override fun Table.deleteWhere(where: ExpressionBuilder.() -> Op<Boolean>): DeleteStatement {
+  override fun <T : Table> T.deleteWhere(where: ExpressionBuilder.() -> Op<Boolean>): DeleteStatement {
     return DeleteStatement(db, this, ExpressionBuilder.where())
   }
 
-  override fun Table.deleteAll(): DeleteStatement {
+  override fun <T : Table> T.deleteAll(): DeleteStatement {
     return DeleteStatement(db, this, null)
   }
 
@@ -343,8 +349,8 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
   override val sqliteVersion: String
     get() = DatabaseUtils.stringForQuery(db, "SELECT sqlite_version() AS sqlite_version", null)
 
-  override fun tegridyCheck(n: Int): List<String> {
-    db.select(buildString { append("PRAGMA INTEGRITY_CHECK(", n, ")") }).use { cursor ->
+  override fun tegridyCheck(maxErrors: Int): List<String> {
+    db.select(buildString { append("PRAGMA INTEGRITY_CHECK(", maxErrors, ")") }).use { cursor ->
       if (cursor.moveToFirst()) {
         return ArrayList<String>(cursor.count).apply {
           do {
@@ -512,8 +518,10 @@ private class TransactionImpl(
 
   override fun rollback() {
     check(!isClosed) { "Txn $unitOfWork already closed" }
-    successful = false
-    rolledBack = true
+    if (!rolledBack) {
+      successful = false
+      rolledBack = true
+    }
   }
 
   override fun close() {

@@ -27,9 +27,9 @@ abstract class Function<T>(override val persistentType: PersistentType<T>) :
 
 open class CustomFunction<T>(
   private val functionName: String,
-  _persistentType: PersistentType<T>,
+  persistentType: PersistentType<T>,
   private vararg val expr: Expression<*>
-) : Function<T>(_persistentType) {
+) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append(functionName)
@@ -41,10 +41,10 @@ open class CustomFunction<T>(
 
 open class CustomOperator<T>(
   private val operatorName: String,
-  _persistentType: PersistentType<T>,
+  persistentType: PersistentType<T>,
   private val expr1: Expression<*>,
   private val expr2: Expression<*>
-) : Function<T>(_persistentType) {
+) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append('(')
@@ -151,8 +151,8 @@ class Trim(
 
 class Min<T : Comparable<T>>(
   private val expr: Expression<in T>,
-  _persistentType: PersistentType<T>
-) : Function<T>(_persistentType) {
+  persistentType: PersistentType<T>
+) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("MIN(")
@@ -163,8 +163,8 @@ class Min<T : Comparable<T>>(
 
 class Max<T : Comparable<T>>(
   private val expr: Expression<T>,
-  _persistentType: PersistentType<T>
-) : Function<T>(_persistentType) {
+  persistentType: PersistentType<T>
+) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("MAX(")
@@ -175,8 +175,8 @@ class Max<T : Comparable<T>>(
 
 class Avg<T : Comparable<T>>(
   private val expr: Expression<in T>,
-  _persistentType: PersistentType<T>
-) : Function<T>(_persistentType) {
+  persistentType: PersistentType<T>
+) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("AVG(")
@@ -187,8 +187,8 @@ class Avg<T : Comparable<T>>(
 
 class Sum<T>(
   private val expr: Expression<T>,
-  _persistentType: PersistentType<T>
-) : Function<T>(_persistentType) {
+  persistentType: PersistentType<T>
+) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("SUM(")

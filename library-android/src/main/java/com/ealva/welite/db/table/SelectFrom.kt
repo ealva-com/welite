@@ -31,9 +31,10 @@ interface SelectFrom {
   val sourceSet: ColumnSet
 
   companion object {
-    operator fun invoke(resultColumns: List<SqlTypeExpression<*>>, sourceSet: ColumnSet): SelectFrom {
-      return SelectFromImpl(resultColumns, sourceSet)
-    }
+    operator fun invoke(
+      resultColumns: List<SqlTypeExpression<*>>,
+      sourceSet: ColumnSet
+    ): SelectFrom = SelectFromImpl(resultColumns, sourceSet)
   }
 }
 

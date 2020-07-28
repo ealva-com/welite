@@ -32,8 +32,12 @@ import com.ealva.welite.db.type.PersistentType
  * will bind into statement parameters. This abstraction was initially for possible statement
  * caching or so a values() method on the insert statement could ensure consistency
  */
-private class InsertSeed(table: Table, onConflict: OnConflict, bind: (ColumnValues) -> Unit) {
-  val columnValues = ColumnValues().also(bind)
+private class InsertSeed<T : Table>(
+  table: T,
+  onConflict: OnConflict,
+  bind: T.(ColumnValues) -> Unit
+) {
+  val columnValues = ColumnValues().apply { table.bind(this) }
 
   private val builder = SqlBuilder().apply {
     append(onConflict.insertOr)
@@ -75,20 +79,20 @@ interface InsertStatement {
      * Make an InsertStatement for the given [Table]. The statement may be saved and reused for
      * multiple inserts.
      */
-    operator fun invoke(
+    operator fun <T : Table> invoke(
       db: SQLiteDatabase,
-      table: Table,
+      table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
-      bind: (ColumnValues) -> Unit
+      bind: T.(ColumnValues) -> Unit
     ): InsertStatement {
       return InsertStatementImpl(db, InsertSeed(table, onConflict, bind))
     }
   }
 }
 
-private class InsertStatementImpl(
+private class InsertStatementImpl<T : Table>(
   db: SQLiteDatabase,
-  insertSeed: InsertSeed
+  insertSeed: InsertSeed<T>
 ) : BaseStatement(), InsertStatement {
 
   override val types: List<PersistentType<*>> = insertSeed.types

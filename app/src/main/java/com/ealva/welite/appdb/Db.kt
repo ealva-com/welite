@@ -33,19 +33,25 @@ val dbModule = module {
       fileName = "WeLiteTest",
       version = 1,
       tables = listOf(MediaFileTable),
-      migrations = emptyList()
-    ) {
-      preOpen { params ->
-        LOG.i { it("preOpen") }
-        params.enableWriteAheadLogging(true)
+      migrations = emptyList(),
+      allowWorkOnUiThread = false,
+      configure = {
+        preOpen { params ->
+          LOG.i { it("preOpen") }
+          params.enableWriteAheadLogging(true)
+        }
+        onConfigure { configuration ->
+          LOG.i { it("onConfigure") }
+          configuration.enableForeignKeyConstraints(true)
+          configuration.execPragma("synchronous=NORMAL")
+        }
+        onCreate { database ->
+          LOG.i { it("onCreate %d", database.tables.size) }
+        }
+        onOpen { database ->
+          LOG.i { it("onOpen %d", database.tables.size) }
+        }
       }
-      onConfigure { configuration ->
-        LOG.i { it("onConfigure") }
-        configuration.enableForeignKeyConstraints(true)
-        configuration.execPragma("synchronous=NORMAL")
-      }
-//      onCreate { LOG.i { it("onCreate") } }
-//      onOpen { LOG.i { it("onOpen") } }
-    }
+    )
   }
 }

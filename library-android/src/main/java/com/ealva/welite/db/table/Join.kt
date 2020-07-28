@@ -71,8 +71,7 @@ fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
   JoinType.NATURAL, onColumn(), otherTable.otherColumn()
 )
 
-class Join(val table: ColumnSet) :
-  ColumnSet {
+class Join(val table: ColumnSet) : ColumnSet {
 
   override val columns: List<Column<*>>
     get() = _joinParts.flatMapTo(table.columns.toMutableList()) { it.joinPart.columns }

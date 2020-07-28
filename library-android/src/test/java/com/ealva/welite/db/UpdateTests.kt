@@ -60,8 +60,8 @@ class UpdateTests {
         setSuccessful()
       }
       transaction {
-        ArtistTable.update { it[ArtistTable.artistName] = goodName }
-          .where { ArtistTable.artistName eq badName}
+        ArtistTable.update { it[artistName] = goodName }
+          .where { artistName eq badName}
           .update()
 
         setSuccessful()
@@ -77,34 +77,34 @@ class UpdateTests {
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    var artistId: Long = 0
+    var idArtist: Long = 0
     ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
       .forEach {
-        artistId = it[ArtistTable.id]
+        idArtist = it[ArtistTable.id]
       }
 
-    if (artistId == 0L) artistId = ArtistTable.insert { it[ArtistTable.artistName] = artist }
+    if (idArtist == 0L) idArtist = ArtistTable.insert { it[artistName] = artist }
 
-    var albumId: Long = 0
+    var idAlbum: Long = 0
     AlbumTable.select(AlbumTable.id)
       .where { AlbumTable.albumName eq album }
       .forEach {
-        albumId = it[AlbumTable.id]
+        idAlbum = it[AlbumTable.id]
       }
 
-    if (albumId == 0L) albumId = AlbumTable.insert { it[AlbumTable.albumName] = album }
+    if (idAlbum == 0L) idAlbum = AlbumTable.insert { it[albumName] = album }
 
     ArtistAlbumTable.insert(OnConflict.Ignore) {
-      it[ArtistAlbumTable.artistId] = artistId
-      it[ArtistAlbumTable.albumId] = albumId
+      it[artistId] = idArtist
+      it[albumId] = idAlbum
     }
 
     val mediaId = MediaFileTable.insert {
-      it[MediaFileTable.mediaUri] = uri.toString()
-      it[MediaFileTable.artistId] = artistId
-      it[MediaFileTable.albumId] = albumId
+      it[mediaUri] = uri.toString()
+      it[artistId] = idArtist
+      it[albumId] = idAlbum
     }
-    return Triple(artistId, albumId, mediaId)
+    return Triple(idArtist, idAlbum, mediaId)
   }
 }

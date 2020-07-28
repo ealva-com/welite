@@ -21,3 +21,4 @@ import android.os.Looper
 private val mainLooper: Looper = checkNotNull(Looper.getMainLooper())
 val uiThread: Thread = mainLooper.thread
 val isUiThread inline get() = uiThread === Thread.currentThread()
+

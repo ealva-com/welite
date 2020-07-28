@@ -26,14 +26,14 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.ParamBindings
 import com.ealva.welite.db.table.Table
 
-class UpdateBuilder(
+class UpdateBuilder<T : Table>(
   private val db: SQLiteDatabase,
-  private val table: Table,
+  private val table: T,
   private val onConflict: OnConflict,
-  private val bind: (ColumnValues) -> Unit
+  private val bind: T.(ColumnValues) -> Unit
 ) {
-  fun where(where: () -> Op<Boolean>): UpdateStatement {
-    return UpdateStatement(db, table, onConflict, where(), bind)
+  fun where(where: T.() -> Op<Boolean>): UpdateStatement {
+    return UpdateStatement(db, table, onConflict, table.where(), bind)
   }
 }
 
@@ -42,33 +42,33 @@ interface UpdateStatement {
   fun update(bindArgs: (ParamBindings) -> Unit = NO_BIND): Int
 
   companion object {
-    operator fun invoke(
+    operator fun <T : Table> invoke(
       db: SQLiteDatabase,
-      table: Table,
+      table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
-      bind: (ColumnValues) -> Unit
+      bind: T.(ColumnValues) -> Unit
     ): UpdateStatement {
       return UpdateStatementImpl(db, table, onConflict, null, bind)
     }
 
-    operator fun invoke(
+    operator fun <T : Table> invoke(
       db: SQLiteDatabase,
-      table: Table,
+      table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       where: Op<Boolean>,
-      bind: (ColumnValues) -> Unit
+      bind: T.(ColumnValues) -> Unit
     ): UpdateStatement {
       return UpdateStatementImpl(db, table, onConflict, where, bind)
     }
   }
 }
 
-private class UpdateStatementImpl(
+private class UpdateStatementImpl<T : Table>(
   db: SQLiteDatabase,
-  private val table: Table,
+  private val table: T,
   private val onConflict: OnConflict,
   private val where: Op<Boolean>?,
-  private val bind: (ColumnValues) -> Unit
+  private val bind: T.(ColumnValues) -> Unit
 ) : BaseStatement(), UpdateStatement, ParamBindings {
 
   private val sqlBuilder: SqlBuilder = SqlBuilder().apply {
@@ -76,7 +76,7 @@ private class UpdateStatementImpl(
     append(table.identity().value)
 
     val columnValues = ColumnValues()
-    bind(columnValues)
+    table.bind(columnValues)
 
     columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
       append(columnValue)

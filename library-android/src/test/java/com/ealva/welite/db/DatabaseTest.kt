@@ -71,8 +71,6 @@ class DatabaseTest {
       query {
         // supports "n.nn.nn"  nn is 1 or 2 numbers
         expect(sqliteVersion).matches(Regex("""[3-9]\.[0-9]{1,2}\.[0-9]{1,2}"""))
-
-         expect(sqliteVersion).toBe("3.7.10") // fragile test
       }
     }
   }

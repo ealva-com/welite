@@ -127,18 +127,18 @@ class ForeignKeySchemaTests {
       expect(ArtistAlbumTable.exists).toBe(true)
 
       MediaFileTable.insert {
-        it[MediaFileTable.mediaUri] = File("/dir/Music/File.mpg").toUri().toString()
-        it[MediaFileTable.artistId] = 100
-        it[MediaFileTable.albumId] = 100
+        it[mediaUri] = File("/dir/Music/File.mpg").toUri().toString()
+        it[artistId] = 100
+        it[albumId] = 100
       }
 
       ArtistAlbumTable.insert {
-        it[ArtistAlbumTable.artistId] = 5000
-        it[ArtistAlbumTable.albumId] = 5000
+        it[artistId] = 5000
+        it[albumId] = 5000
       }
 
-      ArtistTable.insert { it[ArtistTable.artistName] = "Led Zeppelin" }
-      AlbumTable.insert { it[AlbumTable.albumName] = "Killer Queen" }
+      ArtistTable.insert { it[artistName] = "Led Zeppelin" }
+      AlbumTable.insert { it[albumName] = "Killer Queen" }
       setSuccessful()
     }
   }

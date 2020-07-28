@@ -42,12 +42,13 @@ suspend fun withTestDatabase(
   enableForeignKeyConstraints: Boolean
 ): Database {
   return Database(
-    context,
-    1,
-    tables,
-    emptyList(),
-    enableForeignKeyConstraints,
-    testDispatcher
+    context = context,
+    version = 1,
+    tables = tables,
+    migrations = emptyList(),
+    requireMigration = enableForeignKeyConstraints,
+    allowWorkOnUiThread = true,
+    dispatcher = testDispatcher
   ) {
     onConfigure { it.enableForeignKeyConstraints(enableForeignKeyConstraints) }
   }
