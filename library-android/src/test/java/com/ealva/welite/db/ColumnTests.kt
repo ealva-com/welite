@@ -21,6 +21,8 @@ import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.BaseSqlTypeExpression
 import com.ealva.welite.db.expr.SqlBuilder
+import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table

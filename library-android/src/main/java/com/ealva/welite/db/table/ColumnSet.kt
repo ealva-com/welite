@@ -17,7 +17,6 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlBuilder
 
@@ -44,7 +43,7 @@ interface ColumnSet {
     joinType: JoinType,
     thisColumn: Expression<*>? = null,
     otherColumn: Expression<*>? = null,
-    additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)? = null
+    additionalConstraint: (() -> Op<Boolean>)? = null
   ): Join
 
   fun innerJoin(joinTo: ColumnSet): Join

@@ -13,7 +13,7 @@ WeLite is a Kotlin DSL, and Statement/Cursor Wrapper, for Android SQLite
 ## Usage
 
 ### Create Database
-Typically, a Database would be created once and then injected/located where needed.
+Create a single Database instance and then inject/locate where needed.
 ```kotlin
 Database(
   context = androidContext(),

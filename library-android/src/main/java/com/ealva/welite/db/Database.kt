@@ -27,6 +27,7 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
 import com.ealva.welite.db.WeResult.Success
 import com.ealva.welite.db.WeResult.Unsuccessful
+import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.schema.MasterType
 import com.ealva.welite.db.schema.TableDependencies
 import com.ealva.welite.db.schema.sqlite_master

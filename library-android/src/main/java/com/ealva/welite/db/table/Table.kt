@@ -22,7 +22,6 @@ import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.invoke
@@ -58,8 +57,7 @@ typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
  *
  * @param name optional table name, defaulting to the class name with any "Table" suffix removed.
  */
-abstract class Table(name: String = "", systemTable: Boolean = false) :
-  ColumnSet {
+abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSet {
   open val tableName: String =
     (if (name.isNotEmpty()) name else this.javaClass.simpleName.removeSuffix("Table")).also { name ->
       require(systemTable || !name.startsWith(RESERVED_PREFIX)) {
@@ -91,7 +89,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) :
     joinType: JoinType,
     thisColumn: Expression<*>?,
     otherColumn: Expression<*>?,
-    additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)?
+    additionalConstraint: (() -> Op<Boolean>)?
   ): Join =
     Join(
       this,
@@ -333,9 +331,9 @@ abstract class Table(name: String = "", systemTable: Boolean = false) :
   }
 
   @ExperimentalUnsignedTypes
-  fun check(name: String = "", op: ExpressionBuilder.() -> Op<Boolean>) {
+  fun check(name: String = "", op: () -> Op<Boolean>) {
     if (name.isEmpty() || checkConstraints.none { it.first.equals(name, true) }) {
-      checkConstraints.add(name to ExpressionBuilder.op())
+      checkConstraints.add(name to op())
     } else {
       LOG.w { it("A CHECK constraint with name '$name' was ignored because there is already one with that name") }
     }

@@ -19,11 +19,11 @@ package com.ealva.welite.db.table
 import com.ealva.welite.db.expr.BaseExpression
 import com.ealva.welite.db.expr.BaseSqlTypeExpression
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Function
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
+import com.ealva.welite.db.expr.append
 import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.type.PersistentType
 
@@ -72,19 +72,18 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
 }
 
 class ExpressionAlias<T>(val delegate: Expression<T>, val alias: String) : BaseExpression<T>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder { append(delegate).append(" $alias") }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+    append(delegate," $alias")
+  }
 
   fun aliasOnlyExpression(): Expression<T> {
     return if (delegate is SqlTypeExpression<T>) {
       object : Function<T>(delegate.persistentType) {
-        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-          sqlBuilder { append(alias) }
+        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder { append(alias) }
       }
     } else {
       object : BaseExpression<T>() {
-        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-          sqlBuilder { append(alias) }
+        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder { append(alias) }
       }
     }
   }
@@ -143,7 +142,7 @@ class QueryBuilderAlias(
     joinType: JoinType,
     thisColumn: Expression<*>?,
     otherColumn: Expression<*>?,
-    additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)?
+    additionalConstraint: (() -> Op<Boolean>)?
   ): Join =
     Join(
       this,
@@ -195,7 +194,7 @@ fun <T> SqlTypeExpression<T>.alias(alias: String) =
   SqlTypeExpressionAlias(this, alias)
 
 fun Join.joinQuery(
-  on: (ExpressionBuilder.(QueryBuilderAlias) -> Op<Boolean>),
+  on: ((QueryBuilderAlias) -> Op<Boolean>),
   joinType: JoinType = JoinType.INNER,
   joinPart: () -> QueryBuilder
 ): Join {
@@ -205,7 +204,7 @@ fun Join.joinQuery(
 
 
 fun Table.joinQuery(
-  on: (ExpressionBuilder.(QueryBuilderAlias) -> Op<Boolean>),
+  on: (QueryBuilderAlias) -> Op<Boolean>,
   joinType: JoinType = JoinType.INNER,
   joinPart: () -> QueryBuilder
 ) = Join(this).joinQuery(on, joinType, joinPart)

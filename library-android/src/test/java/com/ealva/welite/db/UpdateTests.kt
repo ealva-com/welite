@@ -20,7 +20,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.expr.ExpressionBuilder.eq
+import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.table.OnConflict
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi

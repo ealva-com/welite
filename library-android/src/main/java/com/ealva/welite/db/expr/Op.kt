@@ -47,7 +47,7 @@ abstract class Op<T> : BaseExpression<T>() {
   }
 
   companion object {
-    inline fun <T> build(op: ExpressionBuilder.() -> Op<T>): Op<T> = ExpressionBuilder.op()
+    inline fun <T> build(op: () -> Op<T>): Op<T> = op()
   }
 }
 

@@ -17,7 +17,6 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.appendTo
@@ -80,37 +79,31 @@ class Join(val table: ColumnSet) : ColumnSet {
   internal val joinParts: List<JoinPart>
     get() = _joinParts.toList()
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      table.appendTo(this)
-      _joinParts.forEach { p ->
-        append(" ${p.joinType} JOIN ")
-        val isJoin = p.joinPart is Join
-        if (isJoin) {
-          append("(")
-        }
-        p.joinPart.appendTo(this)
-        if (isJoin) {
-          append(")")
-        }
-        if (p.joinType.hasCondition) {
-          append(" ON ")
-          p.appendConditions(this)
-        }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+    table.appendTo(this)
+    _joinParts.forEach { p ->
+      append(" ${p.joinType} JOIN ")
+      val isJoin = p.joinPart is Join
+      if (isJoin) {
+        append("(")
+      }
+      p.joinPart.appendTo(this)
+      if (isJoin) {
+        append(")")
+      }
+      if (p.joinType.hasCondition) {
+        append(" ON ")
+        p.appendConditions(this)
       }
     }
+  }
 
   private fun asJoinCondition(
     onColumn: Expression<*>?,
     otherColumn: Expression<*>?
   ): List<JoinCondition> {
     if (onColumn == null || otherColumn == null) return emptyList()
-    return listOf(
-      JoinCondition(
-        onColumn,
-        otherColumn
-      )
-    )
+    return listOf(JoinCondition(onColumn, otherColumn))
   }
 
   override fun join(
@@ -118,42 +111,26 @@ class Join(val table: ColumnSet) : ColumnSet {
     joinType: JoinType,
     thisColumn: Expression<*>?,
     otherColumn: Expression<*>?,
-    additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)?
+    additionalConstraint: (() -> Op<Boolean>)?
   ): Join = join(joinTo, joinType, asJoinCondition(thisColumn, otherColumn), additionalConstraint)
-
-  override infix fun innerJoin(joinTo: ColumnSet): Join = join(
-    joinTo,
-    JoinType.INNER
-  )
-
-  override infix fun leftJoin(joinTo: ColumnSet): Join = join(
-    joinTo,
-    JoinType.LEFT
-  )
-
-  override infix fun crossJoin(joinTo: ColumnSet): Join = join(
-    joinTo,
-    JoinType.CROSS
-  )
-
-  override fun naturalJoin(joinTo: ColumnSet): Join = join(
-    joinTo,
-    JoinType.NATURAL
-  )
+  override infix fun innerJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.INNER)
+  override infix fun leftJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.LEFT)
+  override infix fun crossJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.CROSS)
+  override fun naturalJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.NATURAL)
 
   private fun join(
     otherTable: ColumnSet,
     joinType: JoinType,
-    additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)? = null
+    additionalConstraint: (() -> Op<Boolean>)? = null
   ): Join {
     val fkKeys = findKeys(this, otherTable) ?: findKeys(otherTable, this) ?: emptyList()
     return when {
       joinType.hasCondition && fkKeys.isEmpty() && additionalConstraint == null -> {
-        error("Cannot join with $otherTable as there is no matching primary key/foreign key pair and constraint")
+        error("Can't join $otherTable no matching primary/foreign key and constraint")
       }
       fkKeys.any { it.second.size > 1 } && additionalConstraint == null -> {
         val references = fkKeys.joinToString(" & ") { "${it.first} -> ${it.second.joinToString()}" }
-        error("Cannot join with $otherTable as there is multiple primary key <-> foreign key references.\n$references")
+        error("Can't join $otherTable multiple primary/foreign key references.\n$references")
       }
       else -> {
         join(
@@ -170,10 +147,8 @@ class Join(val table: ColumnSet) : ColumnSet {
     joinTo: ColumnSet,
     joinType: JoinType,
     cond: List<JoinCondition>,
-    additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)?
-  ): Join = Join(
-    table
-  ).apply {
+    additionalConstraint: (() -> Op<Boolean>)?
+  ): Join = Join(table).apply {
     _joinParts.addAll(this@Join._joinParts)
     _joinParts.add(
       JoinPart(
@@ -197,7 +172,7 @@ class Join(val table: ColumnSet) : ColumnSet {
     val joinType: JoinType,
     val joinPart: ColumnSet,
     private val conditions: List<JoinCondition>,
-    private val additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)? = null
+    private val additionalConstraint: (() -> Op<Boolean>)? = null
   ) {
     init {
       require(joinType.hasNoCondition || hasConditions() || hasAdditionalConstraint()) {
@@ -216,7 +191,7 @@ class Join(val table: ColumnSet) : ColumnSet {
           append(" AND ")
         }
         append(" (")
-        append(ExpressionBuilder.(additionalConstraint)())
+        append((additionalConstraint)())
         append(")")
       }
     }
@@ -234,7 +209,7 @@ class Join(val table: ColumnSet) : ColumnSet {
       joinType: JoinType = JoinType.INNER,
       onColumn: Expression<*>? = null,
       otherColumn: Expression<*>? = null,
-      additionalConstraint: (ExpressionBuilder.() -> Op<Boolean>)? = null
+      additionalConstraint: (() -> Op<Boolean>)? = null
     ): Join {
       return Join(table).run {
         if (onColumn != null && otherColumn != null) {

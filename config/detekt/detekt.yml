@@ -240,7 +240,7 @@ formatting:
     autoCorrect: true
   Indentation:
     active: false
-    autoCorrect: true
+    autoCorrect: false
     indentSize: 2
     continuationIndentSize: 2
   MaximumLineLength:
@@ -532,7 +532,7 @@ style:
     active: false
   MaxLineLength:
     active: true
-    maxLineLength: 120
+    maxLineLength: 100
     excludePackageStatements: true
     excludeImportStatements: true
     excludeCommentStatements: false

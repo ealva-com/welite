@@ -27,7 +27,7 @@ class SqlBuilder {
   val types: List<PersistentType<*>>
     get() = _types.toList()
 
-  fun <T> Iterable<T>.append(
+  fun <T> Iterable<T>.appendEach(
     separator: CharSequence = ", ",
     prefix: CharSequence = "",
     postfix: CharSequence = "",
@@ -70,6 +70,18 @@ class SqlBuilder {
   }
 
   override fun toString(): String = internalBuilder.toString()
+}
+
+fun SqlBuilder.append(vararg values: Any): SqlBuilder = apply {
+  values.forEach { value ->
+    when (value) {
+      is Expression<*> -> append(value)
+      is String -> append(value)
+      is Long -> append(value)
+      is Char -> append(value)
+      else -> append(value.toString())
+    }
+  }
 }
 
 inline operator fun SqlBuilder.invoke(body: SqlBuilder.() -> Unit) = apply {

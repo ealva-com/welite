@@ -19,11 +19,11 @@ package com.ealva.welite.db.table
 import com.ealva.welite.db.expr.BaseSqlTypeExpression
 import com.ealva.welite.db.expr.Count
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.invoke
+import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.type.PersistentType
 import java.util.Comparator
 
@@ -134,7 +134,7 @@ private class ColumnImpl<T>(
 
   @ExperimentalUnsignedTypes
   override fun default(defaultValue: T) = apply {
-    dbDefaultValue = with(ExpressionBuilder) { literal(defaultValue) }
+    dbDefaultValue = literal(defaultValue)
   }
 
   override fun defaultExpression(defaultValue: Expression<T>) = apply {
@@ -213,8 +213,8 @@ private class ColumnImpl<T>(
   override fun collate(name: String) = apply { addConstraint(CollateConstraint(CollateUser(name))) }
 
   @ExperimentalUnsignedTypes
-  override fun check(name: String, op: ExpressionBuilder.(Column<T>) -> Op<Boolean>) = apply {
-    table.check(name) { ExpressionBuilder.op(this@ColumnImpl) }
+  override fun check(name: String, op: (Column<T>) -> Op<Boolean>) = apply {
+    table.check(name) { op(this@ColumnImpl) }
   }
 
   override fun references(

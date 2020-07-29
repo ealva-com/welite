@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.appdb
+package com.ealva.weliteapp.appdb
 
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
-import com.ealva.welite.app.MediaFileTable
 import com.ealva.welite.db.Database
+import com.ealva.weliteapp.app.MediaFileTable
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 

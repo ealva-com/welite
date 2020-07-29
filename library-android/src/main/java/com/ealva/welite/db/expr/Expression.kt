@@ -41,8 +41,8 @@ abstract class BaseExpression<T> : Expression<T> {
   override fun toString(): String = SqlBuilder().append(this).toString()
 
   companion object {
-    inline fun <T, E : Expression<T>> build(builder: ExpressionBuilder.() -> E): E =
-      ExpressionBuilder.builder()
+    inline fun <T, E : Expression<T>> build(builder: () -> E): E =
+      builder()
   }
 }
 
@@ -53,5 +53,5 @@ fun <T> Iterable<T>.appendTo(
   postfix: CharSequence = "",
   append: SqlBuilder.(T) -> Unit
 ): SqlBuilder =
-  builder.apply { append(separator, prefix, postfix, append) }
+  builder.apply { appendEach(separator, prefix, postfix, append) }
 

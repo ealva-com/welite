@@ -34,7 +34,7 @@ open class CustomFunction<T>(
     sqlBuilder {
       append(functionName)
       append('(')
-      expr.toList().append { append(it) }
+      expr.toList().appendEach { append(it) }
       append(')')
     }
 }

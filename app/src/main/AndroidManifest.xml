@@ -17,10 +17,10 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.ealva.welite">
+    package="com.ealva.weliteapp.app">
 
     <application
-        android:name=".app.App"
+        android:name="com.ealva.weliteapp.app.App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -28,7 +28,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup">
-        <activity android:name=".app.MainActivity">
+        <activity android:name="com.ealva.weliteapp.app.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

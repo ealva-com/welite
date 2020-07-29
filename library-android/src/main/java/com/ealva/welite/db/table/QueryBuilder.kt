@@ -18,7 +18,6 @@ package com.ealva.welite.db.table
 
 import android.database.sqlite.SQLiteDatabase
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.SqlBuilder
@@ -100,7 +99,7 @@ class QueryBuilder(
       append("COUNT(*)")
     } else {
       if (distinct) append("DISTINCT ")
-      set.resultColumns.append { append(it) }
+      set.resultColumns.appendEach { append(it) }
     }
 
     append(" FROM ")
@@ -113,7 +112,7 @@ class QueryBuilder(
     if (!count) {
       if (groupBy.isNotEmpty()) {
         append(" GROUP BY ")
-        groupBy.append { expression ->
+        groupBy.appendEach { expression ->
           append(((expression as? ExpressionAlias)?.aliasOnlyExpression() ?: expression))
         }
       }
@@ -124,7 +123,7 @@ class QueryBuilder(
 
       if (orderBy.isNotEmpty()) {
         append(" ORDER BY ")
-        orderBy.append { orderByPair ->
+        orderBy.appendEach { orderByPair ->
           val alias = (orderByPair.expression as? ExpressionAlias<*>)?.alias
           if (alias != null) append(alias) else append(orderByPair.expression)
           append(" ").append(orderByPair.ascDesc.sqlName)
@@ -148,7 +147,7 @@ class QueryBuilder(
 
   fun groupBy(vararg columns: Expression<*>) = apply { groupBy.addAll(columns) }
 
-  fun having(op: ExpressionBuilder.() -> Op<Boolean>) = apply {
+  fun having(op: () -> Op<Boolean>) = apply {
     if (having != null) {
       error("HAVING clause is specified twice. Old value = '$having', new value = '${Op.build { op() }}'")
     }
@@ -195,7 +194,7 @@ class QueryBuilder(
  * Add `andPart` to where condition with `and` operator.
  * @return same Query instance which was provided as a receiver.
  */
-fun QueryBuilder.andWhere(andPart: ExpressionBuilder.() -> Op<Boolean>) = adjustWhere {
+fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>) = adjustWhere {
   val expr = Op.build { andPart() }
   if (this == null) expr
   else this and expr
@@ -205,7 +204,7 @@ fun QueryBuilder.andWhere(andPart: ExpressionBuilder.() -> Op<Boolean>) = adjust
  * Add `andPart` to where condition with `or` operator.
  * @return same Query instance which was provided as a receiver.
  */
-fun QueryBuilder.orWhere(andPart: ExpressionBuilder.() -> Op<Boolean>) = adjustWhere {
+fun QueryBuilder.orWhere(andPart: () -> Op<Boolean>) = adjustWhere {
   val expr = Op.build { andPart() }
   if (this == null) expr
   else this or expr

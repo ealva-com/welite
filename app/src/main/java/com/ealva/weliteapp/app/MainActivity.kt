@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.app
+package com.ealva.weliteapp.app
 
 import android.os.Bundle
 import android.widget.Toast
@@ -23,13 +23,13 @@ import androidx.lifecycle.lifecycleScope
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
-import com.ealva.welite.app.MediaFileTable.fileName
-import com.ealva.welite.app.MediaFileTable.mediaTitle
-import com.ealva.welite.app.MediaFileTable.mediaUri
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.bindString
+import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
+import com.ealva.weliteapp.app.MediaFileTable.fileName
+import com.ealva.weliteapp.app.MediaFileTable.mediaTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject

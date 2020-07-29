@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.app
+package com.ealva.weliteapp.app
 
 import android.app.Application
 import android.content.ComponentCallbacks2
@@ -26,8 +26,8 @@ import com.ealva.ealvalog.android.DebugLogHandler
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
-import com.ealva.welite.appdb.dbModule
 import com.ealva.welite.db.Database
+import com.ealva.weliteapp.appdb.dbModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 

@@ -24,10 +24,10 @@ import com.ealva.ealvalog.e
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
+import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.schema.ColumnMetadata
 import com.ealva.welite.db.schema.MasterType
 import com.ealva.welite.db.schema.TableDescription
@@ -79,8 +79,8 @@ interface Queryable {
   /**
    * Select all columns of this [ColumnSet] and call [build] to make the where expression
    */
-  fun ColumnSet.selectAllWhere(build: ExpressionBuilder.() -> Op<Boolean>) =
-    selectAllWhere(ExpressionBuilder.build())
+  fun ColumnSet.selectAllWhere(build: () -> Op<Boolean>) =
+    selectAllWhere(build())
 
   /**
    * Select all columns and return a [SelectFrom] to start building the query
@@ -94,8 +94,8 @@ interface Queryable {
    * Calls [build] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
    * and the where clause.
    */
-  fun SelectFrom.where(build: ExpressionBuilder.() -> Op<Boolean>) =
-    where(ExpressionBuilder.build())
+  fun SelectFrom.where(build: () -> Op<Boolean>) =
+    where(build())
 
   /**
    * True if the table, as known via [Table.identity], exists in the database, else false
@@ -232,7 +232,7 @@ interface TransactionInProgress : Queryable {
     bind: T.(ColumnValues) -> Unit
   ): UpdateStatement
 
-  fun <T : Table> T.deleteWhere(where: ExpressionBuilder.() -> Op<Boolean>): DeleteStatement
+  fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement
 
   fun <T : Table> T.deleteAll(): DeleteStatement
 
@@ -274,8 +274,8 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
     return UpdateStatement(db, this, onConflict, bind)
   }
 
-  override fun <T : Table> T.deleteWhere(where: ExpressionBuilder.() -> Op<Boolean>): DeleteStatement {
-    return DeleteStatement(db, this, ExpressionBuilder.where())
+  override fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {
+    return DeleteStatement(db, this, where())
   }
 
   override fun <T : Table> T.deleteAll(): DeleteStatement {

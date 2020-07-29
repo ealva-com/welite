@@ -18,7 +18,6 @@ package com.ealva.welite.db.table
 
 import android.database.sqlite.SQLiteException
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.ExpressionBuilder
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.type.PersistentType
 
@@ -64,7 +63,7 @@ interface ColumnConstraints<T> {
     fkName: String? = null
   ): ColumnConstraints<T>
 
-  fun check(name: String = "", op: ExpressionBuilder.(Column<T>) -> Op<Boolean>): ColumnConstraints<T>
+  fun check(name: String = "", op: (Column<T>) -> Op<Boolean>): ColumnConstraints<T>
 }
 
 private fun List<ColumnConstraint>.joinAsString(): String = joinToString(separator = ",")

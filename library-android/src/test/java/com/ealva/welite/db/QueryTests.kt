@@ -21,6 +21,8 @@ import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.bindString
+import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.table.OnConflict
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
