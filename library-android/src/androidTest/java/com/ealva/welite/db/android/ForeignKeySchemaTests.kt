@@ -29,6 +29,13 @@ import com.ealva.welite.db.Database
 import com.ealva.welite.db.ForeignKeyInfo
 import com.ealva.welite.db.ForeignKeyViolation
 import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.withTestDatabase
+import com.ealva.welite.sharedtest.AlbumTable
+import com.ealva.welite.sharedtest.ArtistAlbumTable
+import com.ealva.welite.sharedtest.ArtistTable
+import com.ealva.welite.sharedtest.CoroutineRule
+import com.ealva.welite.sharedtest.MediaFileTable
+import com.ealva.welite.sharedtest.runBlockingTest
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before

@@ -182,7 +182,7 @@ fun Expression<String>.groupConcat(separator: String? = null) = GroupConcat(this
 
 fun SqlTypeExpression<*>.count(): Count = Count(this)
 
-fun <R> Expression<*>.cast(persistentType: PersistentType<R>): SqlTypeExpression<R> =
+fun <R> Expression<*>.cast(persistentType: PersistentType<R?>): SqlTypeExpression<R> =
   Cast(this, persistentType)
 
 fun <T : Any> SqlTypeExpression<T>.function(name: String): CustomFunction<T> =

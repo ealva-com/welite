@@ -152,7 +152,7 @@ fun uintParam(value: UInt): Expression<UInt> = QueryParameter(value, UIntegerPer
 @ExperimentalUnsignedTypes
 fun ulongParam(value: ULong): Expression<ULong> = QueryParameter(value, ULongPersistentType())
 
-class BindableParameter<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
+class BindableParameter<T>(private val sqlType: PersistentType<T?>) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       registerBindable(sqlType)
@@ -179,7 +179,7 @@ private fun SqlBuilder.appendExpression(expr: Expression<*>) {
   } else append(expr)
 }
 
-class QueryParameter<T>(private val value: T, private val sqlType: PersistentType<T>) :
+class QueryParameter<T>(private val value: T, private val sqlType: PersistentType<T?>) :
   BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder { registerArgument(sqlType, value) }

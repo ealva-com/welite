@@ -74,28 +74,26 @@ interface Queryable {
    * Select all columns of this [ColumnSet] matching the [where] part of the query
    * Convenience function for: ```selectAll().where(where)```
    */
-  fun ColumnSet.selectAllWhere(where: Op<Boolean>?): QueryBuilder = selectAll().where(where)
+  fun ColumnSet.selectAllWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
 
   /**
    * Select all columns of this [ColumnSet] and call [build] to make the where expression
    */
-  fun ColumnSet.selectAllWhere(build: () -> Op<Boolean>) =
-    selectAllWhere(build())
+  fun ColumnSet.selectAllWhere(build: () -> Op<Boolean>): QueryBuilder = selectAllWhere(build())
 
   /**
    * Select all columns and return a [SelectFrom] to start building the query
    */
-  fun ColumnSet.selectAll(): SelectFrom = select()
+  fun ColumnSet.selectAll(): QueryBuilder
 
   /** Makes a [QueryBuilder] from this [SelectFrom] and associated [where] clause */
   fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder
 
   /**
-   * Calls [build] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
+   * Calls [where] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
    * and the where clause.
    */
-  fun SelectFrom.where(build: () -> Op<Boolean>) =
-    where(build())
+  fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
 
   /**
    * True if the table, as known via [Table.identity], exists in the database, else false
@@ -253,6 +251,10 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
     require(db.inTransaction()) { "Transaction must be in progress" }
   }
 
+  override fun ColumnSet.selectAll(): QueryBuilder {
+    return QueryBuilder(db, SelectFrom(columns, this), null)
+  }
+
   override fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(db, this, where)
 
   override fun <T : Table> T.insertValues(
@@ -295,9 +297,9 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
 
   override val Table.exists
     get() = try {
-      val tableName = identity().unquoted
+      val tableName = identity.unquoted
       val tableType = MasterType.Table.toString()
-      sqlite_master.selectAll().where {
+      sqlite_master.selectAllWhere {
         (sqlite_master.type eq tableType) and (sqlite_master.tbl_name eq tableName)
       }.count() == 1L
     } catch (e: Exception) {
@@ -307,9 +309,9 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
 
   override val Table.description: TableDescription
     get() {
-      require(exists) { "Table ${identity().value} does not exist" }
+      require(exists) { "Table ${identity.value} does not exist" }
       val columnsMetadata = mutableListOf<ColumnMetadata>()
-      val tableIdentity = this.identity().unquoted
+      val tableIdentity = this.identity.unquoted
       db.select("""PRAGMA table_info("$tableIdentity")""").use { cursor ->
         while (cursor.moveToNext()) {
           columnsMetadata.add(ColumnMetadata.fromCursor(cursor))
@@ -329,7 +331,7 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
       val sqlCol = sqlite_master.sql
       val typeCol = sqlite_master.type
       sqlite_master.select(sqlCol, typeCol)
-        .where { sqlite_master.tbl_name eq identity().unquoted }
+        .where { sqlite_master.tbl_name eq identity.unquoted }
         .forEach { cursor ->
           cursor.getOptional(sqlCol)?.let { sql ->
             when (val masterType = cursor[typeCol].asMasterType()) {
@@ -369,7 +371,7 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
   override val Table.foreignKeyList: List<ForeignKeyInfo>
     get() {
       db.select(
-        buildString { append("PRAGMA foreign_key_list('", identity().unquoted, "')") }
+        buildString { append("PRAGMA foreign_key_list('", identity.unquoted, "')") }
       ).use { cursor ->
         return if (cursor.count > 0) {
           ArrayList<ForeignKeyInfo>(cursor.count).apply {
@@ -405,7 +407,7 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
     db.select(buildString {
       append("PRAGMA foreign_key_check")
       append("('")
-      append(identity().unquoted)
+      append(identity.unquoted)
       append("')")
     }).use { cursor ->
       return if (cursor.count > 0) {

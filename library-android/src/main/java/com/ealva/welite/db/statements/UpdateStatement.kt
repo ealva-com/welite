@@ -73,7 +73,7 @@ private class UpdateStatementImpl<T : Table>(
 
   private val sqlBuilder: SqlBuilder = SqlBuilder().apply {
     append(onConflict.updateOr)
-    append(table.identity().value)
+    append(table.identity.value)
 
     val columnValues = ColumnValues()
     table.bind(columnValues)

@@ -27,6 +27,7 @@ import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.IntegerPersistentType
+import com.ealva.welite.sharedtest.TestTable
 import com.nhaarman.expect.expect
 import org.junit.Before
 import org.junit.Test
@@ -71,9 +72,9 @@ class ColumnTests {
       val col3 = integer(col3) { unique() }
     }
 
-    expect(account.id.descriptionDdl()).toBe(""""$id1" INTEGER""")
-    expect(account.col2.descriptionDdl()).toBe(""""$col2" INTEGER PRIMARY KEY""")
-    expect(account.col3.descriptionDdl()).toBe(""""$col3" INTEGER UNIQUE""")
+    expect(account.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL""")
+    expect(account.col2.descriptionDdl()).toBe(""""$col2" INTEGER NOT NULL PRIMARY KEY""")
+    expect(account.col3.descriptionDdl()).toBe(""""$col3" INTEGER NOT NULL UNIQUE""")
   }
 
   @Test
@@ -92,10 +93,10 @@ class ColumnTests {
     val tableName2 = "TableName2"
     val account2 = object : Table(tableName2) {
       val id = integer(id1) { primaryKey().autoIncrement() }
-      val col2 = integer(col2) { notNull().default(4) }
-      val col3 = integer(col3) { notNull().defaultExpression(abs(-100)) }
+      val col2 = integer(col2) { default(4) }
+      val col3 = integer(col3) { defaultExpression(abs(-100)) }
     }
-    expect(account2.id.descriptionDdl()).toBe(""""$id1" INTEGER PRIMARY KEY AUTOINCREMENT""")
+    expect(account2.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT""")
     expect(account2.col2.descriptionDdl()).toBe(""""$col2" INTEGER NOT NULL DEFAULT 4""")
     expect(account2.col3.descriptionDdl()).toBe(""""$col3" INTEGER NOT NULL DEFAULT (ABS(-100))""")
   }
@@ -105,9 +106,9 @@ class ColumnTests {
     val id1 = "id1"
     val tableName3 = "TableName3"
     val account3 = object : Table(tableName3) {
-      val id = integer(id1) { primaryKey().desc().notNull() }
+      val id = integer(id1) { primaryKey().desc() }
     }
-    expect(account3.id.descriptionDdl()).toBe(""""$id1" INTEGER PRIMARY KEY DESC NOT NULL""")
+    expect(account3.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL PRIMARY KEY DESC""")
   }
 
   @Test
@@ -122,13 +123,13 @@ class ColumnTests {
       val id = text(id1)
       val col2: Column<String> = text(col2) { primaryKey() }
       val col3 = text(col3) { unique().collateNoCase() }
-      val col4 = text(col4) { notNull().collateRTrim() }
-      val col5 = text(col5) { default("blah").check { it eq "blah" }.notNull() }
+      val col4 = text(col4) { collateRTrim() }
+      val col5 = text(col5) { default("blah").check { it eq "blah" } }
     }
 
-    expect(account.id.descriptionDdl()).toBe(""""$id1" TEXT""")
-    expect(account.col2.descriptionDdl()).toBe(""""$col2" TEXT PRIMARY KEY""")
-    expect(account.col3.descriptionDdl()).toBe(""""$col3" TEXT UNIQUE COLLATE NOCASE""")
+    expect(account.id.descriptionDdl()).toBe(""""$id1" TEXT NOT NULL""")
+    expect(account.col2.descriptionDdl()).toBe(""""$col2" TEXT NOT NULL PRIMARY KEY""")
+    expect(account.col3.descriptionDdl()).toBe(""""$col3" TEXT NOT NULL UNIQUE COLLATE NOCASE""")
     expect(account.col4.descriptionDdl()).toBe(""""$col4" TEXT NOT NULL COLLATE RTRIM""")
     expect(account.col5.descriptionDdl()).toBe(""""$col5" TEXT NOT NULL DEFAULT 'blah'""")
 
@@ -147,7 +148,7 @@ class ColumnTests {
     val tableName = "Account"
     val account = object : TestTable(tableName) {
       val id1: Column<Int> = integer(id1Name)
-      val id2: Column<Int> = integer(id2Name) { notNull().check { it greater 10 } }
+      val id2: Column<Int> = integer(id2Name) { check { it greater 10 } }
 
       init {
         uniqueIndex(id1, id2)

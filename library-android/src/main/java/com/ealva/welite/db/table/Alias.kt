@@ -38,11 +38,7 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
 
   val tableNameWithAlias: String = "${delegate.tableName} AS $alias"
 
-  override fun identity(): Identity {
-    return delegate.identity() + Identity.make(
-      alias
-    )
-  }
+  override val identity: Identity = delegate.identity + Identity.make(alias)
 
   private fun <T : Any?> Column<T>.clone(): Column<T> =
     Column(this@Alias, name, persistentType)
@@ -73,7 +69,7 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
 
 class ExpressionAlias<T>(val delegate: Expression<T>, val alias: String) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
-    append(delegate," $alias")
+    append(delegate, " $alias")
   }
 
   fun aliasOnlyExpression(): Expression<T> {
@@ -103,7 +99,7 @@ class SqlTypeExpressionAlias<T>(
     }
   }
 
-  override val persistentType: PersistentType<T>
+  override val persistentType: PersistentType<T?>
     get() = delegate.persistentType
 }
 
@@ -112,12 +108,8 @@ class QueryBuilderAlias(
   private val alias: String
 ) : ColumnSet {
 
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder {
-    append("(")
-    queryBuilder.appendTo(this)
-    append(") ")
-    append(alias)
-  }
+  override fun appendTo(sqlBuilder: SqlBuilder) =
+    sqlBuilder.append("(", queryBuilder, ") ", alias)
 
   override val columns: List<Column<*>>
     get() = queryBuilder.sourceSetColumnsInResult().map { it.clone() }
@@ -153,33 +145,10 @@ class QueryBuilderAlias(
       additionalConstraint
     )
 
-  override infix fun innerJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.INNER
-    )
-
-  override infix fun leftJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.LEFT
-    )
-
-  override infix fun crossJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.CROSS
-    )
-
-  override fun naturalJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.NATURAL
-    )
+  override infix fun innerJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.INNER)
+  override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
+  override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
+  override fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
 
   private fun <T : Any?> Column<T>.clone(): Column<T> = makeAlias(alias)
 }
@@ -202,7 +171,6 @@ fun Join.joinQuery(
   return join(qAlias, joinType, additionalConstraint = { on(qAlias) })
 }
 
-
 fun Table.joinQuery(
   on: (QueryBuilderAlias) -> Op<Boolean>,
   joinType: JoinType = JoinType.INNER,
@@ -212,14 +180,14 @@ fun Table.joinQuery(
 val Join.lastQueryBuilderAlias: QueryBuilderAlias?
   get() = lastPartAsQueryBuilderAlias()
 
-private fun Join.lastPartAsQueryBuilderAlias() =
-  joinParts.map { it.joinPart as? QueryBuilderAlias }.firstOrNull()
+private fun Join.lastPartAsQueryBuilderAlias() = joinParts.map {
+  it.joinPart as? QueryBuilderAlias
+}.firstOrNull()
 
 fun <T : Any> wrapAsExpression(query: QueryBuilder) = object : BaseExpression<T?>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("(")
-      query.appendTo(this)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+    append("(")
+    query.appendTo(this)
+    append(")")
+  }
 }

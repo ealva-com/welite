@@ -68,9 +68,16 @@ interface Database {
   val tables: List<Table>
 
   /**
+   * If false an IllegalStateException is thrown if work is dispatched the UI thread. Default is
+   * false (don't do I/O on the UI thread). This is here primarily for testing coroutines. WeLite
+   * tests use a rule that confines coroutines to a single thread to simplify testing.
+   */
+  var allowWorkOnUiThread: Boolean
+
+  /**
    * Begin a [Transaction] named [unitOfWork] and call [work] with the transaction as the receiver.
-   * WeLite attempts to require an explicit transaction be started for all DB access (SQLite will
-   * start an implicit regardless). By default [exclusive] is false and the transaction runs in
+   * WeLite attempts to require an explicit transaction be started for all DB access (otherwise
+   * SQLite will start an implicit txn). By default [exclusive] is false and the transaction runs in
    * IMMEDIATE mode. All db work should be completed within the [work] block and the txn must be
    * marked as either successful, [Transaction.setSuccessful], or rolled back,
    * [Transaction.rollback].
@@ -95,9 +102,12 @@ interface Database {
    * command, except a few PRAGMA statements) will automatically start a transaction if one is not
    * already in effect. Automatically started transactions are committed when the last SQL statement
    * finishes.
+   *
    * @see query
-   * @throws IllegalStateException if closed
-   * @throws WeLiteException if an exception is thrown from [work] executing in a Coroutine
+   * @throws IllegalStateException if the database has been closed
+   * @throws WeLiteException if an exception is thrown from [work]. The [WeLiteException.cause]
+   * is set to the underlying exception. If an underlying dispatcher executes on the UI thread
+   * an IllegalStateException is thrown, which is caught, and wrapped in a WeLiteException
    */
   suspend fun <R> transaction(
     exclusive: Boolean = false,
@@ -110,11 +120,11 @@ interface Database {
    * Called to do queries and no other CRUD operation. This is the same as starting a [transaction]
    * and only doing queries.
    *
-   * WeLite attempts to require an explicit transaction be started for all DB access (SQLite will
-   * start an implicit regardless). This function is fundamentally the same as [transaction], except
-   * the client is indicating no other CRUD operations will be performed. Query calls
-   * [Transaction.setSuccessful] on the underlying transaction as queries don't require
-   * commit/rollback
+   * WeLite attempts to require an explicit transaction be started for all DB access (otherwise
+   * SQLite will start an implicit txn). This function is fundamentally the same as [transaction],
+   * except the client is indicating no other CRUD operations will be performed.
+   * [Transaction.setSuccessful] is always called on the underlying transaction as queries don't
+   * require commit/rollback
    *
    * The work function will be executed on the underlying CoroutineDispatcher which is typically
    * either Dispatchers.IO or a custom dispatcher just for DB work.
@@ -124,9 +134,12 @@ interface Database {
    * command, except a few PRAGMA statements) will automatically start a transaction if one is not
    * already in effect. Automatically started transactions are committed when the last SQL statement
    * finishes.
+   *
    * @see transaction
-   * @throws IllegalStateException if closed
-   * @throws WeLiteException if an exception is thrown from [work] executing in a Coroutine
+   * @throws IllegalStateException if the database has been closed
+   * @throws WeLiteException if an exception is thrown from [work]. The [WeLiteException.cause]
+   * is set to the underlying exception. If an underlying dispatcher executes on the UI thread
+   * an IllegalStateException is thrown, which is caught, and wrapped in a WeLiteException
    */
   suspend fun <R> query(
     exclusive: Boolean = false,
@@ -146,9 +159,10 @@ interface Database {
    * The [work] function is executed on the current thread, unlike [transaction] and [query], which
    * will use coroutines to execute off the main thread.
    *
-   * @throws IllegalStateException if the current thread is not in a transaction or the database has
-   * been closed
-   * @throws WeLiteException if an exception is thrown from [work]
+   * @throws IllegalStateException if the current thread is not in a transaction, the database has
+   * been closed, or the caller is on the UI thread
+   * @throws WeLiteException if an exception is thrown from [work]. The [WeLiteException.cause]
+   * is set to the underlying exception.
    * @see inTransaction
    */
   fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R
@@ -188,7 +202,6 @@ interface Database {
       migrations: List<Migration>,
       requireMigration: Boolean = true,
       dispatcher: CoroutineDispatcher = Dispatchers.IO,
-      allowWorkOnUiThread: Boolean = false,
       configure: DatabaseLifecycle.() -> Unit = {}
     ): Database {
       return doMake(
@@ -199,8 +212,7 @@ interface Database {
         migrations,
         requireMigration,
         dispatcher,
-        configure,
-        allowWorkOnUiThread
+        configure
       )
     }
 
@@ -211,7 +223,6 @@ interface Database {
       migrations: List<Migration>,
       requireMigration: Boolean = true,
       dispatcher: CoroutineDispatcher = Dispatchers.IO,
-      allowWorkOnUiThread: Boolean = false,
       configure: DatabaseLifecycle.() -> Unit = {}
     ): Database {
       return doMake(
@@ -222,8 +233,7 @@ interface Database {
         migrations,
         requireMigration,
         dispatcher,
-        configure,
-        allowWorkOnUiThread
+        configure
       )
     }
 
@@ -235,8 +245,7 @@ interface Database {
       migrations: List<Migration>,
       requireMigration: Boolean,
       dispatcher: CoroutineDispatcher,
-      configure: (DatabaseLifecycle) -> Unit,
-      allowWorkOnUiThread: Boolean
+      configure: (DatabaseLifecycle) -> Unit
     ): Database {
       return WeLiteDatabase(
         context,
@@ -246,7 +255,6 @@ interface Database {
         migrations,
         requireMigration,
         dispatcher,
-        allowWorkOnUiThread,
         configure
       )
     }
@@ -263,7 +271,6 @@ private class WeLiteDatabase(
   migrations: List<Migration>,
   requireMigration: Boolean,
   private val dispatcher: CoroutineDispatcher,
-  private val allowWorkOnUiThread: Boolean,
   configure: DatabaseLifecycle.() -> Unit
 ) : Database, AutoCloseable {
   private var closed = false
@@ -273,6 +280,8 @@ private class WeLiteDatabase(
 
   override val tables: List<Table>
     get() = openHelper.tablesInCreateOrder
+
+  override var allowWorkOnUiThread: Boolean = false
 
   override fun close() {
     if (!closed) {
@@ -287,8 +296,8 @@ private class WeLiteDatabase(
   }
 
   /**
-   * Note: The client may not use the transaction return value so we don't return
-   * WeResult<R> and instead rethrow exceptions occurring in work coroutine.
+   * Note: The client may not use the transaction return value (could be of type Unit) so we don't
+   * return WeResult<R> and instead rethrow exceptions occurring in work coroutine.
    */
   override suspend fun <R> transaction(
     exclusive: Boolean,
@@ -299,7 +308,7 @@ private class WeLiteDatabase(
     check(!closed) { "Database has been closed" }
     return when (val result = withContext(dispatcher) {
       try {
-        assertNotUiThread()
+        assertNotUiThread() // client can set dispatcher, need to check
         Success(beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { it.work() })
       } catch (e: Exception) {
         e.asUnsuccessful { "Exception during transaction" }
@@ -311,8 +320,8 @@ private class WeLiteDatabase(
   }
 
   /**
-   * Note: The client may not use the query return value so we don't return
-   * WeResult<R> and instead rethrow exceptions occurring in work coroutine.
+   * Note: The client may not use the transaction return value (could be of type Unit) so we don't
+   * return WeResult<R> and instead rethrow exceptions occurring in work coroutine.
    */
   override suspend fun <R> query(
     exclusive: Boolean,
@@ -322,7 +331,7 @@ private class WeLiteDatabase(
     check(!closed) { "Database has been closed" }
     return when (val result = withContext(dispatcher) {
       try {
-        assertNotUiThread()
+        assertNotUiThread() // client can set dispatcher, need to check
         beginTransaction(exclusive, unitOfWork, true).use { txn ->
           Success(txn.work().also { txn.setSuccessful() })
         }
@@ -403,6 +412,12 @@ private class OpenHelper private constructor(
   private var onConfigure: ((DatabaseConfiguration) -> Unit) = {}
   private var onCreate: ((Database) -> Unit) = {}
   private var onOpen: ((Database) -> Unit) = {}
+
+  var allowWorkOnUiThread: Boolean
+    get() = database.allowWorkOnUiThread
+    set(value) {
+      database.allowWorkOnUiThread = value
+    }
 
   val tablesInCreateOrder: List<Table>
     get() {
@@ -538,6 +553,12 @@ private class OpenHelper private constructor(
 }
 
 private class OpenParamsImpl(private val openHelper: OpenHelper) : OpenParams {
+  override var allowWorkOnUiThread: Boolean
+    get() = openHelper.allowWorkOnUiThread
+    set(value) {
+      openHelper.allowWorkOnUiThread = value
+    }
+
   /**
    * Enables or disables the use of write-ahead logging for the database.
    *

@@ -157,7 +157,7 @@ class CheckConstraint(
   companion object {
     internal operator fun invoke(table: Table, name: Identity, op: Op<Boolean>): CheckConstraint {
       require(name.value.isNotBlank()) { "Check constraint name cannot be blank" }
-      val tableIdentity = table.identity()
+      val tableIdentity = table.identity
       val checkOpSQL = op.toString().replace("${tableIdentity.value}.", "")
       return CheckConstraint(
         tableIdentity,

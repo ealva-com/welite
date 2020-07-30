@@ -22,6 +22,12 @@ import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.sharedtest.AlbumTable
+import com.ealva.welite.sharedtest.ArtistAlbumTable
+import com.ealva.welite.sharedtest.ArtistTable
+import com.ealva.welite.sharedtest.CoroutineRule
+import com.ealva.welite.sharedtest.MediaFileTable
+import com.ealva.welite.sharedtest.runBlockingTest
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
@@ -36,7 +42,7 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [LOLLIPOP])
 class DeleteTests {
-  @get:Rule var coroutineRule = MainCoroutineRule()
+  @get:Rule var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

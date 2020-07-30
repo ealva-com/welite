@@ -88,13 +88,15 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
     operator fun <T> invoke(
       table: Table,
       name: String,
-      persistentType: PersistentType<T>,
+      persistentType: PersistentType<T?>,
+      initialConstraints: List<ColumnConstraint> = emptyList(),
       addTo: (Column<T>) -> Unit = {},
       block: ColumnConstraints<T>.() -> Unit = {}
     ): Column<T> = ColumnImpl(
       table,
       name,
-      persistentType
+      persistentType,
+      initialConstraints
     ).apply {
       addTo(this)
       block()
@@ -105,13 +107,16 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
 private class ColumnImpl<T>(
   override val table: Table,
   override val name: String,
-  override val persistentType: PersistentType<T>
+  override val persistentType: PersistentType<T?>,
+  initialConstraints: List<ColumnConstraint>
 ) : BaseSqlTypeExpression<T>(), Column<T>, ColumnConstraints<T> {
 
-  private val constraintList = ConstraintCollection(persistentType)
+  private val constraintList = ConstraintCollection(persistentType).apply {
+    initialConstraints.forEach { add(it) }
+  }
 
   override val tableIdentity: Identity
-    get() = table.identity()
+    get() = table.identity
 
   override val definesPrimaryKey: Boolean
     get() = constraintList.hasPrimaryKey()
@@ -143,7 +148,7 @@ private class ColumnImpl<T>(
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
-      append(table.identity().value)
+      append(table.identity.value)
       append('.')
       append(identity().value)
     }
@@ -191,8 +196,6 @@ private class ColumnImpl<T>(
 
   override fun unique() = apply { addConstraint(UniqueConstraint) }
 
-  override fun notNull() = apply { addConstraint(NotNullConstraint) }
-
   override fun asc() = apply { addConstraint(AscConstraint) }
 
   override fun desc() = apply { addConstraint(DescConstraint) }
@@ -217,8 +220,8 @@ private class ColumnImpl<T>(
     table.check(name) { op(this@ColumnImpl) }
   }
 
-  override fun references(
-    ref: Column<T>,
+  override fun <S : T> references(
+    ref: Column<S>,
     onDelete: ForeignKeyAction,
     onUpdate: ForeignKeyAction,
     fkName: String?
@@ -259,10 +262,10 @@ private class ColumnImpl<T>(
     check(indexInPK == null) { "$this already part of primary key" }
     indexInPK = table.columns.count { it.indexInPK != null } + 1
   }
-
 }
 
 private val columnComparator: Comparator<Column<*>> =
   compareBy({ column -> column.tableIdentity.value }, { column -> column.name })
 
+@Suppress("unused")
 fun Column<*>.countDistinct(): Count = Count(this, true)

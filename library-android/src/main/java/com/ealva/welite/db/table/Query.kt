@@ -28,11 +28,11 @@ import com.ealva.welite.db.type.Row
 import it.unimi.dsi.fastutil.objects.Reference2IntMap
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow
 import java.util.Arrays
 
 interface Query {
+
   /**
    * Do any necessary [bindArgs], execute the query, and invoke [action] for each row in the
    * results.
@@ -142,7 +142,7 @@ private class QueryImpl(
     ).use { cursor ->
       while (cursor.moveToNext()) emit(factory(cursor))
     }
-  }.conflate()
+  }
 
   override fun longForQuery(bindArgs: (ParamBindings) -> Unit): Long {
     return doLongForQuery(sql, bindArgs)
@@ -160,6 +160,7 @@ private class QueryImpl(
 
   override val expectedArgCount: Int
     get() = queryArgs.paramCount
+
 }
 
 typealias ExpressionToIndexMap = Reference2IntMap<SqlTypeExpression<*>>
@@ -228,15 +229,8 @@ internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String>? = nul
 }
 
 fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>?) {
-  LOG.i {
-    it(
-      "Plan for:\nSQL:%s\nargs:%s", sql,
-      Arrays.toString(selectionArgs)
-    )
-  }
-  println("Plan for:\nSQL:$sql\nargs:${Arrays.toString(selectionArgs)}")
+  LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, Arrays.toString(selectionArgs)) }
   explainQueryPlan(sql, selectionArgs).forEachIndexed { index, toLog ->
-    println("$index: $toLog")
     LOG.i { it("%d: %s", index, toLog) }
   }
 }

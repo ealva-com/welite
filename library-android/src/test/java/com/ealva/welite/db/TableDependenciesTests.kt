@@ -40,21 +40,21 @@ class TableDependenciesTests {
 
 object TableA : Table() {
   val id = long("_id") { primaryKey() }
-  val aName = text("aName") { collateNoCase().notNull() }
+  val aName = text("aName") { collateNoCase() }
   val tableCId = long("tablec_id") { references(TableC.id) }
 }
 
 object TableB : Table() {
   val id = long("_id") { primaryKey() }
-  val bName = text("bName") { collateNoCase().notNull() }
+  val bName = text("bName") { collateNoCase() }
   val tableCId = long("tablea_id") { references(TableA.id) }
 
 }
 
 object TableC : Table() {
   val id = long("_id") { primaryKey() }
-  val cName = text("cName") { collateNoCase().notNull() }
-  val tableCId = long("tablec_id") { references(TableB.id) }
+  val cName = text("cName") { collateNoCase() }
+  val tableCId = long("tableb_id") { references(TableB.id) }
 }
 
 

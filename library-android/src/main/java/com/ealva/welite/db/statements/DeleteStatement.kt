@@ -44,7 +44,7 @@ private class DeleteStatementImpl(
 
   private val builder = SqlBuilder().apply {
     append("DELETE FROM ")
-    append(table.identity().value)
+    append(table.identity.value)
     if (where != null) {
       append(" WHERE ")
       append(where)

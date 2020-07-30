@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.sharedtest
 
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table
@@ -28,19 +28,19 @@ abstract class TestTable(name: String = "") : Table(name) {
 
 object MediaFileTable : TestTable() {
   val id = long("_id") { primaryKey() }
-  val mediaUri = text("MediaUri") { notNull().unique() }
+  val mediaUri = text("MediaUri") { unique() }
   val artistId = long("ArtistId") { references(ArtistTable.id) }
   val albumId = long("AlbumId") { references(AlbumTable.id) }
 }
 
 object ArtistTable : TestTable() {
   val id = long("_id") { primaryKey() }
-  val artistName = text("ArtistName") { notNull().collateNoCase().uniqueIndex() }
+  val artistName = text("ArtistName") { collateNoCase().uniqueIndex() }
 }
 
 object AlbumTable : TestTable() {
   val id = long("_id") { primaryKey() }
-  val albumName = text("AlbumName") { notNull().collateNoCase().uniqueIndex() }
+  val albumName = text("AlbumName") { collateNoCase().uniqueIndex() }
 }
 
 object ArtistAlbumTable : TestTable() {

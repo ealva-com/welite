@@ -42,7 +42,7 @@ private class InsertSeed<T : Table>(
   private val builder = SqlBuilder().apply {
     append(onConflict.insertOr)
     append(" INTO ")
-    append(table.identity().value)
+    append(table.identity.value)
     columnValues.columnValueList.let { list ->
       list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
         appendName(columnValue)

@@ -24,6 +24,7 @@ import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.or
+import kotlinx.coroutines.flow.Flow
 
 typealias LimitOffset = Pair<Long, Long>
 
@@ -139,6 +140,13 @@ class QueryBuilder(
     }
   }
 
+  /**
+   * Bind any necessary arguments and then create a flow of [T] created by [factory]
+   */
+  fun <T> entityFlow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Flow<T> {
+    return build().entityFlow(bindArgs, factory)
+  }
+
   fun appendTo(builder: SqlBuilder): SqlBuilder {
     return builder.append(this)
   }
@@ -156,9 +164,7 @@ class QueryBuilder(
 
   fun orderBy(column: Expression<*>, order: SortOrder = SortOrder.ASC) = orderBy(column to order)
 
-  fun orderBy(vararg order: OrderByPair) = apply {
-    orderBy.addAll(order)
-  }
+  fun orderBy(vararg order: OrderByPair) = apply { orderBy.addAll(order) }
 
   fun limit(limit: Long, offset: Long = 0) = apply {
     limitOffset = LimitOffset(limit, offset)

@@ -43,7 +43,6 @@ annotation class WeLiteMarker
 interface ColumnConstraints<T> {
   fun primaryKey(): ColumnConstraints<T>
   fun unique(): ColumnConstraints<T>
-  fun notNull(): ColumnConstraints<T>
   fun asc(): ColumnConstraints<T>
   fun desc(): ColumnConstraints<T>
   fun autoIncrement(): ColumnConstraints<T>
@@ -56,8 +55,8 @@ interface ColumnConstraints<T> {
   fun collate(name: String): ColumnConstraints<T>
   fun index(customIndexName: String? = null): ColumnConstraints<T>
   fun uniqueIndex(customIndexName: String? = null): ColumnConstraints<T>
-  fun references(
-    ref: Column<T>,
+  fun <S : T> references(
+    ref: Column<S>,
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     fkName: String? = null
@@ -89,7 +88,7 @@ object PrimaryKeyConstraint : ColumnConstraint() {
   override fun allowedToFollow(
     others: List<ColumnConstraint>,
     persistentType: PersistentType<*>
-  ) = notAllowed { "$this must be first column constraint. Current=[${others.joinAsString()}]" }
+  ) { }
 
 }
 
@@ -177,7 +176,7 @@ object AutoIncrementConstraint : ColumnConstraint() {
 
 private const val NOT_NULL = "NOT NULL"
 
-object NotNullConstraint : ColumnConstraint() {
+internal object NotNullConstraint : ColumnConstraint() {
   override fun toString() = NOT_NULL
 
   override fun mayAppearFirst(persistentType: PersistentType<*>) {}

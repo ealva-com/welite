@@ -34,7 +34,6 @@ val dbModule = module {
       version = 1,
       tables = listOf(MediaFileTable),
       migrations = emptyList(),
-      allowWorkOnUiThread = false,
       configure = {
         preOpen { params ->
           LOG.i { it("preOpen") }

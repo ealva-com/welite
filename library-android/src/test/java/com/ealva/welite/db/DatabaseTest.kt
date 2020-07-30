@@ -24,6 +24,13 @@ import com.ealva.welite.db.schema.FieldType.BlobField
 import com.ealva.welite.db.schema.FieldType.IntegerField
 import com.ealva.welite.db.schema.FieldType.RealField
 import com.ealva.welite.db.schema.FieldType.TextField
+import com.ealva.welite.sharedtest.AlbumTable
+import com.ealva.welite.sharedtest.ArtistAlbumTable
+import com.ealva.welite.sharedtest.ArtistTable
+import com.ealva.welite.sharedtest.CoroutineRule
+import com.ealva.welite.sharedtest.MediaFileTable
+import com.ealva.welite.sharedtest.TestTable
+import com.ealva.welite.sharedtest.runBlockingTest
 import com.nhaarman.expect.StringMatcher
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -37,11 +44,11 @@ import org.robolectric.annotation.Config
 
 object SomeMediaTable : TestTable() {
   val id = integer("_id") { primaryKey() }
-  val mediaUri = text("MediaUri") { notNull().unique() }
+  val mediaUri = text("MediaUri") { unique() }
   val fileName = text("MediaFileName") { collateNoCase() }
-  val mediaTitle = text("MediaTitle") { notNull().collateNoCase().default("Title") }
-  val real = double("Real") { notNull() }
-  val blob = blob("Blob")
+  val mediaTitle = text("MediaTitle") { collateNoCase().default("Title") }
+  val real = double("Real")
+  val blob = nullableBlob("Blob")
 
   init {
     index(fileName, real)
@@ -52,7 +59,7 @@ object SomeMediaTable : TestTable() {
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [LOLLIPOP])
 class DatabaseTest {
-  @get:Rule var coroutineRule = MainCoroutineRule()
+  @get:Rule var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 
@@ -88,13 +95,13 @@ class DatabaseTest {
         expect(description.tableName).toBe(SomeMediaTable.tableName)
         expect(description.columnsMetadata.size).toBe(6)
         expect(description.columnsMetadata[0]).toBe(
-          ColumnMetadata(0, SomeMediaTable.id.name, IntegerField, true, "NULL", 1)
+          ColumnMetadata(0, SomeMediaTable.id.name, IntegerField, false, "NULL", 1)
         )
         expect(description.columnsMetadata[1]).toBe(
           ColumnMetadata(1, SomeMediaTable.mediaUri.name, TextField, false, "NULL", 0)
         )
         expect(description.columnsMetadata[2]).toBe(
-          ColumnMetadata(2, SomeMediaTable.fileName.name, TextField, true, "NULL", 0)
+          ColumnMetadata(2, SomeMediaTable.fileName.name, TextField, false, "NULL", 0)
         )
         expect(description.columnsMetadata[3]).toBe(
           ColumnMetadata(3, SomeMediaTable.mediaTitle.name, TextField, false, "'Title'", 0)
@@ -106,7 +113,7 @@ class DatabaseTest {
           ColumnMetadata(5, SomeMediaTable.blob.name, BlobField, true, "NULL", 0)
         )
 
-        val tableIdentity = SomeMediaTable.identity().value
+        val tableIdentity = SomeMediaTable.identity.value
 
         val fakeExecutor = FakeExecutor()
         SomeMediaTable.create(fakeExecutor)
@@ -116,7 +123,7 @@ class DatabaseTest {
         expect(statements[1]).toBe("""CREATE INDEX IF NOT EXISTS "SomeMedia_MediaFileName_Real" ON "SomeMedia"("MediaFileName", "Real")""")
 
         val tableSql = SomeMediaTable.sql
-        expect(tableSql.table.first()).toBe("""CREATE TABLE $tableIdentity ("_id" INTEGER PRIMARY KEY, "MediaUri" TEXT NOT NULL UNIQUE, "MediaFileName" TEXT COLLATE NOCASE, "MediaTitle" TEXT NOT NULL COLLATE NOCASE DEFAULT 'Title', "Real" REAL NOT NULL, "Blob" BLOB)""")
+        expect(tableSql.table.first()).toBe("""CREATE TABLE $tableIdentity ("_id" INTEGER NOT NULL PRIMARY KEY, "MediaUri" TEXT NOT NULL UNIQUE, "MediaFileName" TEXT NOT NULL COLLATE NOCASE, "MediaTitle" TEXT NOT NULL COLLATE NOCASE DEFAULT 'Title', "Real" REAL NOT NULL, "Blob" BLOB)""")
         expect(tableSql.indices.first()).toBe("""CREATE INDEX "SomeMedia_MediaFileName_Real" ON "SomeMedia"("MediaFileName", "Real")""")
       }
     }
@@ -181,21 +188,21 @@ class DatabaseTest {
 
         ArtistTable.sql.let { artistSql ->
           expect(artistSql.table).toHaveSize(1)
-          expect(artistSql.table[0]).toBe("""CREATE TABLE "Artist" ("_id" INTEGER PRIMARY KEY, "ArtistName" TEXT NOT NULL COLLATE NOCASE)""")
+          expect(artistSql.table[0]).toBe("""CREATE TABLE "Artist" ("_id" INTEGER NOT NULL PRIMARY KEY, "ArtistName" TEXT NOT NULL COLLATE NOCASE)""")
           expect(artistSql.indices).toHaveSize(1)
           expect(artistSql.indices[0]).toBe("""CREATE UNIQUE INDEX "Artist_ArtistName_unique" ON "Artist"("ArtistName")""")
         }
 
         AlbumTable.sql.let { albumSql ->
           expect(albumSql.table).toHaveSize(1)
-          expect(albumSql.table[0]).toBe("""CREATE TABLE "Album" ("_id" INTEGER PRIMARY KEY, "AlbumName" TEXT NOT NULL COLLATE NOCASE)""")
+          expect(albumSql.table[0]).toBe("""CREATE TABLE "Album" ("_id" INTEGER NOT NULL PRIMARY KEY, "AlbumName" TEXT NOT NULL COLLATE NOCASE)""")
           expect(albumSql.indices).toHaveSize(1)
           expect(albumSql.indices[0]).toBe("""CREATE UNIQUE INDEX "Album_AlbumName_unique" ON "Album"("AlbumName")""")
         }
 
         ArtistAlbumTable.sql.let { artistAlbum ->
           expect(artistAlbum.table).toHaveSize(1)
-          expect(artistAlbum.table[0]).toBe("""CREATE TABLE "ArtistAlbum" ("_id" INTEGER PRIMARY KEY, "ArtistId" INTEGER, "AlbumId" INTEGER, CONSTRAINT "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id") ON DELETE CASCADE, CONSTRAINT "fk_ArtistAlbum_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id") ON DELETE CASCADE)""")
+          expect(artistAlbum.table[0]).toBe("""CREATE TABLE "ArtistAlbum" ("_id" INTEGER NOT NULL PRIMARY KEY, "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id") ON DELETE CASCADE, CONSTRAINT "fk_ArtistAlbum_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id") ON DELETE CASCADE)""")
           expect(artistAlbum.indices).toHaveSize(3)
           expect(artistAlbum.indices[0]).toBe("""CREATE INDEX "ArtistAlbum_ArtistId" ON "ArtistAlbum"("ArtistId")""")
           expect(artistAlbum.indices[1]).toBe("""CREATE INDEX "ArtistAlbum_AlbumId" ON "ArtistAlbum"("AlbumId")""")
@@ -204,7 +211,7 @@ class DatabaseTest {
 
         MediaFileTable.sql.let { mediaSql ->
           expect(mediaSql.table).toHaveSize(1)
-          expect(mediaSql.table[0]).toBe("""CREATE TABLE "MediaFile" ("_id" INTEGER PRIMARY KEY, "MediaUri" TEXT NOT NULL UNIQUE, "ArtistId" INTEGER, "AlbumId" INTEGER, CONSTRAINT "fk_MediaFile_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id"), CONSTRAINT "fk_MediaFile_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id"))""")
+          expect(mediaSql.table[0]).toBe("""CREATE TABLE "MediaFile" ("_id" INTEGER NOT NULL PRIMARY KEY, "MediaUri" TEXT NOT NULL UNIQUE, "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT "fk_MediaFile_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id"), CONSTRAINT "fk_MediaFile_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id"))""")
           expect(mediaSql.indices).toHaveSize(0)
         }
       }

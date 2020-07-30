@@ -84,7 +84,7 @@ private const val NULL_NOT_ALLOWED_MSG: String = "Value at index=%d null but col
 abstract class BasePersistentType<T>(
   override val sqlType: String,
   override var nullable: Boolean = true
-) : PersistentType<T> {
+) : PersistentType<T?> {
   override val isIntegerType: Boolean
     get() = false
 
@@ -139,7 +139,7 @@ private fun cannotConvert(value: Any, convertedType: String) {
   )
 }
 
-class BytePersistentType : BaseIntegerPersistentType<Byte>() {
+class BytePersistentType : BaseIntegerPersistentType<Byte?>() {
 
   override fun Row.readColumnValue(index: Int) = getShort(index).toByte()
 
@@ -154,7 +154,7 @@ class BytePersistentType : BaseIntegerPersistentType<Byte>() {
 }
 
 @ExperimentalUnsignedTypes
-class UBytePersistentType : BaseIntegerPersistentType<UByte>() {
+class UBytePersistentType : BaseIntegerPersistentType<UByte?>() {
   override fun Row.readColumnValue(index: Int) = getLong(index).toUByte()
 
   override fun notNullValueToDB(value: Any): Any {
@@ -172,7 +172,7 @@ class UBytePersistentType : BaseIntegerPersistentType<UByte>() {
   }
 }
 
-class ShortPersistentType : BaseIntegerPersistentType<Short>() {
+class ShortPersistentType : BaseIntegerPersistentType<Short?>() {
   override fun Row.readColumnValue(index: Int) = getShort(index)
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -186,7 +186,7 @@ class ShortPersistentType : BaseIntegerPersistentType<Short>() {
 }
 
 @ExperimentalUnsignedTypes
-class UShortPersistentType : BaseIntegerPersistentType<UShort>() {
+class UShortPersistentType : BaseIntegerPersistentType<UShort?>() {
   override fun Row.readColumnValue(index: Int) = getLong(index).toUShort()
 
   override fun notNullValueToDB(value: Any): Any {
@@ -204,7 +204,7 @@ class UShortPersistentType : BaseIntegerPersistentType<UShort>() {
   }
 }
 
-class IntegerPersistentType : BaseIntegerPersistentType<Int>() {
+class IntegerPersistentType : BaseIntegerPersistentType<Int?>() {
   override fun Row.readColumnValue(index: Int) = getInt(index)
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -219,7 +219,7 @@ class IntegerPersistentType : BaseIntegerPersistentType<Int>() {
 }
 
 @ExperimentalUnsignedTypes
-class UIntegerPersistentType : BaseIntegerPersistentType<UInt>() {
+class UIntegerPersistentType : BaseIntegerPersistentType<UInt?>() {
   override fun Row.readColumnValue(index: Int) = getLong(index).toUInt()
 
   override fun notNullValueToDB(value: Any): Any {
@@ -237,7 +237,7 @@ class UIntegerPersistentType : BaseIntegerPersistentType<UInt>() {
   }
 }
 
-class LongPersistentType : BaseIntegerPersistentType<Long>() {
+class LongPersistentType : BaseIntegerPersistentType<Long?>() {
   override fun Row.readColumnValue(index: Int) = getLong(index)
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -251,7 +251,7 @@ class LongPersistentType : BaseIntegerPersistentType<Long>() {
 }
 
 @ExperimentalUnsignedTypes
-class ULongPersistentType : BaseIntegerPersistentType<ULong>() {
+class ULongPersistentType : BaseIntegerPersistentType<ULong?>() {
   override fun Row.readColumnValue(index: Int) = getLong(index).toULong()
 
   override fun notNullValueToDB(value: Any): Any {
@@ -268,7 +268,7 @@ class ULongPersistentType : BaseIntegerPersistentType<ULong>() {
   }
 }
 
-class FloatPersistentType : BaseRealPersistentType<Float>() {
+class FloatPersistentType : BaseRealPersistentType<Float?>() {
   override fun Row.readColumnValue(index: Int) = getFloat(index)
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -282,7 +282,7 @@ class FloatPersistentType : BaseRealPersistentType<Float>() {
   }
 }
 
-class DoublePersistentType : BaseRealPersistentType<Double>() {
+class DoublePersistentType : BaseRealPersistentType<Double?>() {
   override fun Row.readColumnValue(index: Int) = getDouble(index)
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -296,7 +296,7 @@ class DoublePersistentType : BaseRealPersistentType<Double>() {
   }
 }
 
-open class StringPersistentType : BasePersistentType<String>("TEXT") {
+open class StringPersistentType : BasePersistentType<String?>("TEXT") {
   override fun Row.readColumnValue(index: Int) = getString(index)
 
   override fun nonNullValueToString(value: Any): String = buildString {
@@ -327,7 +327,7 @@ open class StringPersistentType : BasePersistentType<String>("TEXT") {
   )
 }
 
-open class BlobPersistentType : BasePersistentType<Blob>("BLOB") {
+open class BlobPersistentType : BasePersistentType<Blob?>("BLOB") {
   override fun Row.readColumnValue(index: Int): Blob {
     return Blob(getBlob(index))
   }
@@ -350,7 +350,7 @@ open class BlobPersistentType : BasePersistentType<Blob>("BLOB") {
 
 class UUIDPersistentType private constructor(
   private val blobColumn: BlobPersistentType
-) : BasePersistentType<UUID>(blobColumn.sqlType) {
+) : BasePersistentType<UUID?>(blobColumn.sqlType) {
   private fun ByteBuffer.getUuid(): UUID {
     return UUID(long, long)
   }
@@ -418,7 +418,7 @@ class UUIDPersistentType private constructor(
   }
 }
 
-class BooleanPersistentType : BaseIntegerPersistentType<Boolean>() {
+class BooleanPersistentType : BaseIntegerPersistentType<Boolean?>() {
   override fun Row.readColumnValue(index: Int): Boolean = getInt(index) != 0
   override fun nonNullValueToString(value: Any): String = (value as Boolean).toStatementString()
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -432,7 +432,7 @@ class BooleanPersistentType : BaseIntegerPersistentType<Boolean>() {
 
 class EnumerationPersistentType<T : Enum<T>>(
   private val klass: KClass<T>
-) : BasePersistentType<T>("INTEGER") {
+) : BasePersistentType<T?>("INTEGER") {
 
   private val enums = checkNotNull(klass.java.enumConstants) { "${klass.qualifiedName} not Enum" }
 
@@ -484,7 +484,7 @@ class EnumerationPersistentType<T : Enum<T>>(
 
 class EnumerationNamePersistentType<T : Enum<T>>(
   val klass: KClass<T>
-) : BasePersistentType<T>("TEXT") {
+) : BasePersistentType<T?>("TEXT") {
   private val enums = checkNotNull(klass.java.enumConstants) { "${klass.qualifiedName} not Enum" }
 
   @Suppress("UNCHECKED_CAST")

@@ -28,6 +28,7 @@ import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.type.Blob
 import com.ealva.welite.db.type.BlobPersistentType
 import com.ealva.welite.db.type.BooleanPersistentType
+import com.ealva.welite.db.type.BytePersistentType
 import com.ealva.welite.db.type.DoublePersistentType
 import com.ealva.welite.db.type.EnumerationNamePersistentType
 import com.ealva.welite.db.type.EnumerationPersistentType
@@ -37,7 +38,9 @@ import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.ShortPersistentType
 import com.ealva.welite.db.type.StringPersistentType
+import com.ealva.welite.db.type.UBytePersistentType
 import com.ealva.welite.db.type.ULongPersistentType
+import com.ealva.welite.db.type.UShortPersistentType
 import com.ealva.welite.db.type.UUIDPersistentType
 import java.util.UUID
 import kotlin.reflect.KClass
@@ -65,9 +68,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
       }
     }
 
-  open fun identity(): Identity {
-    return tableName.asIdentity()
-  }
+  open val identity: Identity by lazy { tableName.asIdentity() }
 
   private val _columns = mutableListOf<Column<*>>()
   override val columns: List<Column<*>>
@@ -79,9 +80,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   private val indicesDDL: List<String>
     get() = indices.flatMap { it.createStatement() }
 
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder {
-    append(identity())
-  }
+  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder { append(identity) }
 
   @ExperimentalUnsignedTypes
   override fun join(
@@ -90,43 +89,12 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     thisColumn: Expression<*>?,
     otherColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join =
-    Join(
-      this,
-      joinTo,
-      joinType,
-      thisColumn,
-      otherColumn,
-      additionalConstraint
-    )
+  ): Join = Join(this, joinTo, joinType, thisColumn, otherColumn, additionalConstraint)
 
-  override infix fun innerJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.INNER
-    )
-
-  override infix fun leftJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.LEFT
-    )
-
-  override infix fun crossJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.CROSS
-    )
-
-  override fun naturalJoin(joinTo: ColumnSet): Join =
-    Join(
-      this,
-      joinTo,
-      JoinType.NATURAL
-    )
+  override infix fun innerJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.INNER)
+  override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
+  override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
+  override fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
 
   inner class PrimaryKey(
     firstColumn: Column<*>,
@@ -158,56 +126,113 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 //    .sortedWith(compareBy({ !it.isAutoInc }, { it.indexInPK }))
 //    .takeIf { it.isNotEmpty() }
 
+  protected fun byte(name: String, block: SetConstraints<Byte> = {}): Column<Byte> =
+    registerColumn(name, BytePersistentType(), block)
+
+  protected fun nullableByte(name: String, block: SetConstraints<Byte?> = {}): Column<Byte?> =
+    registerOptColumn(name, BytePersistentType(), block)
+
   protected fun short(name: String, block: SetConstraints<Short> = {}): Column<Short> =
     registerColumn(name, ShortPersistentType(), block)
 
+  protected fun nullableShort(name: String, block: SetConstraints<Short?> = {}): Column<Short?> =
+    registerOptColumn(name, ShortPersistentType(), block)
+
   protected fun integer(name: String, block: SetConstraints<Int> = {}): Column<Int> =
+    registerColumn(name, IntegerPersistentType(), block)
+
+  protected fun nullableInteger(name: String, block: SetConstraints<Int?> = {}): Column<Int?> =
     registerColumn(name, IntegerPersistentType(), block)
 
   protected fun long(name: String, block: SetConstraints<Long> = {}): Column<Long> =
     registerColumn(name, LongPersistentType(), block)
 
-  @ExperimentalUnsignedTypes
-  protected fun ulong(name: String, block: SetConstraints<ULong> = {}): Column<ULong> =
-    registerColumn(name, ULongPersistentType(), block)
+  protected fun nullableLong(name: String, block: SetConstraints<Long?> = {}): Column<Long?> =
+    registerColumn(name, LongPersistentType(), block)
 
   protected fun float(name: String, block: SetConstraints<Float> = {}): Column<Float> =
+    registerColumn(name, FloatPersistentType(), block)
+
+  protected fun nullableFloat(name: String, block: SetConstraints<Float?> = {}): Column<Float?> =
     registerColumn(name, FloatPersistentType(), block)
 
   protected fun double(name: String, block: SetConstraints<Double> = {}): Column<Double> =
     registerColumn(name, DoublePersistentType(), block)
 
+  protected fun nullableDouble(name: String, block: SetConstraints<Double?> = {}): Column<Double?> =
+    registerColumn(name, DoublePersistentType(), block)
+
   protected fun text(name: String, block: SetConstraints<String> = {}): Column<String> =
     registerColumn(name, StringPersistentType(), block)
+
+  protected fun nullableText(name: String, block: SetConstraints<String?> = {}): Column<String?> =
+    registerOptColumn(name, StringPersistentType(), block)
 
   protected fun blob(name: String, block: SetConstraints<Blob> = {}): Column<Blob> =
     registerColumn(name, BlobPersistentType(), block)
 
+  protected fun nullableBlob(name: String, block: SetConstraints<Blob?> = {}): Column<Blob?> =
+    registerOptColumn(name, BlobPersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun ubyte(name: String, block: SetConstraints<UByte> = {}): Column<UByte> =
+    registerColumn(name, UBytePersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun nullableUbyte(name: String, block: SetConstraints<UByte?> = {}): Column<UByte?> =
+    registerOptColumn(name, UBytePersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun uShort(name: String, block: SetConstraints<UShort> = {}): Column<UShort> =
+    registerColumn(name, UShortPersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun nullableUshort(name: String, block: SetConstraints<UShort?> = {}): Column<UShort?> =
+    registerColumn(name, UShortPersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun ulong(name: String, block: SetConstraints<ULong> = {}): Column<ULong> =
+    registerColumn(name, ULongPersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun nullableUlong(name: String, block: SetConstraints<ULong?> = {}): Column<ULong?> =
+    registerColumn(name, ULongPersistentType(), block)
+
   protected fun uuid(name: String, block: SetConstraints<UUID> = {}): Column<UUID> =
     registerColumn(name, UUIDPersistentType(), block)
 
+  protected fun nullableUuid(name: String, block: SetConstraints<UUID?> = {}): Column<UUID?> =
+    registerOptColumn(name, UUIDPersistentType(), block)
+
   protected fun bool(name: String, block: SetConstraints<Boolean> = {}): Column<Boolean> =
     registerColumn(name, BooleanPersistentType(), block)
+
+  protected fun nullableBool(name: String, block: SetConstraints<Boolean?> = {}): Column<Boolean?> =
+    registerOptColumn(name, BooleanPersistentType(), block)
 
   protected fun <T : Enum<T>> enumeration(
     name: String,
     klass: KClass<T>,
     block: SetConstraints<T> = {}
-  ): Column<T> =
-    registerColumn(
-      name,
-      EnumerationPersistentType(klass), block
-    )
+  ): Column<T> = registerColumn(name, EnumerationPersistentType(klass), block)
+
+  protected fun <T : Enum<T>> optEnumeration(
+    name: String,
+    klass: KClass<T>,
+    block: SetConstraints<T?> = {}
+  ): Column<T?> = registerOptColumn(name, EnumerationPersistentType(klass), block)
 
   protected fun <T : Enum<T>> enumerationByName(
     name: String,
     klass: KClass<T>,
     block: SetConstraints<T> = {}
-  ): Column<T> =
-    registerColumn(
-      name,
-      EnumerationNamePersistentType(klass), block
-    )
+  ): Column<T> = registerColumn(name, EnumerationNamePersistentType(klass), block)
+
+  protected fun <T : Enum<T>> optEnumerationByName(
+    name: String,
+    klass: KClass<T>,
+    block: SetConstraints<T?> = {}
+  ): Column<T?> = registerOptColumn(name, EnumerationNamePersistentType(klass), block)
 
   /**
    * Create a FOREIGN KEY constraint on a table
@@ -228,12 +253,13 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     fkName: String? = null
   ): Column<T> =
     Column(
-      this@Table,
-      name,
-      refColumn.persistentType,
-      ::addColumn
+      table = this,
+      name = name,
+      persistentType = refColumn.persistentType,
+      initialConstraints = listOf(NotNullConstraint),
+      addTo = ::addColumn
     ) {
-      references(refColumn, onDelete, onUpdate, fkName).notNull()
+      references(refColumn, onDelete, onUpdate, fkName)
     }
 
   /**
@@ -253,27 +279,40 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     fkName: String? = null
-  ): Column<T> =
-    Column(
-      this,
-      name,
-      refColumn.persistentType,
-      ::addColumn
-    ) {
-      references(refColumn, onDelete, onUpdate, fkName)
-    }
+  ): Column<T?> =
+    Column<T?>(
+      table = this,
+      name = name,
+      persistentType = refColumn.persistentType.apply { nullable = true },
+      addTo = ::addColumn
+    ) { references(refColumn, onDelete, onUpdate, fkName) }
 
   private fun <T> registerColumn(
     name: String,
-    type: PersistentType<T>,
+    type: PersistentType<T?>,
     block: SetConstraints<T>
   ): Column<T> {
     return Column(
-      this,
-      name,
-      type,
-      ::addColumn,
-      block
+      table = this,
+      name = name,
+      persistentType = type.apply { nullable = false },
+      initialConstraints = listOf(NotNullConstraint),
+      addTo = ::addColumn,
+      block = block
+    )
+  }
+
+  private fun <T> registerOptColumn(
+    name: String,
+    type: PersistentType<T?>,
+    block: SetConstraints<T?>
+  ): Column<T?> {
+    return Column(
+      table = this,
+      name = name,
+      persistentType = type.apply { nullable = true },
+      addTo = ::addColumn,
+      block = block
     )
   }
 
@@ -315,7 +354,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     firstColumn: Column<*>,
     vararg otherColumns: Column<*>
   ) {
-    val tableIdentity = identity()
+    val tableIdentity = identity
     indices.add(
       Index(
         tableIdentity,
@@ -404,7 +443,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   private fun createStatement(): List<String> {
     val createTable = buildString {
       append("CREATE TABLE IF NOT EXISTS ")
-      appendIdentity(identity())
+      appendIdentity(identity)
       if (columns.isNotEmpty()) {
         columns.joinTo(this, prefix = " (") { it.descriptionDdl() }
 
@@ -439,7 +478,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   private fun dropStatement(): List<String> {
     val dropTable = buildString {
       append("DROP TABLE IF EXISTS ")
-      appendIdentity(identity())
+      appendIdentity(identity)
     }
 
     return listOf(dropTable)

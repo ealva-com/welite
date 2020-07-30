@@ -36,9 +36,9 @@ import org.koin.android.ext.android.inject
 
 object MediaFileTable : Table() {
   val id = integer("_id") { primaryKey() }
-  val mediaUri = text("MediaUri") { notNull().unique() }
-  val fileName = text("MediaFileName") { notNull().collateNoCase() }
-  val mediaTitle = text("MediaTitle") { notNull().collateNoCase() }
+  val mediaUri = text("MediaUri") { unique() }
+  val fileName = text("MediaFileName") { collateNoCase() }
+  val mediaTitle = text("MediaTitle") { collateNoCase() }
 }
 
 private val LOG by lazyLogger(MainActivity::class)

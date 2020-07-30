@@ -17,6 +17,7 @@
 package com.ealva.welite.db.expr
 
 import com.ealva.welite.db.table.Column
+import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.type.DefaultValueMarker
 import com.ealva.welite.db.type.PersistentType
 
@@ -49,7 +50,7 @@ class SqlBuilder {
 
   fun append(value: Expression<*>): SqlBuilder = value.appendTo(this)
 
-  fun <T> registerBindable(sqlType: PersistentType<T>) {
+  fun <T> registerBindable(sqlType: PersistentType<T?>) {
     _types.add(sqlType)
     append("?")
   }
@@ -62,10 +63,10 @@ class SqlBuilder {
     }
   }
 
-  fun <T> registerArgument(sqlType: PersistentType<T>, argument: T): Unit =
+  fun <T> registerArgument(sqlType: PersistentType<T?>, argument: T): Unit =
     registerArguments(sqlType, listOf(argument))
 
-  fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>) {
+  fun <T> registerArguments(sqlType: PersistentType<T?>, arguments: Iterable<T>) {
     arguments.forEach { append(sqlType.valueToString(it)) }
   }
 
@@ -77,6 +78,7 @@ fun SqlBuilder.append(vararg values: Any): SqlBuilder = apply {
     when (value) {
       is Expression<*> -> append(value)
       is String -> append(value)
+      is QueryBuilder -> value.appendTo(this)
       is Long -> append(value)
       is Char -> append(value)
       else -> append(value.toString())

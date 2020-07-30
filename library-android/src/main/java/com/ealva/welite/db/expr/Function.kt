@@ -22,12 +22,12 @@ import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.StringPersistentType
 
-abstract class Function<T>(override val persistentType: PersistentType<T>) :
+abstract class Function<T>(override val persistentType: PersistentType<T?>) :
   BaseSqlTypeExpression<T>()
 
 open class CustomFunction<T>(
   private val functionName: String,
-  persistentType: PersistentType<T>,
+  persistentType: PersistentType<T?>,
   private vararg val expr: Expression<*>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
@@ -41,7 +41,7 @@ open class CustomFunction<T>(
 
 open class CustomOperator<T>(
   private val operatorName: String,
-  persistentType: PersistentType<T>,
+  persistentType: PersistentType<T?>,
   private val expr1: Expression<*>,
   private val expr2: Expression<*>
 ) : Function<T>(persistentType) {
@@ -151,7 +151,7 @@ class Trim(
 
 class Min<T : Comparable<T>>(
   private val expr: Expression<in T>,
-  persistentType: PersistentType<T>
+  persistentType: PersistentType<T?>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
@@ -163,7 +163,7 @@ class Min<T : Comparable<T>>(
 
 class Max<T : Comparable<T>>(
   private val expr: Expression<T>,
-  persistentType: PersistentType<T>
+  persistentType: PersistentType<T?>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
@@ -175,7 +175,7 @@ class Max<T : Comparable<T>>(
 
 class Avg<T : Comparable<T>>(
   private val expr: Expression<in T>,
-  persistentType: PersistentType<T>
+  persistentType: PersistentType<T?>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
@@ -187,7 +187,7 @@ class Avg<T : Comparable<T>>(
 
 class Sum<T>(
   private val expr: Expression<T>,
-  persistentType: PersistentType<T>
+  persistentType: PersistentType<T?>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
@@ -263,7 +263,7 @@ class CaseWhenElse<T, R : T>(
 
 class Cast<T>(
   private val expr: Expression<*>,
-  persistentType: PersistentType<T>
+  persistentType: PersistentType<T?>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {

@@ -31,7 +31,7 @@ import com.ealva.welite.db.type.ULongPersistentType
 import com.ealva.welite.db.type.UShortPersistentType
 
 class LiteralOp<T>(
-  override val persistentType: PersistentType<T>,
+  override val persistentType: PersistentType<T?>,
   val value: T
 ) : BaseSqlTypeExpression<T>() {
   override fun asDefaultValue() = toString()
@@ -85,7 +85,7 @@ fun stringLiteral(value: String): LiteralOp<String> =
 class ModOp<T : Number?, S : Number?>(
   private val lhs: Expression<T>,
   private val rhs: Expression<S>,
-  override val persistentType: PersistentType<T>
+  override val persistentType: PersistentType<T?>
 ) : BaseSqlTypeExpression<T>() {
   override fun appendTo(
     sqlBuilder: SqlBuilder
@@ -101,7 +101,7 @@ class ModOp<T : Number?, S : Number?>(
 @Suppress("unused")
 class NoOpConversion<T, S>(
   private val expr: Expression<T>,
-  override val persistentType: PersistentType<S>
+  override val persistentType: PersistentType<S?>
 ) : BaseSqlTypeExpression<S>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder { append(expr) }
@@ -144,19 +144,19 @@ class InListOrNotInListOp<T>(
     }
 }
 
-class PlusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T>) :
+class PlusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T?>) :
   CustomOperator<T>("+", persistentType, lhs, rhs)
 
-class MinusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T>) :
+class MinusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T?>) :
   CustomOperator<T>("-", persistentType, lhs, rhs)
 
-class TimesOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T>) :
+class TimesOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T?>) :
   CustomOperator<T>("*", persistentType, lhs, rhs)
 
 class DivideOp<T, S : T>(
   rhs: Expression<T>,
   lhs: Expression<S>,
-  persistentType: PersistentType<T>
+  persistentType: PersistentType<T?>
 ) :
   CustomOperator<T>("/", persistentType, rhs, lhs)
 

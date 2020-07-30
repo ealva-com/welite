@@ -46,6 +46,8 @@ interface DatabaseLifecycle {
 }
 
 interface OpenParams {
+  var allowWorkOnUiThread: Boolean
+
   fun enableWriteAheadLogging(enable: Boolean)
 
   /** No-op if Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1 */

@@ -37,8 +37,16 @@ android {
     }
   }
 
+  sourceSets.getByName("androidTest") {
+    java.srcDir("src/sharedTest/java")
+  }
+
+  sourceSets.getByName("test") {
+    java.srcDir("src/sharedTest/java")
+  }
+
   lintOptions {
-    isWarningsAsErrors = true
+    isWarningsAsErrors = false
     isAbortOnError = true
   }
 

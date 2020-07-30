@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.sharedtest.TestTable
 import com.nhaarman.expect.expect
 import org.junit.Before
 import org.junit.Test
@@ -118,7 +119,7 @@ class CreateTableTests {
     }
 
     expect(other.ddlForTest().first()).toBe(
-      """CREATE TABLE IF NOT EXISTS ${other.identity().value} (${other.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") REFERENCES "Account"("id1") ON DELETE CASCADE ON UPDATE SET DEFAULT)"""
+      """CREATE TABLE IF NOT EXISTS ${other.identity.value} (${other.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") REFERENCES "Account"("id1") ON DELETE CASCADE ON UPDATE SET DEFAULT)"""
     )
   }
 
@@ -138,7 +139,7 @@ class CreateTableTests {
     expect(ddl).toHaveSize(1)
     val create = ddl.first()
     expect(create).toBe(
-      """CREATE TABLE IF NOT EXISTS ${account.identity().value} (${account.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT ${account.primaryKey.identity().value} PRIMARY KEY (${account.id1.identity().value}, ${account.id2.identity().value}))"""
+      """CREATE TABLE IF NOT EXISTS ${account.identity.value} (${account.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT ${account.primaryKey.identity().value} PRIMARY KEY (${account.id1.identity().value}, ${account.id2.identity().value}))"""
     )
   }
 
@@ -148,8 +149,8 @@ class CreateTableTests {
     val id2Name = "id2"
     val tableName = "Account"
     val account = object : TestTable(tableName) {
-      val id1: Column<Int> = integer(id1Name) { notNull().index() }
-      val id2: Column<Int> = integer(id2Name) { notNull().uniqueIndex() }
+      val id1: Column<Int> = integer(id1Name) { index() }
+      val id2: Column<Int> = integer(id2Name) { uniqueIndex() }
 
       init {
         index(id1, id2)

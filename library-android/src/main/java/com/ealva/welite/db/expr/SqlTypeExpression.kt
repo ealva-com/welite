@@ -21,7 +21,7 @@ import com.ealva.welite.db.type.PersistentType
 
 interface SqlTypeExpression<T> : Expression<T> {
   val sqlType: String
-  val persistentType: PersistentType<T>
+  val persistentType: PersistentType<T?>
   fun bind(bindable: Bindable, index: Int, value: T?)
 }
 

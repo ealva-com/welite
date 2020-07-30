@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.sharedtest
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,7 +26,7 @@ import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 @ExperimentalCoroutinesApi
-class MainCoroutineRule constructor(
+class CoroutineRule constructor(
   val testDispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()
 ) : TestWatcher() {
 
@@ -43,6 +43,6 @@ class MainCoroutineRule constructor(
 }
 
 @ExperimentalCoroutinesApi
-fun MainCoroutineRule.runBlockingTest(block: suspend () -> Unit) = testDispatcher.runBlockingTest {
+fun CoroutineRule.runBlockingTest(block: suspend () -> Unit) = testDispatcher.runBlockingTest {
   block()
 }

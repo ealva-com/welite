@@ -47,9 +47,9 @@ suspend fun withTestDatabase(
     tables = tables,
     migrations = emptyList(),
     requireMigration = enableForeignKeyConstraints,
-    allowWorkOnUiThread = true,
     dispatcher = testDispatcher
   ) {
+    preOpen { it.allowWorkOnUiThread = true }
     onConfigure { it.enableForeignKeyConstraints(enableForeignKeyConstraints) }
   }
 }
