@@ -24,6 +24,7 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.table.Cursor
+import com.ealva.welite.db.table.Table
 import com.ealva.welite.sharedtest.CoroutineRule
 import com.ealva.welite.sharedtest.runBlockingTest
 import com.nhaarman.expect.expect
@@ -55,18 +56,18 @@ class JoinTests {
   fun `test join inner join`() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,
-      tables = listOf(Places, People, PeopleInfo),
+      tables = listOf(Place, Person, PersonInfo),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
-        (People innerJoin Places).select(People.name, Places.name)
-          .where { (People.id eq "andrey" or (People.name eq "Sergey") and (People.cityId eq Places.id)) }
+        (Person innerJoin Place).select(Person.name, Place.name)
+          .where { (Person.id eq "louis" or (Person.name eq "Rick") and (Person.cityId eq Place.id)) }
           .forEach {
-            val userName = it[People.name]
-            val cityName = it[Places.name]
+            val userName = it[Person.name]
+            val cityName = it[Place.name]
             when (userName) {
-              "Andrey" -> expect(cityName).toBe("St. Petersburg")
-              "Sergey" -> expect(cityName).toBe("Munich")
+              "Louis" -> expect(cityName).toBe("Cleveland")
+              "Rick" -> expect(cityName).toBe("South Point")
               else -> error("Unexpected user $userName")
             }
           }
@@ -78,18 +79,18 @@ class JoinTests {
   fun `test fk join`() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,
-      tables = listOf(Places, People, PeopleInfo),
+      tables = listOf(Place, Person, PersonInfo),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
-        (People innerJoin Places)
-          .select(People.name, Places.name)
-          .where { Places.name eq "St. Petersburg" or People.cityId.isNull() }
+        (Person innerJoin Place)
+          .select(Person.name, Place.name)
+          .where { Place.name eq "Cleveland" or Person.cityId.isNull() }
           .entityFlow { cursor: Cursor ->
-            Pair(cursor[People.name], cursor[Places.name])
+            Pair(cursor[Person.name], cursor[Place.name])
           }.singleOrNull()?.let { (user, city) ->
-            expect(user).toBe("Andrey")
-            expect(city).toBe("St. Petersburg")
+            expect(user).toBe("Louis")
+            expect(city).toBe("Cleveland")
           } ?: fail("Expected an entity from the flow")
       }
     }
@@ -99,28 +100,26 @@ class JoinTests {
   fun `test join with order by`() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,
-      tables = listOf(Places, People, PeopleInfo),
+      tables = listOf(Place, Person, PersonInfo),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
-        (Places innerJoin People innerJoin PeopleInfo)
+        (Place innerJoin Person innerJoin PersonInfo)
           .selectAll()
-          .orderBy(People.id)
+          .orderBy(Person.id)
           .entityFlow { cursor ->
-            println(cursor[People.name])
-            Triple(cursor[People.name], cursor[PeopleInfo.comment], cursor[Places.name])
-          }.collectIndexed { index, (person, comment, city) ->
-            println("$person $comment $city")
+            Triple(cursor[Person.name], cursor[PersonInfo.post], cursor[Place.name])
+          }.collectIndexed { index, (person, post, city) ->
             when (index) {
               0 -> {
-                expect(person).toBe("Eugene")
-                expect(comment).toBe("Comment for Eugene")
-                expect(city).toBe("Munich")
+                expect(person).toBe("Mike")
+                expect(post).toBe("Mike's post")
+                expect(city).toBe("South Point")
               }
               1 -> {
-                expect(person).toBe("Sergey")
-                expect(comment).toBe("Comment for Sergey")
-                expect(city).toBe("Munich")
+                expect(person).toBe("Rick")
+                expect(post).toBe("Sup Dude")
+                expect(city).toBe("South Point")
               }
               else -> fail("Too many entities")
             }
@@ -129,15 +128,50 @@ class JoinTests {
     }
   }
 
-  /*
-              val r = (cities innerJoin users innerJoin userData).selectAll().orderBy(users.id).toList()
-            assertEquals(2, r.size)
-            assertEquals("Eugene", r[0][users.name])
-            assertEquals("Comment for Eugene", r[0][userData.comment])
-            assertEquals("Munich", r[0][cities.name])
-            assertEquals("Sergey", r[1][users.name])
-            assertEquals("Comment for Sergey", r[1][userData.comment])
-            assertEquals("Munich", r[1][cities.name])
+  @Test
+  fun `test join with relationship table`() = coroutineRule.runBlockingTest {
+    val numbers = object : Table() {
+      val id = integer("id") { primaryKey() }
+    }
 
-   */
+    val names = object : Table() {
+      val name = text("name")
+
+      override val primaryKey = PrimaryKey(name)
+    }
+
+    val numberNameRel = object : Table() {
+      val numberId = references("id_ref", numbers.id)
+      val name = references("name_ref", names.name)
+    }
+
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(numbers, names, numberNameRel),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      transaction {
+        numbers.insert { it[id] = 1 }
+        numbers.insert { it[id] = 2 }
+        names.insert { it[name] = "Francis" }
+        names.insert { it[name] = "Bart" }
+        numberNameRel.insert {
+          it[numberId] = 2
+          it[name] = "Francis"
+        }
+        setSuccessful()
+      }
+      query {
+        (numbers innerJoin numberNameRel innerJoin names)
+          .selectAll()
+          .entityFlow {
+            Pair(it[numbers.id], it[names.name])
+          }.singleOrNull()?.let { (id, name) ->
+            expect(id).toBe(2)
+            expect(name).toBe("Francis")
+          } ?: fail("Expected only 1 entity")
+
+      }
+    }
+  }
 }

@@ -245,7 +245,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
    *
    * @see ForeignKeyAction
    */
-  protected fun <T : Comparable<T>> reference(
+  protected fun <T : Comparable<T>> references(
     name: String,
     refColumn: Column<T>,
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,

@@ -22,21 +22,21 @@ import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
 
-object Places : Table() {
-  val id: Column<Long> = long("cityId") { autoIncrement() }
+object Place : Table() {
+  val id: Column<Long> = long("place_id") { autoIncrement() }
   val name: Column<String> = text("name")
 }
 
-object People : Table() {
+object Person : Table() {
   val id: Column<String> = text("id")
   val name: Column<String> = text("name")
-  val cityId: Column<Long?> = optReference("cityId", Places.id)
+  val cityId: Column<Long?> = optReference("place_id", Place.id)
   override val primaryKey = PrimaryKey(id)
 }
 
-object PeopleInfo : Table() {
-  val user_id: Column<String> = reference("userId", People.id)
-  val comment: Column<String> = text("comment")
+object PersonInfo : Table() {
+  val userId: Column<String> = references("person_id", Person.id)
+  val post: Column<String> = text("post")
   val value: Column<Int> = integer("value")
 }
 
@@ -48,74 +48,76 @@ suspend fun withTestDatabase(
   block: suspend Database.() -> Unit
 ) {
   val db = TestDatabase(context, tables, testDispatcher, enableForeignKeyConstraints)
-  db.transaction {
-    Places.insert {
-      it[name] = "St. Petersburg"
-    }
+  if (tables.contains(Place)) {
+    db.transaction {
+      Place.insert {
+        it[name] = "Cleveland"
+      }
 
-    val munichId = Places.insert {
-      it[name] = "Munich"
-    }
+      val munichId = Place.insert {
+        it[name] = "South Point"
+      }
 
-    Places.insert {
-      it[name] = "Prague"
-    }
+      Place.insert {
+        it[name] = "Cincinnati"
+      }
 
-    People.insert {
-      it[id] = "andrey"
-      it[name] = "Andrey"
-      it[cityId] = 1
-    }
+      Person.insert {
+        it[id] = "louis"
+        it[name] = "Louis"
+        it[cityId] = 1
+      }
 
-    People.insert {
-      it[id] = "sergey"
-      it[name] = "Sergey"
-      it[cityId] = munichId
-    }
+      Person.insert {
+        it[id] = "rick"
+        it[name] = "Rick"
+        it[cityId] = munichId
+      }
 
-    People.insert {
-      it[id] = "eugene"
-      it[name] = "Eugene"
-      it[cityId] = munichId
-    }
+      Person.insert {
+        it[id] = "mike"
+        it[name] = "Mike"
+        it[cityId] = munichId
+      }
 
-    People.insert {
-      it[id] = "alex"
-      it[name] = "Alex"
-      it[cityId] = null
-    }
+      Person.insert {
+        it[id] = "amber"
+        it[name] = "Amber"
+        it[cityId] = null
+      }
 
-    People.insert {
-      it[id] = "smth"
-      it[name] = "Something"
-      it[cityId] = null
-    }
+      Person.insert {
+        it[id] = "nathalia"
+        it[name] = "Nathalia"
+        it[cityId] = null
+      }
 
-    PeopleInfo.insert {
-      it[user_id] = "smth"
-      it[comment] = "Something is here"
-      it[value] = 10
-    }
+      PersonInfo.insert {
+        it[userId] = "nathalia"
+        it[post] = "Nathalia is here"
+        it[value] = 2
+      }
 
-    PeopleInfo.insert {
-      it[user_id] = "smth"
-      it[comment] = "Comment #2"
-      it[value] = 20
-    }
+      PersonInfo.insert {
+        it[userId] = "nathalia"
+        it[post] = "Where's McDreamy"
+        it[value] = 3
+      }
 
-    PeopleInfo.insert {
-      it[user_id] = "eugene"
-      it[comment] = "Comment for Eugene"
-      it[value] = 20
-    }
+      PersonInfo.insert {
+        it[userId] = "mike"
+        it[post] = "Mike's post"
+        it[value] = 4
+      }
 
-    PeopleInfo.insert {
-      it[user_id] = "sergey"
-      it[comment] = "Comment for Sergey"
-      it[value] = 30
-    }
+      PersonInfo.insert {
+        it[userId] = "rick"
+        it[post] = "Sup Dude"
+        it[value] = 5
+      }
 
-    setSuccessful()
+      setSuccessful()
+    }
   }
   try {
     db.block()
