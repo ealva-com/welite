@@ -54,7 +54,7 @@ suspend fun withTestDatabase(
         it[name] = "Cleveland"
       }
 
-      val munichId = Place.insert {
+      val southPointId = Place.insert {
         it[name] = "South Point"
       }
 
@@ -71,13 +71,13 @@ suspend fun withTestDatabase(
       Person.insert {
         it[id] = "rick"
         it[name] = "Rick"
-        it[cityId] = munichId
+        it[cityId] = southPointId
       }
 
       Person.insert {
         it[id] = "mike"
         it[name] = "Mike"
-        it[cityId] = munichId
+        it[cityId] = southPointId
       }
 
       Person.insert {

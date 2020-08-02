@@ -28,6 +28,7 @@ import com.ealva.welite.sharedtest.ArtistTable
 import com.ealva.welite.sharedtest.CoroutineRule
 import com.ealva.welite.sharedtest.MediaFileTable
 import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.sharedtest.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
@@ -64,12 +65,12 @@ class DeleteTests {
       }
 
       transaction {
-        expect(MediaFileTable.selectAllWhere(MediaFileTable.id eq mediaId).count()).toBe(1)
+        expect(MediaFileTable.selectWhere(MediaFileTable.id eq mediaId).count()).toBe(1)
         expect(MediaFileTable.deleteWhere { MediaFileTable.id eq mediaId }.delete()).toBe(1)
         setSuccessful()
       }
 
-      query { expect(MediaFileTable.selectAllWhere(MediaFileTable.id eq mediaId).count()).toBe(0) }
+      query { expect(MediaFileTable.selectWhere(MediaFileTable.id eq mediaId).count()).toBe(0) }
     }
   }
 
@@ -78,25 +79,18 @@ class DeleteTests {
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    var idArtist: Long = 0
-    ArtistTable.select(ArtistTable.id)
+    val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
-      .forEach {
-        idArtist = it[ArtistTable.id]
-      }
+      .sequence { it[ArtistTable.id] }
+      .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    if (idArtist == 0L) idArtist = ArtistTable.insert {
+    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
+      .where { AlbumTable.albumName eq album }
+      .sequence { it[AlbumTable.id] }
+      .singleOrNull() ?: AlbumTable.insert {
+      it[albumName] = album
       it[artistName] = artist
     }
-
-    var idAlbum: Long = 0
-    AlbumTable.select(AlbumTable.id)
-      .where { AlbumTable.albumName eq album }
-      .forEach {
-        idAlbum = it[AlbumTable.id]
-      }
-
-    if (idAlbum == 0L) idAlbum = AlbumTable.insert { it[albumName] = album }
 
     ArtistAlbumTable.insert(OnConflict.Ignore) {
       it[artistId] = idArtist

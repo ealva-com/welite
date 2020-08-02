@@ -28,6 +28,7 @@ import com.ealva.welite.sharedtest.ArtistTable
 import com.ealva.welite.sharedtest.CoroutineRule
 import com.ealva.welite.sharedtest.MediaFileTable
 import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.sharedtest.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
@@ -73,7 +74,7 @@ class UpdateTests {
         setSuccessful()
       }
       query {
-        expect(ArtistTable.selectAllWhere(ArtistTable.artistName eq goodName).count()).toBe(1)
+        expect(ArtistTable.selectWhere(ArtistTable.artistName eq goodName).count()).toBe(1)
       }
     }
   }
@@ -99,7 +100,10 @@ class UpdateTests {
         idAlbum = it[AlbumTable.id]
       }
 
-    if (idAlbum == 0L) idAlbum = AlbumTable.insert { it[albumName] = album }
+    if (idAlbum == 0L) idAlbum = AlbumTable.insert {
+      it[albumName] = album
+      it[artistName] = artist
+    }
 
     ArtistAlbumTable.insert(OnConflict.Ignore) {
       it[artistId] = idArtist

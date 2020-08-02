@@ -24,7 +24,6 @@ import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.or
-import kotlinx.coroutines.flow.Flow
 
 typealias LimitOffset = Pair<Long, Long>
 
@@ -88,10 +87,25 @@ class QueryBuilder(
   }
 
   /**
-   * Build, bind any necessary args, and execute the query calling [action] with each row
+   * Build, bind any necessary args, and execute the query calling [action] with each row. The
+   * [Cursor] passed to [action] has [Cursor.count] indicating the totals rows returned and
+   * [Cursor.position] which is the current index into the the rows.
+   *
    */
   fun forEach(binding: (ParamBindings) -> Unit = {}, action: (Cursor) -> Unit) =
     build().forEach(binding, action)
+
+  /**
+   * Bind any necessary arguments and then create a flow of [T] created by [factory]
+   */
+  fun <T> entityFlow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T) =
+    build().entityFlow(bindArgs, factory)
+
+  /**
+   * Bind args and then generate a sequence of [T] create by [factory]
+   */
+  fun <T> sequence(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T) =
+    build().sequence(bindArgs, factory)
 
   fun SqlBuilder.append(builder: QueryBuilder): SqlBuilder = apply {
     append("SELECT ")
@@ -138,13 +152,6 @@ class QueryBuilder(
         }
       }
     }
-  }
-
-  /**
-   * Bind any necessary arguments and then create a flow of [T] created by [factory]
-   */
-  fun <T> entityFlow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Flow<T> {
-    return build().entityFlow(bindArgs, factory)
   }
 
   fun appendTo(builder: SqlBuilder): SqlBuilder {

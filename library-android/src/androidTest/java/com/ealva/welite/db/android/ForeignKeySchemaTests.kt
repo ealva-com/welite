@@ -16,26 +16,26 @@
 
 package com.ealva.welite.db.android
 
+//import com.ealva.ealvalog.Loggers
+//import com.ealva.ealvalog.android.AndroidLogger
+//import com.ealva.ealvalog.android.AndroidLoggerFactory
+//import com.ealva.ealvalog.android.DebugLogHandler
 import android.content.Context
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
-//import com.ealva.ealvalog.Loggers
-//import com.ealva.ealvalog.android.AndroidLogger
-//import com.ealva.ealvalog.android.AndroidLoggerFactory
-//import com.ealva.ealvalog.android.DebugLogHandler
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.ForeignKeyInfo
 import com.ealva.welite.db.ForeignKeyViolation
 import com.ealva.welite.db.table.ForeignKeyAction
-import com.ealva.welite.db.withTestDatabase
 import com.ealva.welite.sharedtest.AlbumTable
 import com.ealva.welite.sharedtest.ArtistAlbumTable
 import com.ealva.welite.sharedtest.ArtistTable
 import com.ealva.welite.sharedtest.CoroutineRule
 import com.ealva.welite.sharedtest.MediaFileTable
 import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.sharedtest.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
@@ -144,8 +144,12 @@ class ForeignKeySchemaTests {
         it[albumId] = 5000
       }
 
-      ArtistTable.insert { it[artistName] = "Led Zeppelin" }
-      AlbumTable.insert { it[albumName] = "Killer Queen" }
+      val artist = "Led Zeppelin"
+      ArtistTable.insert { it[artistName] = artist }
+      AlbumTable.insert {
+        it[albumName] = "Killer Queen"
+        it[artistName] = artist
+      }
       setSuccessful()
     }
   }

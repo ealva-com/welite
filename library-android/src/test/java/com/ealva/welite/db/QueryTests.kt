@@ -20,6 +20,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
+import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.bindString
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
@@ -30,6 +31,7 @@ import com.ealva.welite.sharedtest.ArtistTable
 import com.ealva.welite.sharedtest.CoroutineRule
 import com.ealva.welite.sharedtest.MediaFileTable
 import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.sharedtest.withTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -173,23 +175,19 @@ class QueryTests {
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    var idArtist: Long = 0
-    ArtistTable.select(ArtistTable.id)
+
+    val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
-      .forEach {
-        idArtist = it[ArtistTable.id]
-      }
+      .sequence { cursor -> cursor[ArtistTable.id] }
+      .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    if (idArtist == 0L) idArtist = ArtistTable.insert { it[artistName] = artist }
-
-    var idAlbum: Long = 0
-    AlbumTable.select(AlbumTable.id)
-      .where { AlbumTable.albumName eq bindString() }
-      .forEach({ it[0] = album }) {
-        idAlbum = it[AlbumTable.id]
-      }
-
-    if (idAlbum == 0L) idAlbum = AlbumTable.insert { it[albumName] = album }
+    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
+      .where { AlbumTable.albumName eq bindString() and (AlbumTable.artistName eq artist) }
+      .sequence({ it[0] = album }) { it[AlbumTable.id] }
+      .singleOrNull() ?: AlbumTable.insert {
+      it[albumName] = album
+      it[artistName] = artist
+    }
 
     ArtistAlbumTable.insert(OnConflict.Ignore) {
       it[artistId] = idArtist

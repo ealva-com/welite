@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.sharedtest
 
 import android.content.Context
+import com.ealva.welite.db.Database
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
 

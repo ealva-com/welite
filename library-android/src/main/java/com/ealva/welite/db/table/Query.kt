@@ -25,8 +25,8 @@ import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
-import it.unimi.dsi.fastutil.objects.Reference2IntMap
-import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap
+import it.unimi.dsi.fastutil.objects.Object2IntMap
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.Arrays
@@ -44,6 +44,12 @@ interface Query {
    * entity created using [factory] for each row in the query results
    */
   fun <T> entityFlow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Flow<T>
+
+  /**
+   * After any necessary [bindArgs] generate a sequence of [T] using [factory] for each Cursor
+   * row
+   */
+  fun <T> sequence(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T): Sequence<T>
 
   /**
    * Do any necessary [bindArgs], execute the query, and return the value in the first column of the
@@ -115,7 +121,6 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ParamBi
     get() = args.copyOf()
 }
 
-
 private class QueryImpl(
   private val db: SQLiteDatabase,
   private val fields: List<SqlTypeExpression<*>>,
@@ -144,9 +149,20 @@ private class QueryImpl(
     }
   }
 
-  override fun longForQuery(bindArgs: (ParamBindings) -> Unit): Long {
-    return doLongForQuery(sql, bindArgs)
+  override fun <T> sequence(
+    bindArgs: (ParamBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Sequence<T> = sequence {
+    bindArgs(queryArgs)
+    DbCursorWrapper(
+      db.select(sql, queryArgs.arguments),
+      fields.mapExprToIndex()
+    ).use { cursor ->
+      while (cursor.moveToNext()) yield(factory(cursor))
+    }
   }
+
+  override fun longForQuery(bindArgs: (ParamBindings) -> Unit): Long = doLongForQuery(sql, bindArgs)
 
   private fun doLongForQuery(sql: String, binding: (ParamBindings) -> Unit): Long {
     binding(queryArgs)
@@ -163,10 +179,10 @@ private class QueryImpl(
 
 }
 
-typealias ExpressionToIndexMap = Reference2IntMap<SqlTypeExpression<*>>
+typealias ExpressionToIndexMap = Object2IntMap<SqlTypeExpression<*>>
 
 private fun List<SqlTypeExpression<*>>.mapExprToIndex(): ExpressionToIndexMap {
-  return Reference2IntOpenHashMap<SqlTypeExpression<*>>(size).apply {
+  return Object2IntOpenHashMap<SqlTypeExpression<*>>(size).apply {
     defaultReturnValue(-1)
     this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
   }

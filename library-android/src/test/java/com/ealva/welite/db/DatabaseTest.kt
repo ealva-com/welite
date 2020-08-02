@@ -31,6 +31,7 @@ import com.ealva.welite.sharedtest.CoroutineRule
 import com.ealva.welite.sharedtest.MediaFileTable
 import com.ealva.welite.sharedtest.TestTable
 import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.sharedtest.withTestDatabase
 import com.nhaarman.expect.StringMatcher
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -195,9 +196,9 @@ class DatabaseTest {
 
         AlbumTable.sql.let { albumSql ->
           expect(albumSql.table).toHaveSize(1)
-          expect(albumSql.table[0]).toBe("""CREATE TABLE "Album" ("_id" INTEGER NOT NULL PRIMARY KEY, "AlbumName" TEXT NOT NULL COLLATE NOCASE)""")
+          expect(albumSql.table[0]).toBe("""CREATE TABLE "Album" ("_id" INTEGER NOT NULL PRIMARY KEY, "AlbumName" TEXT NOT NULL COLLATE NOCASE, "ArtistName" TEXT NOT NULL COLLATE NOCASE)""")
           expect(albumSql.indices).toHaveSize(1)
-          expect(albumSql.indices[0]).toBe("""CREATE UNIQUE INDEX "Album_AlbumName_unique" ON "Album"("AlbumName")""")
+          expect(albumSql.indices[0]).toBe("""CREATE UNIQUE INDEX "Album_AlbumName_ArtistName_unique" ON "Album"("AlbumName", "ArtistName")""")
         }
 
         ArtistAlbumTable.sql.let { artistAlbum ->

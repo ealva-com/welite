@@ -38,7 +38,11 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
 
   val tableNameWithAlias: String = "${delegate.tableName} AS $alias"
 
-  override val identity: Identity = delegate.identity + Identity.make(alias)
+  override val identity: Identity = Identity.make(alias)
+
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+    append(tableNameWithAlias)
+  }
 
   private fun <T : Any?> Column<T>.clone(): Column<T> =
     Column(this@Alias, name, persistentType)
@@ -105,11 +109,10 @@ class SqlTypeExpressionAlias<T>(
 
 class QueryBuilderAlias(
   private val queryBuilder: QueryBuilder,
-  private val alias: String
+  val alias: String
 ) : ColumnSet {
 
-  override fun appendTo(sqlBuilder: SqlBuilder) =
-    sqlBuilder.append("(", queryBuilder, ") ", alias)
+  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.append("(", queryBuilder, ") ", alias)
 
   override val columns: List<Column<*>>
     get() = queryBuilder.sourceSetColumnsInResult().map { it.clone() }
@@ -156,8 +159,7 @@ class QueryBuilderAlias(
 fun <T : Table> T.alias(alias: String) =
   Alias(this, alias)
 
-fun QueryBuilder.alias(alias: String) =
-  QueryBuilderAlias(this, alias)
+fun QueryBuilder.alias(alias: String) = QueryBuilderAlias(this, alias)
 
 fun <T> SqlTypeExpression<T>.alias(alias: String) =
   SqlTypeExpressionAlias(this, alias)

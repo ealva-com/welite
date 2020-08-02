@@ -61,7 +61,7 @@ import com.ealva.welite.db.table.select
 interface Queryable {
   /** Select a subset of [columns] of this [ColumnSet], returning a [SelectFrom] */
   fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom =
-    SelectFrom(columns.distinct(), this)
+    select(columns.distinct())
 
   /**
    * Select a subset of [columns] of this [ColumnSet] (default is all [columns]), and return a
@@ -72,17 +72,17 @@ interface Queryable {
 
   /**
    * Select all columns of this [ColumnSet] matching the [where] part of the query
-   * Convenience function for: ```selectAll().where(where)```
+   * Convenience function for: ```select().where(where)```
    */
-  fun ColumnSet.selectAllWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
+  fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
 
   /**
    * Select all columns of this [ColumnSet] and call [build] to make the where expression
    */
-  fun ColumnSet.selectAllWhere(build: () -> Op<Boolean>): QueryBuilder = selectAllWhere(build())
+  fun ColumnSet.selectWhere(build: () -> Op<Boolean>): QueryBuilder = selectWhere(build())
 
   /**
-   * Select all columns and return a [SelectFrom] to start building the query
+   * Select all columns from all rows
    */
   fun ColumnSet.selectAll(): QueryBuilder
 
@@ -94,6 +94,9 @@ interface Queryable {
    * and the where clause.
    */
   fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
+
+  /** All rows will be returned */
+  fun SelectFrom.all() = where(null)
 
   /**
    * True if the table, as known via [Table.identity], exists in the database, else false
@@ -251,9 +254,8 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
     require(db.inTransaction()) { "Transaction must be in progress" }
   }
 
-  override fun ColumnSet.selectAll(): QueryBuilder {
-    return QueryBuilder(db, SelectFrom(columns, this), null)
-  }
+  override fun ColumnSet.selectAll(): QueryBuilder =
+    QueryBuilder(db, SelectFrom(columns, this), null)
 
   override fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(db, this, where)
 
@@ -299,7 +301,7 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
     get() = try {
       val tableName = identity.unquoted
       val tableType = MasterType.Table.toString()
-      sqlite_master.selectAllWhere {
+      sqlite_master.selectWhere {
         (sqlite_master.type eq tableType) and (sqlite_master.tbl_name eq tableName)
       }.count() == 1L
     } catch (e: Exception) {

@@ -70,17 +70,17 @@ fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
   JoinType.NATURAL, onColumn(), otherTable.otherColumn()
 )
 
-class Join(val table: ColumnSet) : ColumnSet {
+class Join(val columnSet: ColumnSet) : ColumnSet {
 
   override val columns: List<Column<*>>
-    get() = _joinParts.flatMapTo(table.columns.toMutableList()) { it.joinPart.columns }
+    get() = _joinParts.flatMapTo(columnSet.columns.toMutableList()) { it.joinPart.columns }
 
   private val _joinParts: MutableList<JoinPart> = mutableListOf()
   internal val joinParts: List<JoinPart>
     get() = _joinParts.toList()
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
-    table.appendTo(this)
+    columnSet.appendTo(this)
     _joinParts.forEach { p ->
       append(" ${p.joinType} JOIN ")
       val isJoin = p.joinPart is Join
@@ -112,7 +112,10 @@ class Join(val table: ColumnSet) : ColumnSet {
     thisColumn: Expression<*>?,
     otherColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join = join(joinTo, joinType, asJoinCondition(thisColumn, otherColumn), additionalConstraint)
+  ): Join {
+    return join(joinTo, joinType, asJoinCondition(thisColumn, otherColumn), additionalConstraint)
+  }
+
   override infix fun innerJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.INNER)
   override infix fun leftJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.LEFT)
   override infix fun crossJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.CROSS)
@@ -148,16 +151,9 @@ class Join(val table: ColumnSet) : ColumnSet {
     joinType: JoinType,
     cond: List<JoinCondition>,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join = Join(table).apply {
-    _joinParts.addAll(this@Join._joinParts)
-    _joinParts.add(
-      JoinPart(
-        joinType,
-        joinTo,
-        cond,
-        additionalConstraint
-      )
-    )
+  ): Join = Join(columnSet).also {
+    it._joinParts.addAll(this._joinParts)
+    it._joinParts.add(JoinPart(joinType, joinTo, cond, additionalConstraint))
   }
 
   private fun findKeys(a: ColumnSet, b: ColumnSet): List<Pair<Column<*>, List<Column<*>>>>? =

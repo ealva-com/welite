@@ -40,7 +40,12 @@ object ArtistTable : TestTable() {
 
 object AlbumTable : TestTable() {
   val id = long("_id") { primaryKey() }
-  val albumName = text("AlbumName") { collateNoCase().uniqueIndex() }
+  val albumName = text("AlbumName") { collateNoCase() }
+  val artistName = text("ArtistName") { collateNoCase() }
+  init {
+    uniqueIndex(albumName, artistName)
+  }
+
 }
 
 object ArtistAlbumTable : TestTable() {

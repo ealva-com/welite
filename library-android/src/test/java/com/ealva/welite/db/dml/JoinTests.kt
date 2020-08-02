@@ -17,14 +17,21 @@
 package com.ealva.welite.db.dml
 
 import android.content.Context
+import android.database.sqlite.SQLiteException
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
+import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.or
+import com.ealva.welite.db.expr.stringLiteral
+import com.ealva.welite.db.table.Alias
 import com.ealva.welite.db.table.Cursor
+import com.ealva.welite.db.table.Join
+import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.alias
 import com.ealva.welite.sharedtest.CoroutineRule
 import com.ealva.welite.sharedtest.runBlockingTest
 import com.nhaarman.expect.expect
@@ -32,6 +39,7 @@ import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.singleOrNull
+import kotlinx.coroutines.flow.toList
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -130,17 +138,11 @@ class JoinTests {
 
   @Test
   fun `test join with relationship table`() = coroutineRule.runBlockingTest {
-    val numbers = object : Table() {
-      val id = integer("id") { primaryKey() }
-    }
-
-    val names = object : Table() {
-      val name = text("name")
-
-      override val primaryKey = PrimaryKey(name)
-    }
-
+    val numbers = object : Table() { val id = long("id") { primaryKey() } }
+    val names = object : Table() { val name = text("name") { primaryKey() } }
     val numberNameRel = object : Table() {
+      @Suppress("unused")
+      val id = long("id") { primaryKey() }
       val numberId = references("id_ref", numbers.id)
       val name = references("name_ref", names.name)
     }
@@ -170,8 +172,99 @@ class JoinTests {
             expect(id).toBe(2)
             expect(name).toBe("Francis")
           } ?: fail("Expected only 1 entity")
-
       }
     }
   }
+
+  @Test
+  fun `test cross join`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(Place, Person, PersonInfo),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      query {
+        val allToSouthPoint: List<Pair<String, String>> = (Person crossJoin Place)
+          .select(Person.name, Person.cityId, Place.name)
+          .where { Place.name eq "South Point" }
+          .entityFlow {
+            it[Person.name] to it[Place.name]
+          }
+          .toList()
+
+        val allUsers = setOf(
+          "Amber",
+          "Louis",
+          "Mike",
+          "Nathalia",
+          "Rick"
+        )
+        expect(allToSouthPoint.all { it.second == "South Point"}).toBe(true)
+        expect(allToSouthPoint.map { it.first }.toSet()).toBe(allUsers)
+      }
+    }
+  }
+
+  @Test(expected = SQLiteException::class)
+  fun `test join multiple references`() = coroutineRule.runBlockingTest {
+    val fooTable = object : Table("foo") {
+      val baz = long("baz") { uniqueIndex() }
+    }
+    val barTable = object : Table("bar") {
+      val foo = references("foo", fooTable.baz)
+      val foo2 = references("foo2", fooTable.baz)
+      val baz = references("baz", fooTable.baz)
+    }
+
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(fooTable, barTable),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      try {
+        transaction {
+          val fooId = fooTable.insert {
+            it[baz] = 5
+          }
+
+          barTable.insert {
+            it[foo] = fooId
+            it[foo2] = fooId
+            it[baz] = 5  // fk violation
+          }
+
+          setSuccessful()
+        }
+
+        fail("insert should have failed with an foreign key violation")
+
+      } catch (e: WeLiteException) {
+        throw requireNotNull(e.cause)  // rethrow underlying exception
+      }
+    }
+  }
+
+  @ExperimentalUnsignedTypes
+  @Test
+  fun `test join with alias`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(Place, Person, PersonInfo),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      val person = Person
+      query {
+        val personAlias: Alias<Person> = person.alias("u2")
+        val pair = Join(person).join(personAlias, JoinType.LEFT, personAlias[person.id], stringLiteral("nathalia"))
+          .selectWhere { person.id eq "amber" }
+          .entityFlow { Pair(it[person.name], it[personAlias[person.name]]) }
+          .singleOrNull() ?: fail("expected single entity")
+
+        expect(pair.first).toBe("Amber")
+        expect(pair.second).toBe("Nathalia")
+      }
+    }
+  }
+
+
 }
