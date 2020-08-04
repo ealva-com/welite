@@ -31,8 +31,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import java.util.Arrays
-import kotlinx.coroutines.flow.flow as kflow
 import kotlin.sequences.sequence as ksequence
+import kotlinx.coroutines.flow.flow as kflow
 
 /**
  * Interface with functions that perform a query. Query implements these functions as does
