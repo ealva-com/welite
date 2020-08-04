@@ -50,4 +50,3 @@ data class ForeignKeyViolation(
    */
   val failingConstraintIndex: Long
 )
-

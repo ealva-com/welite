@@ -105,11 +105,11 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     fun identity() = name.asIdentity()
 
     val columns: List<Column<*>> = remainingColumns.toMutableList().apply {
-        add(0, firstColumn)
-        checkMultipleDeclaration()
-        forEach { column -> column.markPrimaryKey() }
-        sortWith(compareBy { !it.isAutoInc })
-      }
+      add(0, firstColumn)
+      checkMultipleDeclaration()
+      forEach { column -> column.markPrimaryKey() }
+      sortWith(compareBy { !it.isAutoInc })
+    }
 
     private fun checkMultipleDeclaration() {
       this@Table.columnDefiningPrimaryKey?.let { column ->

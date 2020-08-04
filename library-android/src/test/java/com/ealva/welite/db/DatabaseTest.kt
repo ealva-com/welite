@@ -187,7 +187,7 @@ class DatabaseTest {
     }
   }
 
-  @Suppress("LongMethod")  // detekt
+  @Suppress("LongMethod") // detekt
   @Test
   fun `create tables with foreign keys`() = coroutineRule.runBlockingTest {
     withTestDatabase(

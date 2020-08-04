@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("unused")
+
 package com.ealva.welite.db
 
 import com.ealva.ealvalog.invoke
@@ -43,10 +45,10 @@ private typealias EndMigrationMapImpl = TreeMap<Int, Migration>
 private typealias StartToEndMigrationMap = MutableMap<Int, EndMigrationMap>
 private typealias StartToEndMigrationMapImpl = HashMap<Int, EndMigrationMap>
 
-@Suppress("FunctionName")  // detekt
+@Suppress("FunctionName") // detekt
 private fun EndMigrationMap(): EndMigrationMap = EndMigrationMapImpl()
 
-@Suppress("FunctionName")  // detekt
+@Suppress("FunctionName") // detekt
 private fun StartToEndMigrationMap(): StartToEndMigrationMap = StartToEndMigrationMapImpl()
 
 private val LOG by lazyLogger(Migration::class)

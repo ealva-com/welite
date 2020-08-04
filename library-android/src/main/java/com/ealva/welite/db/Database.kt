@@ -29,8 +29,8 @@ import com.ealva.welite.db.WeResult.Success
 import com.ealva.welite.db.WeResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.schema.MasterType
-import com.ealva.welite.db.schema.TableDependencies
 import com.ealva.welite.db.schema.SQLiteMaster
+import com.ealva.welite.db.schema.TableDependencies
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker

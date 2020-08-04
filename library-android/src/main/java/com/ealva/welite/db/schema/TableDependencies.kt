@@ -79,7 +79,7 @@ class TableDependencies(private val tables: List<Table>) {
           visited += table
           (graph[table]?.any { traverse(it.key) } == true).also { if (!it) recursion -= table }
         } else true
-      }  else false
+      } else false
     }
 
     return sortedTables.any { traverse(it) }
