@@ -189,7 +189,6 @@ class QueryTests {
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
       .sequence { cursor -> cursor[ArtistTable.id] }

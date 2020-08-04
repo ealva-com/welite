@@ -189,7 +189,7 @@ Both the [Squash] and [Exposed] libraries influence this library, primarily the 
 
 ### The name?
 
-Lite=SQLite and We="without entities". After attempting to port an in-house solution to Room and searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a Kotlin DSL to build the underlying SQL. The goal is not to store business objects in a RDBMS but to store and retrieve data with as little friction as possible, while providing benefits of a Kotlin interface.
+Lite=SQLite and We="without entities". After attempting to port an in-house solution to Room and searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a Kotlin DSL to build the underlying SQL. The goal is not to store business objects in a RDBMS but to store and retrieve data with as little friction as possible, while providing benefits of a Kotlin interface. That said, the client controls what objects are created from rows in a query. While we envision flows of data classes or simple types, the user is free to construct any type of object(s).
 
 Why "without entities"? We often find a one-to-many relationship between a row in a table to a Kotlin object. So we don't try to enforce a row to entity mapping or load data unnecessarily. A higher level abstraction could be built over WeLite but that is not the current focus.  
 

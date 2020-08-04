@@ -50,7 +50,7 @@ subprojects {
     version.set(Versions.KTLINT)
     android.set(true)
     ignoreFailures.set(false)
-    enableExperimentalRules.set(true)
+    enableExperimentalRules.set(false)
     filter {
       exclude("**/generated/**")
       include("**/kotlin/**")

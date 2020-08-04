@@ -56,7 +56,7 @@ private val LOG by lazyLogger(Migration::class)
 /**
  * Finds the list of migrations that should be run to move from [startVersion] to [endVersion]
  * @param startVersion current database version
- * @param endVersion   target database version
+ * @param endVersion target database version
  * @return An ordered list of [Migration]s that should be executed to migrate the database or null
  * if a migration path cannot be found.
  */
