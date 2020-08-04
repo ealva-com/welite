@@ -30,9 +30,9 @@ import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.schema.ColumnMetadata
 import com.ealva.welite.db.schema.MasterType
+import com.ealva.welite.db.schema.SQLiteMaster
 import com.ealva.welite.db.schema.TableDescription
 import com.ealva.welite.db.schema.asMasterType
-import com.ealva.welite.db.schema.sqlite_master
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
 import com.ealva.welite.db.statements.InsertStatement
@@ -136,47 +136,6 @@ interface Queryable {
   val sqliteVersion: String
 }
 
-data class ForeignKeyInfo(
-  val id: Long,
-  val seq: Long,
-  val table: String,
-  val from: String,
-  val to: String,
-  val onUpdate: ForeignKeyAction,
-  val onDelete: ForeignKeyAction
-  // val match: String not currently supported in SQLite
-)
-
-/**
- * Returned from [Transaction.foreignKeyCheck]
- *
- * The first column is .
- * The second column is
- * The third column is .
- * The fourth column is
- * The fourth column in the output of the foreign_key_check pragma is . When a "table-name" is specified, the only
- * foreign key constraints checked are those created by REFERENCES clauses in the CREATE TABLE
- * statement for table-name.
- */
-data class ForeignKeyViolation(
-  /** The name of the table that contains the REFERENCES clause */
-  val tableName: String,
-  /**
-   * The row id of the row that contains the invalid REFERENCES clause, or -1 if the child table is
-   * a WITHOUT ROWID table.
-   */
-  val rowId: Long,
-  /**
-   * The name of the table that is referred to
-   */
-  val refersTo: String,
-  /**
-   * The index of the specific foreign key constraint that failed. This is the same integer as the
-   * first column in the output of [Transaction.foreignKeyList]
-   */
-  val failingConstraintIndex: Long
-)
-
 /**
  * This interface is the entry point of a SQLite CRUD DSL including [Queryable] functions. These
  * functions are scoped to a Transaction interface in an attempt to only read and write to the DB
@@ -248,6 +207,7 @@ interface TransactionInProgress : Queryable {
 
 private class TransactionInProgressImpl(private val config: DbConfig) : TransactionInProgress {
   private val db = config.db
+
   init {
     require(db.inTransaction()) { "Transaction must be in progress" }
   }
@@ -309,8 +269,8 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
     get() = try {
       val tableName = identity.unquoted
       val tableType = MasterType.Table.toString()
-      sqlite_master.selectWhere {
-        (sqlite_master.type eq tableType) and (sqlite_master.tbl_name eq tableName)
+      SQLiteMaster.selectWhere {
+        (SQLiteMaster.type eq tableType) and (SQLiteMaster.tbl_name eq tableName)
       }.count() == 1L
     } catch (e: Exception) {
       LOG.e(e) { it("Error checking table existence") }
@@ -338,10 +298,10 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
       val triggers = mutableListOf<String>()
       val views = mutableListOf<String>()
 
-      val sqlCol = sqlite_master.sql
-      val typeCol = sqlite_master.type
-      sqlite_master.select(sqlCol, typeCol)
-        .where { sqlite_master.tbl_name eq identity.unquoted }
+      val sqlCol = SQLiteMaster.sql
+      val typeCol = SQLiteMaster.type
+      SQLiteMaster.select(sqlCol, typeCol)
+        .where { SQLiteMaster.tbl_name eq identity.unquoted }
         .forEach { cursor ->
           cursor.getOptional(sqlCol)?.let { sql ->
             when (val masterType = cursor[typeCol].asMasterType()) {
@@ -388,13 +348,13 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
             while (cursor.moveToNext()) {
               add(
                 ForeignKeyInfo(
-                  id = cursor.getLong(0),
-                  seq = cursor.getLong(1),
-                  table = cursor.getString(2),
-                  from = cursor.getString(3),
-                  to = cursor.getString(4),
-                  onUpdate = ForeignKeyAction.fromSQLite(cursor.getString(5)),
-                  onDelete = ForeignKeyAction.fromSQLite(cursor.getString(6))
+                  id = cursor.getLong(INDEX_FK_ID),
+                  seq = cursor.getLong(INDEX_FK_SEQ),
+                  table = cursor.getString(INDEX_FK_TABLE),
+                  from = cursor.getString(INDEX_FK_FROM),
+                  to = cursor.getString(INDEX_FK_TO),
+                  onUpdate = ForeignKeyAction.fromSQLite(cursor.getString(INDEX_FK_ON_UPDATE)),
+                  onDelete = ForeignKeyAction.fromSQLite(cursor.getString(INDEX_FK_ON_DELETE))
                   // match = cursor.getString(7) not supported so we won't read it
                 )
               )
@@ -427,10 +387,12 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
           while (cursor.moveToNext()) {
             add(
               ForeignKeyViolation(
-                tableName = cursor.getString(0),
-                rowId = if (cursor.isNull(1)) -1 else cursor.getLong(1),
-                refersTo = cursor.getString(2),
-                failingConstraintIndex = cursor.getLong(3)
+                tableName = cursor.getString(INDEX_FK_VIOLATION_TABLE),
+                rowId = if (cursor.isNull(INDEX_FK_VIOLATION_ROW_ID)) -1 else cursor.getLong(
+                  INDEX_FK_VIOLATION_ROW_ID
+                ),
+                refersTo = cursor.getString(INDEX_FK_VIOLATION_REFERS_TO),
+                failingConstraintIndex = cursor.getLong(INDEX_FK_VIOLATION_CONSTRAINT_INDEX)
               )
             )
           }
@@ -445,6 +407,20 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
     db.execSQL("VACUUM;")
   }
 }
+
+private const val INDEX_FK_ID = 0
+private const val INDEX_FK_SEQ = 1
+private const val INDEX_FK_TABLE = 2
+private const val INDEX_FK_FROM = 3
+private const val INDEX_FK_TO = 4
+private const val INDEX_FK_ON_UPDATE = 5
+private const val INDEX_FK_ON_DELETE = 6
+// const private val index_fk_match = 7
+
+private const val INDEX_FK_VIOLATION_TABLE = 0
+private const val INDEX_FK_VIOLATION_ROW_ID = 1
+private const val INDEX_FK_VIOLATION_REFERS_TO = 2
+private const val INDEX_FK_VIOLATION_CONSTRAINT_INDEX = 3
 
 /**
  * Transaction implements [AutoCloseable] and is typically used within a [use] block.

@@ -47,7 +47,7 @@ fun String.asMasterType(): MasterType = when (this) {
  * and programmer-defined objects.
  */
 @Suppress("ClassName")
-object sqlite_master : Table(name = "sqlite_master", systemTable = true) {
+object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
   /**
    * The sqlite_master.type column will be one of the following text strings: 'table', 'index',
    * 'view', or 'trigger' according to the type of object defined. The 'table' string is used for
@@ -107,6 +107,9 @@ object sqlite_master : Table(name = "sqlite_master", systemTable = true) {
   val sql = text("sql")
 
   override fun preCreate() {
-    error("Cannot create system table sqlite_master")
+    error(
+      "Cannot create system table sqlite_master. " +
+        "sqlite_master is available after database creation"
+    )
   }
 }

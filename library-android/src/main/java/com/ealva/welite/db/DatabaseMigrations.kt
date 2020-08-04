@@ -43,10 +43,10 @@ private typealias EndMigrationMapImpl = TreeMap<Int, Migration>
 private typealias StartToEndMigrationMap = MutableMap<Int, EndMigrationMap>
 private typealias StartToEndMigrationMapImpl = HashMap<Int, EndMigrationMap>
 
-@Suppress("FunctionName")
+@Suppress("FunctionName")  // detekt
 private fun EndMigrationMap(): EndMigrationMap = EndMigrationMapImpl()
 
-@Suppress("FunctionName")
+@Suppress("FunctionName")  // detekt
 private fun StartToEndMigrationMap(): StartToEndMigrationMap = StartToEndMigrationMapImpl()
 
 private val LOG by lazyLogger(Migration::class)
@@ -58,6 +58,7 @@ private val LOG by lazyLogger(Migration::class)
  * @return An ordered list of [Migration]s that should be executed to migrate the database or null
  * if a migration path cannot be found.
  */
+@Suppress("ReturnCount") // detekt
 fun List<Migration>.findMigrationPath(startVersion: Int, endVersion: Int): List<Migration>? {
   val migrationMap: StartToEndMigrationMap = StartToEndMigrationMap().apply {
     this@findMigrationPath.forEach { migration ->

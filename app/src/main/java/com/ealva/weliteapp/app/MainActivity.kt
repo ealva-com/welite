@@ -17,10 +17,8 @@
 package com.ealva.weliteapp.app
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.ealva.ealvalog.e
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
@@ -58,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
       // On first app install tables/etc will be created here when the txn requests a writeable DB
       db.transaction {
-        check(MediaFileTable.exists)  // Was table created
+        check(MediaFileTable.exists) // Was table created
 
         LOG.i { it("insert into MediaFileTable") }
 
@@ -93,38 +91,27 @@ class MainActivity : AppCompatActivity() {
           it[mediaTitle] = "Fourth Title"
         }
 
-        LOG.i { it("Mark txn successful") }
         setSuccessful()
       }
 
       db.query {
         val count = MediaFileTable.select(fileName).where { mediaTitle like "%Title%" }.count()
-        launch(Dispatchers.Main) {
-          Toast.makeText(this@MainActivity, "$count", Toast.LENGTH_SHORT).show()
-        }
+        launch(Dispatchers.Main) { LOG.i { it("count=%d", count) } }
 
         MediaFileTable
           .select(mediaTitle)
           .where { mediaTitle like "%Title%" }
-          .flow {
-            it[mediaTitle].also { title -> LOG.e { +it("flow %s", title) }  }
-          }
-          .collect { title ->
-            LOG.e { +it("collect %s", title) }
-          }
+          .flow { it[mediaTitle].also { title -> LOG.i { +it("flow %s", title) } } }
+          .collect { title -> LOG.i { +it("collect %s", title) } }
 
         MediaFileTable
           .select(mediaTitle)
           .where { mediaTitle like "%Title%" }
-          .sequence {
-            it[mediaTitle].also { title -> LOG.e { +it("factory %s", title) }  }
-          }
+          .sequence { it[mediaTitle].also { title -> LOG.i { +it("factory %s", title) } } }
           .forEach { title ->
-            LOG.e { +it("forEach %s", title) }
+            LOG.i { +it("forEach %s", title) }
           }
-
       }
     }
-    LOG.i { it("Txn closed") }
   }
 }

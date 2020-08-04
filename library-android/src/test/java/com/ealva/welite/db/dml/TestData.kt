@@ -40,6 +40,7 @@ object PersonInfo : Table() {
   val value: Column<Int> = integer("value")
 }
 
+@Suppress("LongMethod")  // detekt
 suspend fun withTestDatabase(
   context: Context,
   tables: List<Table>,

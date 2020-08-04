@@ -104,11 +104,12 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   ) {
     fun identity() = name.asIdentity()
 
-    val columns: List<Column<*>> = mutableListOf(firstColumn, *remainingColumns).apply {
-      checkMultipleDeclaration()
-      forEach { column -> column.markPrimaryKey() }
-      sortWith(compareBy { !it.isAutoInc })
-    }
+    val columns: List<Column<*>> = remainingColumns.toMutableList().apply {
+        add(0, firstColumn)
+        checkMultipleDeclaration()
+        forEach { column -> column.markPrimaryKey() }
+        sortWith(compareBy { !it.isAutoInc })
+      }
 
     private fun checkMultipleDeclaration() {
       this@Table.columnDefiningPrimaryKey?.let { column ->
@@ -335,32 +336,33 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     primaryKey?.let { it.identity().unquoted != "pk_$tableName" } == true
 
   fun index(customIndexName: String, firstColumn: Column<*>, vararg columns: Column<*>) =
-    makeIndex(customIndexName, false, firstColumn, *columns)
+    makeIndex(customIndexName, false, firstColumn, columns.toList())
 
   fun index(firstColumn: Column<*>, vararg columns: Column<*>) =
-    makeIndex(null, false, firstColumn, *columns)
+    makeIndex(null, false, firstColumn, columns.toList())
 
   fun uniqueIndex(
     customIndexName: String,
     firstColumn: Column<*>,
     vararg columns: Column<*>
-  ) = makeIndex(customIndexName, true, firstColumn, *columns)
+  ) = makeIndex(customIndexName, true, firstColumn, columns.toList())
 
   fun uniqueIndex(firstColumn: Column<*>, vararg columns: Column<*>) =
-    makeIndex(null, true, firstColumn, *columns)
+    makeIndex(null, true, firstColumn, columns.toList())
 
   private fun makeIndex(
     customIndexName: String?,
     isUnique: Boolean,
     firstColumn: Column<*>,
-    vararg otherColumns: Column<*>
+    otherColumns: List<Column<*>>
   ) {
     val tableIdentity = identity
     indices.add(
       Index(
         tableIdentity,
-        mutableListOf(firstColumn, *otherColumns).also { list ->
-          list.forEach { column ->
+        otherColumns.toMutableList().apply {
+          add(0, firstColumn)
+          forEach { column ->
             require(columns.contains(column)) { "Column '$column' not in table '$tableName'" }
           }
         },

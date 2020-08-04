@@ -28,13 +28,13 @@ abstract class Function<T>(override val persistentType: PersistentType<T?>) :
 open class CustomFunction<T>(
   private val functionName: String,
   persistentType: PersistentType<T?>,
-  private vararg val expr: Expression<*>
+  private val exprList: List<Expression<*>>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append(functionName)
       append('(')
-      expr.toList().appendEach { append(it) }
+      exprList.appendEach { append(it) }
       append(')')
     }
 }
@@ -88,19 +88,19 @@ class UpperCase(
 
 class Concat(
   private val separator: String,
-  private vararg val expr: Expression<String>
+  private val exprList: List<Expression<String>>
 ) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
-      expr.toList().appendTo(
+      exprList.appendTo(
         builder = this,
         separator = if (separator.isEmpty()) " || " else " || '$separator' || "
       ) { append(it) }
 
       if (separator.isEmpty()) {
-        expr.toList().appendTo(this, separator = " || ") { append(it) }
+        exprList.appendTo(this, separator = " || ") { append(it) }
       } else {
-        expr.toList().appendTo(this, separator = " || '$separator' || ") { append(it) }
+        exprList.appendTo(this, separator = " || '$separator' || ") { append(it) }
       }
     }
 }

@@ -255,9 +255,7 @@ class ConstraintList(
   override fun hasDesc(): Boolean = constraints.contains(DescConstraint)
 
   override fun isRowId(isIntegerType: Boolean): Boolean {
-    if (hasAutoInc()) return true
-    if (isIntegerType && hasPrimaryKey() && !hasDesc()) return true
-    return true
+    return hasAutoInc()|| (isIntegerType && hasPrimaryKey() && !hasDesc())
   }
 
   override fun iterator() = constraints.iterator()

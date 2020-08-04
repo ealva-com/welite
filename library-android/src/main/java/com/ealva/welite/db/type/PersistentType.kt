@@ -355,6 +355,8 @@ open class BlobPersistentType : BasePersistentType<Blob?>("BLOB") {
   }
 }
 
+private const val SIZE_UUID = 16
+
 class UUIDPersistentType private constructor(
   private val blobColumn: BlobPersistentType
 ) : BasePersistentType<UUID?>(blobColumn.sqlType) {
@@ -368,7 +370,7 @@ class UUIDPersistentType private constructor(
   }
 
   private fun UUID.toBlob(): Blob = Blob(
-    ByteBuffer.allocate(16)
+    ByteBuffer.allocate(SIZE_UUID)
       .putUuid(this)
       .array()
   )
@@ -401,7 +403,7 @@ class UUIDPersistentType private constructor(
 
   override fun notNullValueToDB(value: Any): Any {
     val uuid = valueToUUID(value)
-    return ByteBuffer.allocate(16)
+    return ByteBuffer.allocate(SIZE_UUID)
       .putLong(uuid.mostSignificantBits)
       .putLong(uuid.leastSignificantBits)
       .array()

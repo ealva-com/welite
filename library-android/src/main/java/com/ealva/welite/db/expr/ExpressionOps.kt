@@ -99,10 +99,9 @@ infix fun <T : Number?, S : T> SqlTypeExpression<T>.mod(t: S): ModOp<T, S> = thi
 
 infix fun <T : Number?, S : Number> SqlTypeExpression<T>.mod(other: Expression<S>) = this % other
 
-fun concat(vararg expr: Expression<String>): Concat = Concat("", *expr)
+fun concat(vararg expr: Expression<String>): Concat = Concat("", expr.toList())
 
-fun concat(separator: String = "", expr: List<Expression<String>>): Concat =
-  Concat(separator, *expr.toTypedArray())
+fun concat(separator: String = "", expr: List<Expression<String>>): Concat = Concat(separator, expr)
 
 infix fun <T : String?> Expression<T>.like(pattern: String): LikeOp =
   LikeOp(this, stringParam(pattern))
@@ -118,6 +117,7 @@ infix fun <T> SqlTypeExpression<T>.inList(list: Iterable<T>): InListOrNotInListO
 infix fun <T> SqlTypeExpression<T>.notInList(list: Iterable<T>): InListOrNotInListOp<T> =
   InListOrNotInListOp(this, list, isInList = false)
 
+@OptIn(ExperimentalUnsignedTypes::class)
 @Suppress("UNCHECKED_CAST")
 fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (value) {
   is String -> stringParam(value)
@@ -136,6 +136,7 @@ fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (value) {
   else -> QueryParameter(value, persistentType)
 } as Expression<T>
 
+@OptIn(ExperimentalUnsignedTypes::class)
 @Suppress("UNCHECKED_CAST")
 fun <T> SqlTypeExpression<in T>.literal(value: T): LiteralOp<T> = when (value) {
   is String -> stringLiteral(value)
@@ -186,10 +187,10 @@ fun <R> Expression<*>.cast(persistentType: PersistentType<R?>): SqlTypeExpressio
   Cast(this, persistentType)
 
 fun <T : Any> SqlTypeExpression<T>.function(name: String): CustomFunction<T> =
-  CustomFunction(name, persistentType, this)
+  CustomFunction(name, persistentType, listOf(this))
 
 fun customStringFunction(name: String, vararg params: Expression<*>): CustomFunction<String> =
-  CustomFunction(name, StringPersistentType(), *params)
+  CustomFunction(name, StringPersistentType(), params.toList())
 
 fun customLongFunction(name: String, vararg params: Expression<*>): CustomFunction<Long> =
-  CustomFunction(name, LongPersistentType(), *params)
+  CustomFunction(name, LongPersistentType(), params.toList())

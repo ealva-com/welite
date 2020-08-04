@@ -73,11 +73,13 @@ class TableDependencies(private val tables: List<Table>) {
     val sortedTables = sortedTableList
 
     fun traverse(table: Table): Boolean {
-      if (table in recursion) return true
-      if (table in visited) return false
-      recursion += table
-      visited += table
-      return (graph[table]?.any { traverse(it.key) } == true).also { if (!it) recursion -= table }
+      return if (table !in recursion) {
+        if (table !in visited) {
+          recursion += table
+          visited += table
+          (graph[table]?.any { traverse(it.key) } == true).also { if (!it) recursion -= table }
+        } else true
+      }  else false
     }
 
     return sortedTables.any { traverse(it) }

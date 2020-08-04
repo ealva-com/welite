@@ -113,15 +113,15 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
     otherColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
   ): Join {
-    return join(joinTo, joinType, asJoinCondition(thisColumn, otherColumn), additionalConstraint)
+    return doJoin(joinTo, joinType, asJoinCondition(thisColumn, otherColumn), additionalConstraint)
   }
 
-  override infix fun innerJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.INNER)
-  override infix fun leftJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.LEFT)
-  override infix fun crossJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.CROSS)
-  override fun naturalJoin(joinTo: ColumnSet): Join = join(joinTo, JoinType.NATURAL)
+  override infix fun innerJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.INNER)
+  override infix fun leftJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.LEFT)
+  override infix fun crossJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.CROSS)
+  override fun naturalJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.NATURAL)
 
-  private fun join(
+  private fun doJoin(
     otherTable: ColumnSet,
     joinType: JoinType,
     additionalConstraint: (() -> Op<Boolean>)? = null
@@ -136,7 +136,7 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
         error("Can't join $otherTable multiple primary/foreign key references.\n$references")
       }
       else -> {
-        join(
+        doJoin(
           otherTable,
           joinType,
           fkKeys.filter { it.second.size == 1 }.map { it.first to it.second.single() },
@@ -146,7 +146,7 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
     }
   }
 
-  private fun join(
+  private fun doJoin(
     joinTo: ColumnSet,
     joinType: JoinType,
     cond: List<JoinCondition>,
@@ -210,7 +210,7 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
         if (onColumn != null && otherColumn != null) {
           join(otherTable, joinType, onColumn, otherColumn, additionalConstraint)
         } else {
-          join(otherTable, joinType, additionalConstraint)
+          doJoin(otherTable, joinType, additionalConstraint)
         }
       }
     }

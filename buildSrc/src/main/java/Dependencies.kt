@@ -53,9 +53,8 @@ object SupportLibs {
   const val ANDROIDX_CONSTRAINT_LAYOUT =
     "com.android.support.constraint:constraint-layout:${Versions.CONSTRAINT_LAYOUT}"
   const val ANDROIDX_CORE_KTX = "androidx.core:core-ktx:${Versions.CORE_KTX}"
-//  const val ANDROIDX_ACTIVITY_KTX = "androidx.activity:activity-ktx:${Versions.ACTIVITY_KTX}"
-  const val ANDROIDX_LIFECYCLE_RUNTIME_KTX = "androidx.lifecycle:lifecycle-runtime-ktx:${Versions.LIFECYCLE}"
-//  const val ANDROIDX_LIFECYCLE_EXTENSIONS = "androidx.lifecycle:lifecycle-extensions:${Versions.LIFECYCLE}"
+  const val ANDROIDX_LIFECYCLE_RUNTIME_KTX =
+    "androidx.lifecycle:lifecycle-runtime-ktx:${Versions.LIFECYCLE}"
 }
 
 object ThirdParty {
@@ -63,22 +62,19 @@ object ThirdParty {
   const val EALVALOG_CORE = "com.ealva:ealvalog-core:${Versions.EALVALOG}"
   const val EALVALOG_ANDROID = "com.ealva:ealvalog-android:${Versions.EALVALOG}"
   const val FASTUTIL = "it.unimi.dsi:fastutil:${Versions.FASTUTIL}"
-  const val COROUTINE_CORE =  "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.COROUTINES}"
-  const val COROUTINE_ANDROID = "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.COROUTINES}"
+  const val COROUTINE_CORE = "org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.COROUTINES}"
+  const val COROUTINE_ANDROID =
+    "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.COROUTINES}"
   const val KOIN = "org.koin:koin-core:${Versions.KOIN}"
   const val KOIN_ANDROID = "org.koin:koin-android:${Versions.KOIN}"
 }
 
-/**
- * "org.koin:koin-core:$koin_version"
-// Testing
-testCompile "org.koin:koin-test:$koin_version"
- */
 object TestingLib {
   const val JUNIT = "junit:junit:${Versions.JUNIT}"
   const val ROBOLECTRIC = "org.robolectric:robolectric:${Versions.ROBOLECTRIC}"
   const val EXPECT = "com.nhaarman:expect.kt:${Versions.EXPECT}"
-  const val COROUTINE_TEST = "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.COROUTINES_TEST}"
+  const val COROUTINE_TEST =
+    "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.COROUTINES_TEST}"
   const val KOIN_TEST = "org.koin:koin-test:${Versions.KOIN}"
 }
 
