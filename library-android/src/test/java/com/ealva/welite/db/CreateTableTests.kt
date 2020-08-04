@@ -56,7 +56,9 @@ class CreateTableTests {
     expect(ddl).toHaveSize(1)
     val create = ddl.first()
     expect(create).toBe(
-      """CREATE TABLE IF NOT EXISTS "$tableName" (${account.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT "pk_$tableName" PRIMARY KEY ("$id1Name", "$id2Name"))"""
+      """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+        account.columns.joinToString { it.descriptionDdl() } + """, CONSTRAINT "pk_""" +
+        tableName + """" PRIMARY KEY ("""" + id1Name + """", """" + id2Name + """"))"""
     )
   }
 
@@ -74,7 +76,8 @@ class CreateTableTests {
     expect(ddl).toHaveSize(1)
     val create = ddl.first()
     expect(create).toBe(
-      """CREATE TABLE IF NOT EXISTS "$tableName" (${account.columns.joinToString { it.descriptionDdl() }})"""
+      """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+        account.columns.joinToString { it.descriptionDdl() } + """)"""
     )
   }
 
@@ -90,11 +93,13 @@ class CreateTableTests {
     val otherTableName = "Other"
     @Suppress("unused") val other = object : TestTable(otherTableName) {
       val id1: Column<Int> = integer(otherIdName) { references(account.id1) }
-
     }
 
     expect(other.ddlForTest().first()).toBe(
-      """CREATE TABLE IF NOT EXISTS "$otherTableName" (${other.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") REFERENCES "Account"("id1"))"""
+      """CREATE TABLE IF NOT EXISTS """" + otherTableName +
+        """" (""" + other.columns.joinToString { it.descriptionDdl() } +
+        """, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") """ +
+        """REFERENCES "Account"("id1"))"""
     )
   }
 
@@ -119,7 +124,10 @@ class CreateTableTests {
     }
 
     expect(other.ddlForTest().first()).toBe(
-      """CREATE TABLE IF NOT EXISTS ${other.identity.value} (${other.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") REFERENCES "Account"("id1") ON DELETE CASCADE ON UPDATE SET DEFAULT)"""
+      """CREATE TABLE IF NOT EXISTS """ + other.identity.value + """ (""" +
+        other.columns.joinToString { it.descriptionDdl() } +
+        """, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") REFERENCES""" +
+        """ "Account"("id1") ON DELETE CASCADE ON UPDATE SET DEFAULT)"""
     )
   }
 
@@ -139,7 +147,10 @@ class CreateTableTests {
     expect(ddl).toHaveSize(1)
     val create = ddl.first()
     expect(create).toBe(
-      """CREATE TABLE IF NOT EXISTS ${account.identity.value} (${account.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT ${account.primaryKey.identity().value} PRIMARY KEY (${account.id1.identity().value}, ${account.id2.identity().value}))"""
+      """CREATE TABLE IF NOT EXISTS """ + account.identity.value + """ (""" +
+        account.columns.joinToString { it.descriptionDdl() } + """, CONSTRAINT """ +
+        account.primaryKey.identity().value + """ PRIMARY KEY (""" + account.id1.identity().value +
+        """, """ + account.id2.identity().value + """))"""
     )
   }
 
@@ -160,10 +171,13 @@ class CreateTableTests {
     val ddl = account.ddlForTest()
     expect(ddl).toHaveSize(4)
     expect(ddl[0]).toBe(
-      """CREATE TABLE IF NOT EXISTS "$tableName" (${account.columns.joinToString { it.descriptionDdl() }})"""
+      """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+        account.columns.joinToString { it.descriptionDdl() } + """)"""
     )
     expect(ddl[1]).toBe("""CREATE INDEX IF NOT EXISTS "Account_id1" ON "Account"("id1")""")
-    expect(ddl[2]).toBe("""CREATE UNIQUE INDEX IF NOT EXISTS "Account_id2_unique" ON "Account"("id2")""")
-    expect(ddl[3]).toBe("""CREATE INDEX IF NOT EXISTS "Account_id1_id2" ON "Account"("id1", "id2")""")
+    expect(ddl[2])
+      .toBe("""CREATE UNIQUE INDEX IF NOT EXISTS "Account_id2_unique" ON "Account"("id2")""")
+    expect(ddl[3])
+      .toBe("""CREATE INDEX IF NOT EXISTS "Account_id1_id2" ON "Account"("id1", "id2")""")
   }
 }

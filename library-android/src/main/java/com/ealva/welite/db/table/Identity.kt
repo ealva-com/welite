@@ -60,11 +60,13 @@ inline class Identity(val value: String) {
 
     fun make(identity: String, forceQuote: Boolean = false): Identity {
       return if (quoteAll || forceQuote) {
-        Identity(buildString {
-          append(quoteChar)
-          append(identity)
-          append(quoteChar)
-        })
+        Identity(
+          buildString {
+            append(quoteChar)
+            append(identity)
+            append(quoteChar)
+          }
+        )
       } else {
         Identity(identity)
       }
@@ -79,4 +81,3 @@ inline fun String.asIdentity(forceQuote: Boolean = false) =
   Identity.make(this, forceQuote)
 
 fun SqlBuilder.append(identity: Identity): SqlBuilder = append(identity.value)
-

@@ -96,7 +96,7 @@ class ColumnTests {
       val col2 = integer(col2) { default(4) }
       val col3 = integer(col3) { defaultExpression(abs(-100)) }
     }
-    expect(account2.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT""")
+    expect(account2.id.descriptionDdl()).toBe("\"$id1\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT")
     expect(account2.col2.descriptionDdl()).toBe(""""$col2" INTEGER NOT NULL DEFAULT 4""")
     expect(account2.col3.descriptionDdl()).toBe(""""$col3" INTEGER NOT NULL DEFAULT (ABS(-100))""")
   }
@@ -136,9 +136,10 @@ class ColumnTests {
     val ddl = account.ddlForTest()
     expect(ddl).toHaveSize(1)
     expect(ddl[0]).toBe(
-      """CREATE TABLE IF NOT EXISTS "$tableName" (${account.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT "check_Account_0" CHECK ("col5" = 'blah'))"""
+      """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+        account.columns.joinToString { it.descriptionDdl() } +
+        """, CONSTRAINT "check_Account_0" CHECK ("col5" = 'blah'))"""
     )
-
   }
 
   @Test
@@ -158,8 +159,13 @@ class ColumnTests {
     val ddl = account.ddlForTest()
     expect(ddl).toHaveSize(2)
     expect(ddl[0]).toBe(
-      """CREATE TABLE IF NOT EXISTS "$tableName" (${account.columns.joinToString { it.descriptionDdl() }}, CONSTRAINT "check_Account_0" CHECK ("$id2Name" > 10))"""
+      """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+        account.columns.joinToString { it.descriptionDdl() } +
+        """, CONSTRAINT "check_Account_0" CHECK ("""" + id2Name + """" > 10))"""
     )
-    expect(ddl[1]).toBe("""CREATE UNIQUE INDEX IF NOT EXISTS "Account_id1_id2_unique" ON "Account"("id1", "id2")""")
+    expect(ddl[1]).toBe(
+      "CREATE UNIQUE INDEX IF NOT EXISTS \"Account_id1_id2_unique\" " +
+        "ON \"Account\"(\"id1\", \"id2\")"
+    )
   }
 }

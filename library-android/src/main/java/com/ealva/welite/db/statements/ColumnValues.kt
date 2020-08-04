@@ -34,7 +34,7 @@ interface ColumnValues {
   val columnValueList: MutableList<ColumnValue<*>>
   operator fun <S> set(column: Column<S>, value: S)
 
-  operator fun <T, E:Expression<T>> set(column: Column<T>, expression: E)
+  operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E)
 
   companion object {
     operator fun invoke(): ColumnValues = ColumnValuesImpl()
@@ -47,7 +47,7 @@ private class ColumnValuesImpl : ColumnValues {
     columnValueList.add(ColumnValueWithValue(column, value))
   }
 
-  override operator fun <T, E: Expression<T>> set(column: Column<T>, expression: E) {
+  override operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E) {
     columnValueList.add(ColumnValueWithExpression(column, expression))
   }
 }
@@ -66,7 +66,7 @@ interface ColumnValue<S> {
 class ColumnValueWithValue<S>(
   override val column: Column<S>,
   private val value: S
-): ColumnValue<S> {
+) : ColumnValue<S> {
   override fun appendValueTo(builder: SqlBuilder) {
     builder.registerArgument(column, value)
   }
@@ -75,7 +75,7 @@ class ColumnValueWithValue<S>(
 class ColumnValueWithExpression<S>(
   override val column: Column<S>,
   private val expression: Expression<S>
-): ColumnValue<S> {
+) : ColumnValue<S> {
   override fun appendValueTo(builder: SqlBuilder) {
     builder.append(expression)
   }

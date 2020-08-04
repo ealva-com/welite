@@ -74,20 +74,24 @@ fun not(op: Expression<Boolean>): Op<Boolean> = NotOp(op)
 infix fun Expression<Boolean>.and(op: Expression<Boolean>): Op<Boolean> = when {
   this is AndOp && op is AndOp -> AndOp(expressions + op.expressions)
   this is AndOp -> AndOp(expressions + op)
-  op is AndOp -> AndOp(ArrayList<Expression<Boolean>>(op.expressions.size + 1).also {
-    it.add(this)
-    it.addAll(op.expressions)
-  })
+  op is AndOp -> AndOp(
+    ArrayList<Expression<Boolean>>(op.expressions.size + 1).also {
+      it.add(this)
+      it.addAll(op.expressions)
+    }
+  )
   else -> AndOp(listOf(this, op))
 }
 
 infix fun Expression<Boolean>.or(op: Expression<Boolean>): Op<Boolean> = when {
   this is OrOp && op is OrOp -> OrOp(expressions + op.expressions)
   this is OrOp -> OrOp(expressions + op)
-  op is OrOp -> OrOp(ArrayList<Expression<Boolean>>(op.expressions.size + 1).also {
-    it.add(this)
-    it.addAll(op.expressions)
-  })
+  op is OrOp -> OrOp(
+    ArrayList<Expression<Boolean>>(op.expressions.size + 1).also {
+      it.add(this)
+      it.addAll(op.expressions)
+    }
+  )
   else -> OrOp(listOf(this, op))
 }
 

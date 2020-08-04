@@ -16,7 +16,7 @@
 
 package com.ealva.welite.db.table
 
-import android.database.sqlite.SQLiteDatabase
+import com.ealva.welite.db.DbConfig
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SortOrder
@@ -24,6 +24,7 @@ import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.or
+import kotlinx.coroutines.flow.Flow
 
 typealias LimitOffset = Pair<Long, Long>
 
@@ -43,11 +44,11 @@ inline val OrderByPair.ascDesc
 
 @WeLiteMarker
 class QueryBuilder(
-  private val db: SQLiteDatabase,
+  private val dbConfig: DbConfig,
   private var set: SelectFrom,
   private var where: Op<Boolean>?,
   private var count: Boolean = false
-) {
+) : PerformQuery {
   private var groupBy = mutableListOf<Expression<*>>()
   private var orderBy = mutableListOf<OrderByPair>()
   private var having: Op<Boolean>? = null
@@ -55,7 +56,7 @@ class QueryBuilder(
   private var limitOffset: LimitOffset? = null
 
   fun copy(): QueryBuilder = QueryBuilder(
-    db,
+    dbConfig,
     set,
     where
   ).also { copy ->
@@ -67,9 +68,8 @@ class QueryBuilder(
     copy.count = count
   }
 
-  fun sourceSetColumnsInResult(): List<Column<*>> {
-    return set.sourceSet.columns.filter { it in set.resultColumns }
-  }
+  fun sourceSetColumnsInResult(): List<Column<*>> =
+    set.sourceSet.columns.filter { it in set.resultColumns }
 
   /**
    * Changes [where] field of a Query.
@@ -80,11 +80,7 @@ class QueryBuilder(
   /**
    * Save this query to reuse and possibly bind parameters each time via [Query.forEach]
    */
-  fun build(): Query {
-    val stringBuilder = SqlBuilder()
-    appendTo(stringBuilder)
-    return Query(db, set.resultColumns, stringBuilder)
-  }
+  fun build(): Query = Query(dbConfig, set.resultColumns, appendTo(SqlBuilder()))
 
   /**
    * Build, bind any necessary args, and execute the query calling [action] with each row. The
@@ -92,20 +88,30 @@ class QueryBuilder(
    * [Cursor.position] which is the current index into the the rows.
    *
    */
-  fun forEach(binding: (ParamBindings) -> Unit = {}, action: (Cursor) -> Unit) =
-    build().forEach(binding, action)
+  override fun forEach(bindArgs: (ParamBindings) -> Unit, action: (Cursor) -> Unit) =
+    build().forEach(bindArgs, action)
 
   /**
    * Bind any necessary arguments and then create a flow of [T] created by [factory]
    */
-  fun <T> entityFlow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T) =
-    build().entityFlow(bindArgs, factory)
+  override fun <T> flow(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
+    build().flow(bindArgs, factory)
 
   /**
    * Bind args and then generate a sequence of [T] create by [factory]
    */
-  fun <T> sequence(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T) =
-    build().sequence(bindArgs, factory)
+  override fun <T> sequence(
+    bindArgs: (ParamBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Sequence<T> = build().sequence(bindArgs, factory)
+
+  override fun longForQuery(bindArgs: (ParamBindings) -> Unit): Long {
+    return build().longForQuery(bindArgs)
+  }
+
+  override fun stringForQuery(bindArgs: (ParamBindings) -> Unit): String {
+    return build().stringForQuery(bindArgs)
+  }
 
   fun SqlBuilder.append(builder: QueryBuilder): SqlBuilder = apply {
     append("SELECT ")
@@ -164,7 +170,10 @@ class QueryBuilder(
 
   fun having(op: () -> Op<Boolean>) = apply {
     if (having != null) {
-      error("HAVING clause is specified twice. Old value = '$having', new value = '${Op.build { op() }}'")
+      error(
+        """HAVING clause is specified twice. Old value = '""" + having +
+          """', new value = '""" + Op.build { op() } + """'"""
+      )
     }
     having = Op.build { op() }
   }
@@ -177,7 +186,7 @@ class QueryBuilder(
     limitOffset = LimitOffset(limit, offset)
   }
 
-  fun count(bindArgs: (ParamBindings) -> Unit = NO_BIND): Long {
+  override fun count(bindArgs: (ParamBindings) -> Unit): Long {
     return if (distinct || groupBy.isNotEmpty() || limitOffset != null) {
       check(!count) { "Cannot use count with DISTINCT, GROUP BY, or LIMIT" }
       val query = build()
@@ -197,7 +206,9 @@ class QueryBuilder(
     return set.sourceSet.columns.find { it == original }
   }
 
-  fun <T> findResultColumnExpressionAlias(original: SqlTypeExpression<T>): SqlTypeExpressionAlias<T>? {
+  fun <T> findResultColumnExpressionAlias(
+    original: SqlTypeExpression<T>
+  ): SqlTypeExpressionAlias<T>? {
     @Suppress("UNCHECKED_CAST")
     return set.resultColumns.find { it == original } as? SqlTypeExpressionAlias<T>
   }
@@ -222,4 +233,3 @@ fun QueryBuilder.orWhere(andPart: () -> Op<Boolean>) = adjustWhere {
   if (this == null) expr
   else this or expr
 }
-

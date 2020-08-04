@@ -62,11 +62,12 @@ typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
  */
 abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSet {
   open val tableName: String =
-    (if (name.isNotEmpty()) name else this.javaClass.simpleName.removeSuffix("Table")).also { name ->
-      require(systemTable || !name.startsWith(RESERVED_PREFIX)) {
-        "Invalid Table name '$name', must not start with $RESERVED_PREFIX"
+    (if (name.isNotEmpty()) name else this.javaClass.simpleName.removeSuffix("Table"))
+      .also { name ->
+        require(systemTable || !name.startsWith(RESERVED_PREFIX)) {
+          "Invalid Table name '$name', must not start with $RESERVED_PREFIX"
+        }
       }
-    }
 
   open val identity: Identity by lazy { tableName.asIdentity() }
 
@@ -374,7 +375,12 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     if (name.isEmpty() || checkConstraints.none { it.first.equals(name, true) }) {
       checkConstraints.add(name to op())
     } else {
-      LOG.w { it("A CHECK constraint with name '$name' was ignored because there is already one with that name") }
+      LOG.w {
+        it(
+          """A CHECK constraint with name '""" + name +
+            """' was ignored because there is already one with that name"""
+        )
+      }
     }
   }
 
@@ -412,7 +418,10 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
         when (column.persistentType) {
           is IntegerPersistentType, is LongPersistentType -> {
             LOG.w {
-              it("The WITHOUT ROWID optimization is unlikely to be helpful for tables that have a single INTEGER PRIMARY KEY.")
+              it(
+                "The WITHOUT ROWID optimization is unlikely to be helpful for tables that " +
+                  "have a single INTEGER PRIMARY KEY."
+              )
             }
           }
         }

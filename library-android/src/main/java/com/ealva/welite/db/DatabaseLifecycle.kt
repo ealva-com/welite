@@ -111,4 +111,3 @@ interface DatabaseConfiguration {
   @Throws(SQLException::class)
   fun execPragma(statement: String)
 }
-

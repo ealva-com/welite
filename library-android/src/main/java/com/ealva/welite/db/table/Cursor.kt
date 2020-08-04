@@ -47,7 +47,4 @@ interface Cursor {
    */
   operator fun <T : Any> get(expression: SqlTypeExpression<T>, defaultValue: T): T =
     getOptional(expression) ?: defaultValue
-
 }
-
-

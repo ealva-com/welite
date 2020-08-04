@@ -253,13 +253,13 @@ class CaseWhenElse<T, R : T>(
     }
 }
 
-//class Coalesce<out T, S : T?, R : T>(
+// class Coalesce<out T, S : T?, R : T>(
 //  private val expr: ExpressionWithColumnType<S>,
 //  private val alternate: ExpressionWithColumnType<out T>
-//) : Function<R>(alternate.columnType) {
+// ) : Function<R>(alternate.columnType) {
 //  override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit =
 //    queryBuilder { append("COALESCE(", expr, ", ", alternate, ")") }
-//}
+// }
 
 class Cast<T>(
   private val expr: Expression<*>,

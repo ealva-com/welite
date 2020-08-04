@@ -26,4 +26,3 @@ enum class OnConflict(private val onConflict: String, val insertOr: String, val 
 
   override fun toString() = onConflict
 }
-

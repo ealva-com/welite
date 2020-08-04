@@ -60,21 +60,19 @@ import com.ealva.welite.db.table.select
 @WeLiteMarker
 interface Queryable {
   /** Select a subset of [columns] of this [ColumnSet], returning a [SelectFrom] */
-  fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom =
-    select(columns.distinct())
+  fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom
 
   /**
    * Select a subset of [columns] of this [ColumnSet] (default is all [columns]), and return a
    * SelectFrom to start building the query.
    */
-  fun ColumnSet.select(columns: List<SqlTypeExpression<*>> = this.columns): SelectFrom =
-    SelectFrom(columns.distinct(), this)
+  fun ColumnSet.select(columns: List<SqlTypeExpression<*>> = this.columns): SelectFrom
 
   /**
    * Select all columns of this [ColumnSet] matching the [where] part of the query
    * Convenience function for: ```select().where(where)```
    */
-  fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
+  fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder
 
   /**
    * Select all columns of this [ColumnSet] and call [build] to make the where expression
@@ -244,20 +242,29 @@ interface TransactionInProgress : Queryable {
   fun vacuum()
 
   companion object {
-    operator fun invoke(db: SQLiteDatabase): TransactionInProgress = TransactionInProgressImpl(db)
+    operator fun invoke(db: DbConfig): TransactionInProgress = TransactionInProgressImpl(db)
   }
 }
 
-private class TransactionInProgressImpl(private val db: SQLiteDatabase) : TransactionInProgress {
-
+private class TransactionInProgressImpl(private val config: DbConfig) : TransactionInProgress {
+  private val db = config.db
   init {
     require(db.inTransaction()) { "Transaction must be in progress" }
   }
 
-  override fun ColumnSet.selectAll(): QueryBuilder =
-    QueryBuilder(db, SelectFrom(columns, this), null)
+  override fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom =
+    select(columns.distinct())
 
-  override fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(db, this, where)
+  override fun ColumnSet.select(columns: List<SqlTypeExpression<*>>): SelectFrom =
+    SelectFrom(columns.distinct(), this)
+
+  override fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
+
+  override fun ColumnSet.selectAll(): QueryBuilder =
+    QueryBuilder(config, SelectFrom(columns, this), null)
+
+  override fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder =
+    QueryBuilder(config, this, where)
 
   override fun <T : Table> T.insertValues(
     onConflict: OnConflict,
@@ -295,7 +302,8 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
    * [QueryBuilder.count] on the result is equivalent. eg. ```table.selectAll().count()``` returns a
    * count of all rows in the table.
    */
-  fun SelectFrom.count(where: Op<Boolean>?): Query = QueryBuilder(db, this, where, true).build()
+  fun SelectFrom.count(where: Op<Boolean>?): Query =
+    QueryBuilder(config, this, where, true).build()
 
   override val Table.exists
     get() = try {
@@ -406,12 +414,14 @@ private class TransactionInProgressImpl(private val db: SQLiteDatabase) : Transa
    */
   @RequiresApi(Build.VERSION_CODES.O)
   override fun Table.foreignKeyCheck(): List<ForeignKeyViolation> {
-    db.select(buildString {
-      append("PRAGMA foreign_key_check")
-      append("('")
-      append(identity.unquoted)
-      append("')")
-    }).use { cursor ->
+    db.select(
+      buildString {
+        append("PRAGMA foreign_key_check")
+        append("('")
+        append(identity.unquoted)
+        append("')")
+      }
+    ).use { cursor ->
       return if (cursor.count > 0) {
         ArrayList<ForeignKeyViolation>(cursor.count).apply {
           while (cursor.moveToNext()) {
@@ -475,18 +485,19 @@ interface Transaction : TransactionInProgress, AutoCloseable {
 
   companion object {
     operator fun invoke(
-      db: SQLiteDatabase,
+      database: DbConfig,
       exclusiveLock: Boolean,
       unitOfWork: String,
       throwIfNoChoice: Boolean
     ): Transaction {
+      val db = database.db
       if (exclusiveLock) db.beginTransaction() else db.beginTransactionNonExclusive()
       return TransactionImpl(
         db,
         exclusiveLock,
         unitOfWork,
         throwIfNoChoice,
-        TransactionInProgress(db)
+        TransactionInProgress(database)
       )
     }
   }
@@ -544,6 +555,7 @@ private class TransactionImpl(
   }
 
   override fun toString(): String {
-    return """Txn='$unitOfWork' closed=$isClosed exclusive=$exclusiveLock success=$successful rolledBack=$rolledBack"""
+    return "Txn='" + unitOfWork + "' closed=" + isClosed + " exclusive=" + exclusiveLock +
+      " success=" + successful + " rolledBack=" + rolledBack
   }
 }

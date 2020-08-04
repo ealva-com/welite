@@ -78,7 +78,7 @@ class AliasTests {
   }
 
   @Test
-  fun `test joinQuery subquery `() = coroutineRule.runBlockingTest {
+  fun `test joinQuery subquery alias expr alias query`() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, PersonInfo),
@@ -95,9 +95,29 @@ class AliasTests {
           Join(Person)
             .join(usersAlias, JoinType.INNER, Person.name, usersAlias[expAlias])
             .selectAll()
-            .sequence { it[Person.name]}
+            .sequence { usersAlias[expAlias] }
             .count()
         ).toBe(3)
+      }
+    }
+  }
+
+  @Test
+  fun `test query alias table`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(Place, Person, PersonInfo),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      query {
+        val personAlias = Person.alias("person_alias")
+        expect(
+          personAlias.select(personAlias[Person.name], personAlias[Person.cityId])
+            .where { personAlias[Person.name] eq "Rick" }
+            .groupBy(personAlias[Person.cityId])
+            .sequence { it[personAlias[Person.name]] }
+            .count()
+        ).toBe(1)
       }
     }
   }

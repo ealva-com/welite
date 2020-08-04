@@ -147,10 +147,18 @@ class InListOrNotInListOp<T>(
 class PlusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T?>) :
   CustomOperator<T>("+", persistentType, lhs, rhs)
 
-class MinusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T?>) :
+class MinusOp<T, S : T>(
+  lhs: Expression<T>,
+  rhs: Expression<S>,
+  persistentType: PersistentType<T?>
+) :
   CustomOperator<T>("-", persistentType, lhs, rhs)
 
-class TimesOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T?>) :
+class TimesOp<T, S : T>(
+  lhs: Expression<T>,
+  rhs: Expression<S>,
+  persistentType: PersistentType<T?>
+) :
   CustomOperator<T>("*", persistentType, lhs, rhs)
 
 class DivideOp<T, S : T>(

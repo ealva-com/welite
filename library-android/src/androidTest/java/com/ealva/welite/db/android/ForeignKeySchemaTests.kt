@@ -16,10 +16,10 @@
 
 package com.ealva.welite.db.android
 
-//import com.ealva.ealvalog.Loggers
-//import com.ealva.ealvalog.android.AndroidLogger
-//import com.ealva.ealvalog.android.AndroidLoggerFactory
-//import com.ealva.ealvalog.android.DebugLogHandler
+// import com.ealva.ealvalog.Loggers
+// import com.ealva.ealvalog.android.AndroidLogger
+// import com.ealva.ealvalog.android.AndroidLoggerFactory
+// import com.ealva.ealvalog.android.DebugLogHandler
 import android.content.Context
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
@@ -123,7 +123,6 @@ class ForeignKeySchemaTests {
         }
       }
     }
-
   }
 
   private suspend fun Database.createTablesWithFKViolations() {

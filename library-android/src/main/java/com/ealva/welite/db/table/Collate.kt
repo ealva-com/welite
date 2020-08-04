@@ -43,7 +43,6 @@ sealed class Collate(val sql: String) {
   override fun hashCode(): Int {
     return sql.hashCode()
   }
-
 }
 
 object CollateBinary : Collate("COLLATE BINARY")
@@ -61,4 +60,3 @@ class CollateUser(name: String) : Collate(
     name
   ).value}"
 )
-

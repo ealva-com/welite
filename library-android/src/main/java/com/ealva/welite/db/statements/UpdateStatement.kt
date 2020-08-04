@@ -97,5 +97,4 @@ private class UpdateStatementImpl<T : Table>(
     if (bindArgs !== NO_BIND) bindArgs(this)
     return statement.executeUpdateDelete()
   }
-
 }

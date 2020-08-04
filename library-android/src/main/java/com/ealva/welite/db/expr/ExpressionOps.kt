@@ -193,4 +193,3 @@ fun customStringFunction(name: String, vararg params: Expression<*>): CustomFunc
 
 fun customLongFunction(name: String, vararg params: Expression<*>): CustomFunction<Long> =
   CustomFunction(name, LongPersistentType(), *params)
-

@@ -250,7 +250,8 @@ private class ColumnImpl<T>(
       Alias(
         table,
         tableAlias ?: "${table.tableName}_$name"
-      ), name, persistentType
+      ),
+      name, persistentType
     )
   }
 
@@ -258,7 +259,9 @@ private class ColumnImpl<T>(
 
   override fun markPrimaryKey() {
     val columnDefiningPrimaryKey = table.columnDefiningPrimaryKey
-    check(columnDefiningPrimaryKey == null) { "Primary key already defined for column ${columnDefiningPrimaryKey?.name}" }
+    check(columnDefiningPrimaryKey == null) {
+      "Primary key already defined for column ${columnDefiningPrimaryKey?.name}"
+    }
     check(indexInPK == null) { "$this already part of primary key" }
     indexInPK = table.columns.count { it.indexInPK != null } + 1
   }

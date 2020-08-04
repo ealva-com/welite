@@ -89,7 +89,6 @@ object PrimaryKeyConstraint : ColumnConstraint() {
     others: List<ColumnConstraint>,
     persistentType: PersistentType<*>
   ) { }
-
 }
 
 private const val ASC = "ASC"
@@ -120,7 +119,6 @@ object DescConstraint : AscDescConstraint(
       notAllowed { "$this no allowed with $AutoIncrementConstraint" }
     }
   }
-
 }
 
 /**
@@ -148,9 +146,10 @@ class ConflictConstraint(private val onConflict: OnConflict) : ColumnConstraint(
     if (constraint != null) notAllowed { "$constraint already defined, cannot add $this" }
     val hasRequired = others.find {
       when (it) {
-        is PrimaryKeyConstraint, is AscDescConstraint, is NotNullConstraint, is UniqueConstraint -> {
-          true
-        }
+        is PrimaryKeyConstraint,
+        is AscDescConstraint,
+        is NotNullConstraint,
+        is UniqueConstraint -> true
         else -> false
       }
     } != null
@@ -168,10 +167,13 @@ object AutoIncrementConstraint : ColumnConstraint() {
 
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
     if (!persistentType.isIntegerType) notAllowed { "$this only allowed with INTEGER column" }
-    if (others.find { it is PrimaryKeyConstraint } == null) notAllowed { "$this for $PRIMARY_KEY only. Current=${others.joinAsString()}" }
-    if (others.find { it is DescConstraint } != null) notAllowed { "$this not allowed with $DESC. Current=${others.joinAsString()}" }
+    if (others.find { it is PrimaryKeyConstraint } == null) notAllowed {
+      "$this for $PRIMARY_KEY only. Current=${others.joinAsString()}"
+    }
+    if (others.find { it is DescConstraint } != null) notAllowed {
+      "$this not allowed with $DESC. Current=${others.joinAsString()}"
+    }
   }
-
 }
 
 private const val NOT_NULL = "NOT NULL"
@@ -198,7 +200,6 @@ object UniqueConstraint : ColumnConstraint() {
 //      else -> notAllowed { "$this may not follow $prev" }
 //    }
   }
-
 }
 
 class CollateConstraint(private val collate: Collate) : ColumnConstraint() {
@@ -261,4 +262,3 @@ class ConstraintList(
 
   override fun iterator() = constraints.iterator()
 }
-

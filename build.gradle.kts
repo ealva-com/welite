@@ -27,16 +27,18 @@ subprojects {
   }
 
   ktlint {
+    verbose.set(true)
+    outputToConsole.set(true)
+    coloredOutput.set(true)
     debug.set(false)
     version.set(Versions.KTLINT)
-    verbose.set(true)
-    android.set(false)
-    outputToConsole.set(true)
+    android.set(true)
     ignoreFailures.set(false)
     enableExperimentalRules.set(true)
     filter {
       exclude("**/generated/**")
       include("**/kotlin/**")
+      include("**/java/**")
     }
   }
 

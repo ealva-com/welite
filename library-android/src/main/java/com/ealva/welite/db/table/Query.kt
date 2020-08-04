@@ -21,6 +21,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
+import com.ealva.welite.db.DbConfig
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.PersistentType
@@ -28,11 +29,23 @@ import com.ealva.welite.db.type.Row
 import it.unimi.dsi.fastutil.objects.Object2IntMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import java.util.Arrays
+import kotlinx.coroutines.flow.flow as kflow
+import kotlin.sequences.sequence as ksequence
 
-interface Query {
-
+/**
+ * Interface with functions that perform a query. Query implements these functions as does
+ * [QueryBuilder]. A Query can be built and reused whereas QueryBuilder is providing a fast
+ * path call that builds the query and executes the call on the Query. Invoking these functions
+ * on the QueryBuilder makes the Query single use and it's not exposed to clients.
+ *
+ * Query functions perform an internal iteration and don't expose the underlying cursor. Instead
+ * implementations control the iteration and lifetime of the Cursor. Therefore, this does not
+ * implement the [Iterable] interface. Instead of iterable prefer the [flow] or [sequence]
+ * functions.
+ */
+interface PerformQuery {
   /**
    * Do any necessary [bindArgs], execute the query, and invoke [action] for each row in the
    * results.
@@ -40,16 +53,16 @@ interface Query {
   fun forEach(bindArgs: (ParamBindings) -> Unit = NO_BIND, action: (Cursor) -> Unit)
 
   /**
-   * Creates a flow, first doing any necessary [bindArgs], execute the query, and emit an
-   * entity created using [factory] for each row in the query results
+   * Creates a flow, first doing any necessary [bindArgs], execute the query, and emit a [T]
+   * created using [factory] for each row in the query results
    */
-  fun <T> entityFlow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Flow<T>
+  fun <T> flow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Flow<T>
 
   /**
-   * After any necessary [bindArgs] generate a sequence of [T] using [factory] for each Cursor
-   * row
+   * After any necessary [bindArgs] generate a [Sequence] of [T] using [factory] for each Cursor
+   * row and yields a [T] into the [Sequence]
    */
-  fun <T> sequence(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T): Sequence<T>
+  fun <T> sequence(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Sequence<T>
 
   /**
    * Do any necessary [bindArgs], execute the query, and return the value in the first column of the
@@ -58,11 +71,20 @@ interface Query {
   fun longForQuery(bindArgs: (ParamBindings) -> Unit = NO_BIND): Long
 
   /**
+   * Do any necessary [bindArgs], execute the query, and return the value in the first column of the
+   * first row.
+   */
+  fun stringForQuery(bindArgs: (ParamBindings) -> Unit = NO_BIND): String
+
+  /**
    * Do any necessary [bindArgs], execute the query for count similar to
    * ```COUNT(*) FROM ( $thisQuery )```, and return the value in the first column of the
    * first row
    */
   fun count(bindArgs: (ParamBindings) -> Unit = NO_BIND): Long
+}
+
+interface Query : PerformQuery {
 
   val sql: String
 
@@ -81,19 +103,18 @@ interface Query {
      * ```
      */
     internal operator fun invoke(
-      db: SQLiteDatabase,
+      dbConfig: DbConfig,
       fields: List<SqlTypeExpression<*>>,
       builder: SqlBuilder
     ): Query {
-      return QueryImpl(db, fields, builder)
+      return QueryImpl(dbConfig, fields, builder)
     }
-
   }
 }
 
 /** Take a subset of the [SelectFrom.resultColumns]  */
 fun SelectFrom.subset(vararg columns: SqlTypeExpression<*>): SelectFrom =
-  SelectFrom(columns.distinct(), sourceSet)
+  subset(columns.asList())
 
 /** Take a subset of the [SelectFrom.resultColumns]  */
 fun SelectFrom.subset(columns: List<SqlTypeExpression<*>>): SelectFrom =
@@ -102,7 +123,6 @@ fun SelectFrom.subset(columns: List<SqlTypeExpression<*>>): SelectFrom =
 private typealias ACursor = android.database.Cursor
 
 private val LOG by lazyLogger(Query::class)
-
 private const val UNBOUND = "Unbound"
 
 private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ParamBindings {
@@ -122,10 +142,11 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ParamBi
 }
 
 private class QueryImpl(
-  private val db: SQLiteDatabase,
+  private val dbConfig: DbConfig,
   private val fields: List<SqlTypeExpression<*>>,
   builder: SqlBuilder
 ) : Query {
+  private val db = dbConfig.db
   override val sql = builder.toString()
   private val queryArgs = QueryArgs(builder.types)
 
@@ -139,7 +160,7 @@ private class QueryImpl(
     }
   }
 
-  override fun <T> entityFlow(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T) = flow {
+  override fun <T> flow(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T) = kflow {
     bindArgs(queryArgs)
     DbCursorWrapper(
       db.select(sql, queryArgs.arguments),
@@ -147,12 +168,12 @@ private class QueryImpl(
     ).use { cursor ->
       while (cursor.moveToNext()) emit(factory(cursor))
     }
-  }
+  }.flowOn(dbConfig.dispatcher)
 
   override fun <T> sequence(
     bindArgs: (ParamBindings) -> Unit,
     factory: (Cursor) -> T
-  ): Sequence<T> = sequence {
+  ): Sequence<T> = ksequence {
     bindArgs(queryArgs)
     DbCursorWrapper(
       db.select(sql, queryArgs.arguments),
@@ -169,6 +190,14 @@ private class QueryImpl(
     return db.longForQuery(sql, queryArgs.arguments)
   }
 
+  override fun stringForQuery(bindArgs: (ParamBindings) -> Unit): String =
+    doStringForQuery(sql, bindArgs)
+
+  private fun doStringForQuery(sql: String, binding: (ParamBindings) -> Unit): String {
+    binding(queryArgs)
+    return db.stringForQuery(sql, queryArgs.arguments)
+  }
+
   override fun count(bindArgs: (ParamBindings) -> Unit): Long {
     val alreadyCountQuery = sql.trim().startsWith("SELECT COUNT(*)", ignoreCase = true)
     return doLongForQuery(if (alreadyCountQuery) sql else "SELECT COUNT(*) FROM ( $sql )", bindArgs)
@@ -176,7 +205,6 @@ private class QueryImpl(
 
   override val expectedArgCount: Int
     get() = queryArgs.paramCount
-
 }
 
 typealias ExpressionToIndexMap = Object2IntMap<SqlTypeExpression<*>>
@@ -244,6 +272,11 @@ internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String>? = nul
   return DatabaseUtils.longForQuery(this, sql, args)
 }
 
+internal fun SQLiteDatabase.stringForQuery(sql: String, args: Array<String>? = null): String {
+  if (Query.logQueryPlans) logQueryPlan(sql, args)
+  return DatabaseUtils.stringForQuery(this, sql, args)
+}
+
 fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>?) {
   LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, Arrays.toString(selectionArgs)) }
   explainQueryPlan(sql, selectionArgs).forEachIndexed { index, toLog ->
@@ -258,11 +291,13 @@ fun SQLiteDatabase.explainQueryPlan(
   return mutableListOf<String>().apply {
     rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { c ->
       while (c.moveToNext()) {
-        add(buildString {
-          for (i in 0 until c.columnCount) {
-            append(c.getColumnName(i)).append(":").append(c.getString(i)).append(", ")
+        add(
+          buildString {
+            for (i in 0 until c.columnCount) {
+              append(c.getColumnName(i)).append(":").append(c.getString(i)).append(", ")
+            }
           }
-        })
+        )
       }
     }
   }

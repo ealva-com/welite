@@ -60,4 +60,3 @@ class NotInSubQueryOp<T>(private val expr: Expression<T>, private val queryBuild
       append(")")
     }
 }
-

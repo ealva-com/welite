@@ -20,5 +20,4 @@ interface SqlExecutor {
   fun exec(sql: String, vararg bindArgs: Any)
 
   fun exec(sql: List<String>)
-
 }

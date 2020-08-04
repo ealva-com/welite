@@ -98,4 +98,3 @@ fun List<Migration>.findMigrationPath(startVersion: Int, endVersion: Int): List<
   }
   return if (found) result else null
 }
-

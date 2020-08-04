@@ -99,7 +99,7 @@ private class InsertStatementImpl<T : Table>(
   override val statement: SQLiteStatement = db.compileStatement(insertSeed.sql)
 
   override fun insert(bind: (ParamBindings) -> Unit): Long {
-    statement.clearBindings()  // bind arguments are all set to null
+    statement.clearBindings() // bind arguments are all set to null
     bind(this)
     return statement.executeInsert()
   }

@@ -669,4 +669,3 @@ val SQLITE_KEYWORDS: Set<String> by lazy {
 
 @Suppress("unused")
 val ANSI_SQL_AND_SQLITE_KEYWORDS by lazy { ANSI_SQL_2003_KEYWORDS + SQLITE_KEYWORDS }
-

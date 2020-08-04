@@ -45,7 +45,6 @@ object AlbumTable : TestTable() {
   init {
     uniqueIndex(albumName, artistName)
   }
-
 }
 
 object ArtistAlbumTable : TestTable() {
@@ -56,4 +55,3 @@ object ArtistAlbumTable : TestTable() {
     uniqueIndex(artistId, albumId)
   }
 }
-

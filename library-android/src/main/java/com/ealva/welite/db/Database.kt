@@ -263,6 +263,11 @@ interface Database {
 
 private val LOG by lazyLogger(Database::class)
 
+interface DbConfig {
+  val dispatcher: CoroutineDispatcher
+  val db: SQLiteDatabase
+}
+
 private class WeLiteDatabase(
   context: Context,
   fileName: String?,
@@ -270,9 +275,9 @@ private class WeLiteDatabase(
   tables: List<Table>,
   migrations: List<Migration>,
   requireMigration: Boolean,
-  private val dispatcher: CoroutineDispatcher,
+  override val dispatcher: CoroutineDispatcher,
   configure: DatabaseLifecycle.() -> Unit
-) : Database, AutoCloseable {
+) : Database, DbConfig, AutoCloseable {
   private var closed = false
 
   private val openHelper: OpenHelper =
@@ -306,14 +311,16 @@ private class WeLiteDatabase(
     work: suspend Transaction.() -> R
   ): R {
     check(!closed) { "Database has been closed" }
-    return when (val result = withContext(dispatcher) {
-      try {
-        assertNotUiThread() // client can set dispatcher, need to check
-        Success(beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { it.work() })
-      } catch (e: Exception) {
-        e.asUnsuccessful { "Exception during transaction" }
+    return when (
+      val result = withContext(dispatcher) {
+        try {
+          assertNotUiThread() // client can set dispatcher, need to check
+          Success(beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { it.work() })
+        } catch (e: Exception) {
+          e.asUnsuccessful { "Exception during transaction" }
+        }
       }
-    }) {
+    ) {
       is Success -> result.value
       is Unsuccessful -> throw result.exception
     }
@@ -329,16 +336,18 @@ private class WeLiteDatabase(
     work: suspend Queryable.() -> R
   ): R {
     check(!closed) { "Database has been closed" }
-    return when (val result = withContext(dispatcher) {
-      try {
-        assertNotUiThread() // client can set dispatcher, need to check
-        beginTransaction(exclusive, unitOfWork, true).use { txn ->
-          Success(txn.work().also { txn.setSuccessful() })
+    return when (
+      val result = withContext(dispatcher) {
+        try {
+          assertNotUiThread() // client can set dispatcher, need to check
+          beginTransaction(exclusive, unitOfWork, true).use { txn ->
+            Success(txn.work().also { txn.setSuccessful() })
+          }
+        } catch (e: Exception) {
+          e.asUnsuccessful { "Exception during query" }
         }
-      } catch (e: Exception) {
-        e.asUnsuccessful { "Exception during query" }
       }
-    }) {
+    ) {
       is Success -> result.value
       is Unsuccessful -> throw result.exception
     }
@@ -352,7 +361,7 @@ private class WeLiteDatabase(
     try {
       assertNotUiThread()
       check(!closed) { "Database has been closed" }
-      return TransactionInProgress(db).work()
+      return TransactionInProgress(this).work()
     } catch (e: Exception) {
       throw WeLiteException("Exception during ongoingTransaction", e)
     }
@@ -369,10 +378,10 @@ private class WeLiteDatabase(
     unitOfWork: String,
     throwIfNoChoice: Boolean
   ): Transaction {
-    return Transaction(db, exclusive, unitOfWork, throwIfNoChoice)
+    return Transaction(this, exclusive, unitOfWork, throwIfNoChoice)
   }
 
-  private val db: SQLiteDatabase
+  override val db: SQLiteDatabase
     get() = openHelper.writableDatabase
 
   private fun assertNotUiThread() {
@@ -479,9 +488,9 @@ private class OpenHelper private constructor(
         }
       }
       requireMigration -> throw IllegalStateException(
-        """A migration from $oldVersion to $newVersion was not found. Create one, or more,
-        | Migrations or do not require migration which results in the database being deleted
-        | and recreated.""".trimMargin()
+        "A migration from " + oldVersion + " to " + newVersion +
+          " was not found. Create one, or more, Migrations or do not require migration which " +
+          "results in the database being deleted and recreated."
       )
       else -> {
         LOG.w { it("No migration path found and migration not required, drop all and recreate") }
@@ -613,4 +622,3 @@ private class ConfigurationImpl(private val db: SQLiteDatabase) : DatabaseConfig
 
 class NeitherSuccessNorRollbackException(unitOfWork: String) :
   SQLiteException("Txn '$unitOfWork' was not set as successful nor rolled back")
-

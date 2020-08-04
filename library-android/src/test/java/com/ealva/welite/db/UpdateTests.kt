@@ -68,7 +68,7 @@ class UpdateTests {
       }
       transaction {
         ArtistTable.update { it[artistName] = goodName }
-          .where { artistName eq badName}
+          .where { artistName eq badName }
           .update()
 
         setSuccessful()

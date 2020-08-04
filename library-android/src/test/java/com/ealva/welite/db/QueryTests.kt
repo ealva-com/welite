@@ -72,7 +72,10 @@ class QueryTests {
           .where { MediaFileTable.id greater 0L }
           .build()
 
-        expect(query.sql).toBe("""SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM "MediaFile" WHERE "MediaFile"."_id" > 0""")
+        expect(query.sql).toBe(
+          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
+            """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
+        )
 
         var count = 0
         query.forEach { cursor ->
@@ -95,23 +98,29 @@ class QueryTests {
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
-        val song1Path = """/Music/Song1.mp3"""
+        val song1Path =
+          """/Music/Song1.mp3"""
         val uri1 = Uri.fromFile(File(song1Path))
-        val song2Path = """/Music/Song2.mp3"""
+        val song2Path =
+          """/Music/Song2.mp3"""
         val uri2 = Uri.fromFile(File(song2Path))
-        val song3Path = """/Music/Song3.mp3"""
+        val song3Path =
+          """/Music/Song3.mp3"""
         val uri3 = Uri.fromFile(File(song3Path))
         val ids1 = insertData("Led Zeppelin", "Houses of the Holy", uri1)
         val ids2 = insertData("Led Zeppelin", "Physical Graffiti", uri2)
         val ids3 = insertData("The Beatles", "Revolver", uri3)
 
-        expect(ids1.first).toBe(ids2.first)  // same artist ID, different albums
+        expect(ids1.first).toBe(ids2.first) // same artist ID, different albums
 
         val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
           .where { MediaFileTable.id greater 0L }
           .build()
 
-        expect(query.sql).toBe("""SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM "MediaFile" WHERE "MediaFile"."_id" > 0""")
+        expect(query.sql).toBe(
+          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
+            """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
+        )
 
         var haveQueryResults = false
         query.forEach { cursor ->
@@ -132,9 +141,11 @@ class QueryTests {
         }
         expect(haveQueryResults).toBe(true)
 
-        expect(ArtistAlbumTable.select(ArtistAlbumTable.id)
-          .where { ArtistAlbumTable.artistId eq ids1.first }
-          .count())
+        expect(
+          ArtistAlbumTable.select(ArtistAlbumTable.id)
+            .where { ArtistAlbumTable.artistId eq ids1.first }
+            .count()
+        )
           .toBe(2)
         setSuccessful()
       }
@@ -150,11 +161,14 @@ class QueryTests {
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
-        val song1Path = """/Music/Song1.mp3"""
+        val song1Path =
+          """/Music/Song1.mp3"""
         val uri1 = Uri.fromFile(File(song1Path))
-        val song2Path = """/Music/Song2.mp3"""
+        val song2Path =
+          """/Music/Song2.mp3"""
         val uri2 = Uri.fromFile(File(song2Path))
-        val song3Path = """/Music/Song3.mp3"""
+        val song3Path =
+          """/Music/Song3.mp3"""
         val uri3 = Uri.fromFile(File(song3Path))
         val ids1 = insertData("Led Zeppelin", "Houses of the Holy", uri1)
         val ids2 = insertData("Led Zeppelin", "Physical Graffiti", uri2)

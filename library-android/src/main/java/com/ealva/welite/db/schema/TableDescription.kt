@@ -68,7 +68,7 @@ data class ColumnMetadata(
         cursor.getInt(ID_COLUMN),
         cursor.getString(NAME_COLUMN),
         FieldType.fromType(cursor.getString(TYPE_COLUMN)),
-        cursor.getInt(NULLABLE_COLUMN) != NOT_NULLABLE,  // 1 = not nullable
+        cursor.getInt(NULLABLE_COLUMN) != NOT_NULLABLE, // 1 = not nullable
         if (cursor.isNull(DEF_VAL_COLUMN)) "NULL" else cursor.getString(DEF_VAL_COLUMN),
         cursor.getInt(PK_COLUMN)
       )

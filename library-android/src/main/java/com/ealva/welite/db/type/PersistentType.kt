@@ -63,19 +63,7 @@ interface PersistentType<T> {
    */
   fun columnValue(row: Row, columnIndex: Int): T?
 
-  fun notNullValueToDB(value: Any): Any = value
-
-  fun valueToString(value: Any?): String = when (value) {
-    null -> {
-      check(nullable) { "NULL in non-nullable column" }
-      "NULL"
-    }
-    DefaultValueMarker -> "DEFAULT"
-    is Iterable<*> -> value.joinToString(",", transform = ::valueToString)
-    else -> nonNullValueToString(value)
-  }
-
-  fun nonNullValueToString(value: Any): String = notNullValueToDB(value).toString()
+  fun valueToString(value: Any?): String
 }
 
 private val LOG by lazyLogger(PersistentType::class)
@@ -98,6 +86,20 @@ abstract class BasePersistentType<T>(
     check(nullable) { "Cannot assign null to non-nullable column" }
     bindNull(index)
   }
+
+  override fun valueToString(value: Any?): String = when (value) {
+    null -> {
+      check(nullable) { "NULL in non-nullable column" }
+      "NULL"
+    }
+    DefaultValueMarker -> "DEFAULT"
+    is Iterable<*> -> value.joinToString(",", transform = ::valueToString)
+    else -> nonNullValueToString(value)
+  }
+
+  protected open fun notNullValueToDB(value: Any): Any = value
+
+  protected open fun nonNullValueToString(value: Any): String = notNullValueToDB(value).toString()
 
   override fun toString(): String = sqlType
   override fun equals(other: Any?): Boolean {
@@ -123,7 +125,6 @@ abstract class BasePersistentType<T>(
   }
 
   abstract fun Row.readColumnValue(index: Int): T
-
 }
 
 abstract class BaseIntegerPersistentType<T> : BasePersistentType<T>("INTEGER") {
@@ -165,8 +166,9 @@ class UBytePersistentType : BaseIntegerPersistentType<UByte?>() {
     when (value) {
       is UByte -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toLong().toUByte().toLong())
-      is String -> value.toUByteOrNull()?.toLong()?.let { bindable.bind(index, it) }
-        ?: cannotConvert(value, "UByte")
+      is String ->
+        value.toUByteOrNull()?.toLong()?.let { bindable.bind(index, it) }
+          ?: cannotConvert(value, "UByte")
       else -> cannotConvert(value, "UByte")
     }
   }
@@ -197,8 +199,9 @@ class UShortPersistentType : BaseIntegerPersistentType<UShort?>() {
     when (value) {
       is UShort -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toLong().toUShort().toLong())
-      is String -> value.toUShortOrNull()?.toLong()?.let { bindable.bind(index, it) }
-        ?: cannotConvert(value, "UShort")
+      is String ->
+        value.toUShortOrNull()?.toLong()?.let { bindable.bind(index, it) }
+          ?: cannotConvert(value, "UShort")
       else -> cannotConvert(value, "UShort")
     }
   }
@@ -211,8 +214,9 @@ class IntegerPersistentType : BaseIntegerPersistentType<Int?>() {
     when (value) {
       is Int -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toInt().toLong())
-      is String -> value.toIntOrNull()?.toLong()?.let { bindable.bind(index, it) }
-        ?: cannotConvert(value, "Int")
+      is String ->
+        value.toIntOrNull()?.toLong()?.let { bindable.bind(index, it) }
+          ?: cannotConvert(value, "Int")
       else -> cannotConvert(value, "Int")
     }
   }
@@ -230,8 +234,9 @@ class UIntegerPersistentType : BaseIntegerPersistentType<UInt?>() {
     when (value) {
       is UInt -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toLong().toUInt().toLong())
-      is String -> value.toUIntOrNull()?.toLong()?.let { bindable.bind(index, it) }
-        ?: cannotConvert(value, "UInt")
+      is String ->
+        value.toUIntOrNull()?.toLong()?.let { bindable.bind(index, it) }
+          ?: cannotConvert(value, "UInt")
       else -> cannotConvert(value, "UInt")
     }
   }
@@ -275,8 +280,9 @@ class FloatPersistentType : BaseRealPersistentType<Float?>() {
     when (value) {
       is Float -> bindable.bind(index, value.toDouble())
       is Number -> bindable.bind(index, value.toDouble())
-      is String -> value.toFloatOrNull()?.toDouble()?.let { bindable.bind(index, it) }
-        ?: cannotConvert(value, "Float")
+      is String ->
+        value.toFloatOrNull()?.toDouble()?.let { bindable.bind(index, it) }
+          ?: cannotConvert(value, "Float")
       else -> cannotConvert(value, "Float")
     }
   }
@@ -289,8 +295,9 @@ class DoublePersistentType : BaseRealPersistentType<Double?>() {
     when (value) {
       is Double -> bindable.bind(index, value)
       is Number -> bindable.bind(index, value.toDouble())
-      is String -> value.toDoubleOrNull()?.let { bindable.bind(index, it) }
-        ?: cannotConvert(value, "Double")
+      is String ->
+        value.toDoubleOrNull()?.let { bindable.bind(index, it) }
+          ?: cannotConvert(value, "Double")
       else -> cannotConvert(value, "Double")
     }
   }
@@ -408,8 +415,9 @@ class UUIDPersistentType private constructor(
       require(value.matches(uuidRegexp)) { "String not in form of UUID" }
       UUID.fromString(value)
     }
-    is ByteArray -> ByteBuffer.wrap(value)
-      .let { UUID(it.long, it.long) }
+    is ByteArray ->
+      ByteBuffer.wrap(value)
+        .let { UUID(it.long, it.long) }
     else -> error("Unexpected value of type UUID: ${value.javaClass.canonicalName}")
   }
 
@@ -444,7 +452,9 @@ class EnumerationPersistentType<T : Enum<T>>(
   override fun notNullValueToDB(value: Any): Int = when (value) {
     is Int -> value
     is Enum<*> -> value.ordinal
-    else -> error("$value of type ${value::class.qualifiedName} is not valid for enum ${klass.qualifiedName}")
+    else -> error(
+      "$value of type ${value::class.qualifiedName} is not valid for enum ${klass.qualifiedName}"
+    )
   }
 
   override fun equals(other: Any?): Boolean {
@@ -495,7 +505,9 @@ class EnumerationNamePersistentType<T : Enum<T>>(
   override fun notNullValueToDB(value: Any): String = when (value) {
     is String -> value
     is Enum<*> -> value.name
-    else -> error("$value of ${value::class.qualifiedName} is not valid for enum ${klass.qualifiedName}")
+    else -> error(
+      "$value of ${value::class.qualifiedName} is not valid for enum ${klass.qualifiedName}"
+    )
   }
 
   override fun equals(other: Any?): Boolean {
@@ -522,10 +534,10 @@ class EnumerationNamePersistentType<T : Enum<T>>(
         require(klass.isInstance(value))
         bindable.bind(index, value.name)
       }
-      is String -> enums.firstOrNull { it.name == value }?.let { bindable.bind(index, it.name) }
-        ?: cannotConvert(value, klass.qualifiedName ?: klass.toString())
+      is String ->
+        enums.firstOrNull { it.name == value }?.let { bindable.bind(index, it.name) }
+          ?: cannotConvert(value, klass.qualifiedName ?: klass.toString())
       else -> cannotConvert(value, klass.qualifiedName ?: klass.toString())
-
     }
   }
 }

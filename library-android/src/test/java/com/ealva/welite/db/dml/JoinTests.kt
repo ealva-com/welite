@@ -69,7 +69,9 @@ class JoinTests {
     ) {
       query {
         (Person innerJoin Place).select(Person.name, Place.name)
-          .where { (Person.id eq "louis" or (Person.name eq "Rick") and (Person.cityId eq Place.id)) }
+          .where {
+            (Person.id eq "louis" or (Person.name eq "Rick") and (Person.cityId eq Place.id))
+          }
           .forEach {
             val userName = it[Person.name]
             val cityName = it[Place.name]
@@ -94,12 +96,12 @@ class JoinTests {
         (Person innerJoin Place)
           .select(Person.name, Place.name)
           .where { Place.name eq "Cleveland" or Person.cityId.isNull() }
-          .entityFlow { cursor: Cursor ->
+          .flow { cursor: Cursor ->
             Pair(cursor[Person.name], cursor[Place.name])
           }.singleOrNull()?.let { (user, city) ->
-            expect(user).toBe("Louis")
-            expect(city).toBe("Cleveland")
-          } ?: fail("Expected an entity from the flow")
+          expect(user).toBe("Louis")
+          expect(city).toBe("Cleveland")
+        } ?: fail("Expected an item from the flow")
       }
     }
   }
@@ -115,7 +117,7 @@ class JoinTests {
         (Place innerJoin Person innerJoin PersonInfo)
           .selectAll()
           .orderBy(Person.id)
-          .entityFlow { cursor ->
+          .flow { cursor ->
             Triple(cursor[Person.name], cursor[PersonInfo.post], cursor[Place.name])
           }.collectIndexed { index, (person, post, city) ->
             when (index) {
@@ -166,12 +168,12 @@ class JoinTests {
       query {
         (numbers innerJoin numberNameRel innerJoin names)
           .selectAll()
-          .entityFlow {
+          .flow {
             Pair(it[numbers.id], it[names.name])
           }.singleOrNull()?.let { (id, name) ->
-            expect(id).toBe(2)
-            expect(name).toBe("Francis")
-          } ?: fail("Expected only 1 entity")
+          expect(id).toBe(2)
+          expect(name).toBe("Francis")
+        } ?: fail("Expected only 1 item")
       }
     }
   }
@@ -187,7 +189,7 @@ class JoinTests {
         val allToSouthPoint: List<Pair<String, String>> = (Person crossJoin Place)
           .select(Person.name, Person.cityId, Place.name)
           .where { Place.name eq "South Point" }
-          .entityFlow {
+          .flow {
             it[Person.name] to it[Place.name]
           }
           .toList()
@@ -199,7 +201,7 @@ class JoinTests {
           "Nathalia",
           "Rick"
         )
-        expect(allToSouthPoint.all { it.second == "South Point"}).toBe(true)
+        expect(allToSouthPoint.all { it.second == "South Point" }).toBe(true)
         expect(allToSouthPoint.map { it.first }.toSet()).toBe(allUsers)
       }
     }
@@ -230,16 +232,15 @@ class JoinTests {
           barTable.insert {
             it[foo] = fooId
             it[foo2] = fooId
-            it[baz] = 5  // fk violation
+            it[baz] = 5 // fk violation
           }
 
           setSuccessful()
         }
 
         fail("insert should have failed with an foreign key violation")
-
       } catch (e: WeLiteException) {
-        throw requireNotNull(e.cause)  // rethrow underlying exception
+        throw requireNotNull(e.cause) // rethrow underlying exception
       }
     }
   }
@@ -255,16 +256,15 @@ class JoinTests {
       val person = Person
       query {
         val personAlias: Alias<Person> = person.alias("u2")
-        val pair = Join(person).join(personAlias, JoinType.LEFT, personAlias[person.id], stringLiteral("nathalia"))
+        val pair = Join(person)
+          .join(personAlias, JoinType.LEFT, personAlias[person.id], stringLiteral("nathalia"))
           .selectWhere { person.id eq "amber" }
-          .entityFlow { Pair(it[person.name], it[personAlias[person.name]]) }
-          .singleOrNull() ?: fail("expected single entity")
+          .flow { Pair(it[person.name], it[personAlias[person.name]]) }
+          .singleOrNull() ?: fail("expected single item")
 
         expect(pair.first).toBe("Amber")
         expect(pair.second).toBe("Nathalia")
       }
     }
   }
-
-
 }

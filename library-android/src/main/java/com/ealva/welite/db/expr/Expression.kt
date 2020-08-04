@@ -54,4 +54,3 @@ fun <T> Iterable<T>.appendTo(
   append: SqlBuilder.(T) -> Unit
 ): SqlBuilder =
   builder.apply { appendEach(separator, prefix, postfix, append) }
-

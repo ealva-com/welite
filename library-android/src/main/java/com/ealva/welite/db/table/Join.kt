@@ -195,7 +195,6 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
     private fun hasAdditionalConstraint() = additionalConstraint != null
 
     private fun hasConditions() = conditions.isNotEmpty()
-
   }
 
   companion object {
@@ -215,6 +214,5 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
         }
       }
     }
-
   }
 }

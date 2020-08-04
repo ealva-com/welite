@@ -108,7 +108,9 @@ data class ForeignKeyConstraint(
   internal val foreignKeyPart: String
     get() = buildString {
       append("CONSTRAINT ${fkName.value} ")
-      append("FOREIGN KEY (${parentColumn.value}) REFERENCES ${childTable.value}(${childColumn.value})")
+      append(
+        "FOREIGN KEY (${parentColumn.value}) REFERENCES ${childTable.value}(${childColumn.value})"
+      )
       if (onDelete != ForeignKeyAction.NO_ACTION) {
         append(" ON DELETE $onDelete")
       }
@@ -116,7 +118,6 @@ data class ForeignKeyConstraint(
         append(" ON UPDATE $onUpdate")
       }
     }
-
 }
 
 class CheckConstraint(
@@ -151,7 +152,8 @@ class CheckConstraint(
   }
 
   override fun toString(): String {
-    return "CheckConstraint(tableIdentity=$tableIdentity, checkName=$checkName, checkOp='$checkOp', checkPart='$checkPart')"
+    return "CheckConstraint(tableIdentity=" + tableIdentity + ", checkName=" + checkName +
+      ", checkOp='" + checkOp + "', checkPart='" + checkPart + "')"
   }
 
   companion object {

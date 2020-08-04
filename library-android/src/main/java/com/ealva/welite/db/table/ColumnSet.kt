@@ -54,4 +54,3 @@ interface ColumnSet {
 
   fun naturalJoin(joinTo: ColumnSet): Join
 }
-

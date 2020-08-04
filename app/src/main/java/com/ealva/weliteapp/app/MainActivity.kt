@@ -20,9 +20,11 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.ealva.ealvalog.e
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
+import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.bindString
 import com.ealva.welite.db.expr.like
@@ -31,6 +33,7 @@ import com.ealva.welite.db.table.Table
 import com.ealva.weliteapp.app.MediaFileTable.fileName
 import com.ealva.weliteapp.app.MediaFileTable.mediaTitle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
@@ -100,12 +103,26 @@ class MainActivity : AppCompatActivity() {
           Toast.makeText(this@MainActivity, "$count", Toast.LENGTH_SHORT).show()
         }
 
-        MediaFileTable.select(mediaTitle).where { mediaTitle like "%Title%" }.forEach {
-          val title = it[mediaTitle]
-          launch {
-            Toast.makeText(this@MainActivity, title, Toast.LENGTH_SHORT).show()
+        MediaFileTable
+          .select(mediaTitle)
+          .where { mediaTitle like "%Title%" }
+          .flow {
+            it[mediaTitle].also { title -> LOG.e { +it("flow %s", title) }  }
           }
-        }
+          .collect { title ->
+            LOG.e { +it("collect %s", title) }
+          }
+
+        MediaFileTable
+          .select(mediaTitle)
+          .where { mediaTitle like "%Title%" }
+          .sequence {
+            it[mediaTitle].also { title -> LOG.e { +it("factory %s", title) }  }
+          }
+          .forEach { title ->
+            LOG.e { +it("forEach %s", title) }
+          }
+
       }
     }
     LOG.i { it("Txn closed") }

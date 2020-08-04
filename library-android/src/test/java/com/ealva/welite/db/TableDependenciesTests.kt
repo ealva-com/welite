@@ -35,7 +35,6 @@ class TableDependenciesTests {
     val deps = TableDependencies(listOf(TableA, TableB, TableC))
     expect(deps.tablesAreCyclic()).toBe(true)
   }
-
 }
 
 object TableA : Table() {
@@ -48,7 +47,6 @@ object TableB : Table() {
   val id = long("_id") { primaryKey() }
   val bName = text("bName") { collateNoCase() }
   val tableCId = long("tablea_id") { references(TableA.id) }
-
 }
 
 object TableC : Table() {
@@ -56,5 +54,3 @@ object TableC : Table() {
   val cName = text("cName") { collateNoCase() }
   val tableCId = long("tableb_id") { references(TableB.id) }
 }
-
-

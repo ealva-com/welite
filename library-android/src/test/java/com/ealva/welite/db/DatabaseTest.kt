@@ -120,12 +120,25 @@ class DatabaseTest {
         SomeMediaTable.create(fakeExecutor)
         val statements = fakeExecutor.statements
         expect(statements).toHaveSize(2)
-        expect(statements[0]).toBe("""CREATE TABLE IF NOT EXISTS $tableIdentity (${SomeMediaTable.columns.joinToString { it.descriptionDdl() }})""")
-        expect(statements[1]).toBe("""CREATE INDEX IF NOT EXISTS "SomeMedia_MediaFileName_Real" ON "SomeMedia"("MediaFileName", "Real")""")
+        expect(statements[0]).toBe(
+          "CREATE TABLE IF NOT EXISTS " + tableIdentity + " (" +
+            SomeMediaTable.columns.joinToString { it.descriptionDdl() } + ")"
+        )
+        expect(statements[1]).toBe(
+          "CREATE INDEX IF NOT EXISTS \"SomeMedia_MediaFileName_Real\" ON " +
+            "\"SomeMedia\"(\"MediaFileName\", \"Real\")"
+        )
 
         val tableSql = SomeMediaTable.sql
-        expect(tableSql.table.first()).toBe("""CREATE TABLE $tableIdentity ("_id" INTEGER NOT NULL PRIMARY KEY, "MediaUri" TEXT NOT NULL UNIQUE, "MediaFileName" TEXT NOT NULL COLLATE NOCASE, "MediaTitle" TEXT NOT NULL COLLATE NOCASE DEFAULT 'Title', "Real" REAL NOT NULL, "Blob" BLOB)""")
-        expect(tableSql.indices.first()).toBe("""CREATE INDEX "SomeMedia_MediaFileName_Real" ON "SomeMedia"("MediaFileName", "Real")""")
+        expect(tableSql.table.first()).toBe(
+          "CREATE TABLE $tableIdentity (\"_id\" INTEGER NOT NULL PRIMARY KEY, \"MediaUri\" TEXT " +
+            "NOT NULL UNIQUE, \"MediaFileName\" TEXT NOT NULL COLLATE NOCASE, \"MediaTitle\" " +
+            "TEXT NOT NULL COLLATE NOCASE DEFAULT 'Title', \"Real\" REAL NOT NULL, \"Blob\" BLOB)"
+        )
+        expect(tableSql.indices.first()).toBe(
+          "CREATE INDEX \"SomeMedia_MediaFileName_Real\" ON " +
+            "\"SomeMedia\"(\"MediaFileName\", \"Real\")"
+        )
       }
     }
   }
@@ -189,30 +202,58 @@ class DatabaseTest {
 
         ArtistTable.sql.let { artistSql ->
           expect(artistSql.table).toHaveSize(1)
-          expect(artistSql.table[0]).toBe("""CREATE TABLE "Artist" ("_id" INTEGER NOT NULL PRIMARY KEY, "ArtistName" TEXT NOT NULL COLLATE NOCASE)""")
+          expect(artistSql.table[0]).toBe(
+            """CREATE TABLE "Artist" ("_id" INTEGER NOT NULL PRIMARY KEY, """ +
+              """"ArtistName" TEXT NOT NULL COLLATE NOCASE)"""
+          )
           expect(artistSql.indices).toHaveSize(1)
-          expect(artistSql.indices[0]).toBe("""CREATE UNIQUE INDEX "Artist_ArtistName_unique" ON "Artist"("ArtistName")""")
+          expect(artistSql.indices[0]).toBe(
+            """CREATE UNIQUE INDEX "Artist_ArtistName_unique" ON "Artist"("ArtistName")"""
+          )
         }
 
         AlbumTable.sql.let { albumSql ->
           expect(albumSql.table).toHaveSize(1)
-          expect(albumSql.table[0]).toBe("""CREATE TABLE "Album" ("_id" INTEGER NOT NULL PRIMARY KEY, "AlbumName" TEXT NOT NULL COLLATE NOCASE, "ArtistName" TEXT NOT NULL COLLATE NOCASE)""")
+          expect(albumSql.table[0]).toBe(
+            """CREATE TABLE "Album" ("_id" INTEGER NOT NULL PRIMARY KEY, "AlbumName" TEXT """ +
+              """NOT NULL COLLATE NOCASE, "ArtistName" TEXT NOT NULL COLLATE NOCASE)"""
+          )
           expect(albumSql.indices).toHaveSize(1)
-          expect(albumSql.indices[0]).toBe("""CREATE UNIQUE INDEX "Album_AlbumName_ArtistName_unique" ON "Album"("AlbumName", "ArtistName")""")
+          expect(albumSql.indices[0]).toBe(
+            """CREATE UNIQUE INDEX "Album_AlbumName_ArtistName_unique" ON""" +
+              """ "Album"("AlbumName", "ArtistName")"""
+          )
         }
 
         ArtistAlbumTable.sql.let { artistAlbum ->
           expect(artistAlbum.table).toHaveSize(1)
-          expect(artistAlbum.table[0]).toBe("""CREATE TABLE "ArtistAlbum" ("_id" INTEGER NOT NULL PRIMARY KEY, "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id") ON DELETE CASCADE, CONSTRAINT "fk_ArtistAlbum_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id") ON DELETE CASCADE)""")
+          expect(artistAlbum.table[0]).toBe(
+            """CREATE TABLE "ArtistAlbum" ("_id" INTEGER NOT NULL PRIMARY KEY,""" +
+              """ "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT""" +
+              """ "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES""" +
+              """ "Artist"("_id") ON DELETE CASCADE, CONSTRAINT "fk_ArtistAlbum_AlbumId__id"""" +
+              """ FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id") ON DELETE CASCADE)"""
+          )
           expect(artistAlbum.indices).toHaveSize(3)
-          expect(artistAlbum.indices[0]).toBe("""CREATE INDEX "ArtistAlbum_ArtistId" ON "ArtistAlbum"("ArtistId")""")
-          expect(artistAlbum.indices[1]).toBe("""CREATE INDEX "ArtistAlbum_AlbumId" ON "ArtistAlbum"("AlbumId")""")
-          expect(artistAlbum.indices[2]).toBe("""CREATE UNIQUE INDEX "ArtistAlbum_ArtistId_AlbumId_unique" ON "ArtistAlbum"("ArtistId", "AlbumId")""")
+          expect(artistAlbum.indices[0])
+            .toBe("""CREATE INDEX "ArtistAlbum_ArtistId" ON "ArtistAlbum"("ArtistId")""")
+          expect(artistAlbum.indices[1])
+            .toBe("""CREATE INDEX "ArtistAlbum_AlbumId" ON "ArtistAlbum"("AlbumId")""")
+          expect(artistAlbum.indices[2]).toBe(
+            """CREATE UNIQUE INDEX "ArtistAlbum_ArtistId_AlbumId_unique" ON""" +
+              """ "ArtistAlbum"("ArtistId", "AlbumId")"""
+          )
         }
 
         MediaFileTable.sql.let { mediaSql ->
           expect(mediaSql.table).toHaveSize(1)
-          expect(mediaSql.table[0]).toBe("""CREATE TABLE "MediaFile" ("_id" INTEGER NOT NULL PRIMARY KEY, "MediaUri" TEXT NOT NULL UNIQUE, "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT "fk_MediaFile_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id"), CONSTRAINT "fk_MediaFile_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id"))""")
+          expect(mediaSql.table[0]).toBe(
+            """CREATE TABLE "MediaFile" ("_id" INTEGER NOT NULL PRIMARY KEY, "MediaUri"""" +
+              """ TEXT NOT NULL UNIQUE, "ArtistId" INTEGER NOT NULL, "AlbumId"""" +
+              """ INTEGER NOT NULL, CONSTRAINT "fk_MediaFile_ArtistId__id" FOREIGN KEY""" +
+              """ ("ArtistId") REFERENCES "Artist"("_id"), CONSTRAINT""" +
+              """ "fk_MediaFile_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id"))"""
+          )
           expect(mediaSql.indices).toHaveSize(0)
         }
       }
@@ -224,4 +265,3 @@ private fun StringMatcher.matches(regex: Regex) {
   val value = actual ?: fail("Expected to match value against $regex but was null")
   if (!value.matches(regex)) fail("Expected `$value` to match $regex")
 }
-
