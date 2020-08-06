@@ -38,6 +38,7 @@ object Versions {
   const val COROUTINES = "1.3.7"
   const val COROUTINES_TEST = "1.3.6"
   const val KOIN = "2.1.4"
+  const val DESUGAR = "1.0.9"
 }
 
 object BuildPluginsVersion {
@@ -84,4 +85,8 @@ object AndroidTestingLib {
   const val ANDROIDX_TEST_EXT_JUNIT = "androidx.test.ext:junit:${Versions.ANDROIDX_TEST_EXT}"
   const val ANDROIDX_TEST_CORE = "androidx.test:core:${Versions.ANDROIDX_TEST}"
   const val ESPRESSO_CORE = "androidx.test.espresso:espresso-core:${Versions.ESPRESSO_CORE}"
+}
+
+object ToolsLib {
+  const val DESUGARING = "com.android.tools:desugar_jdk_libs:${Versions.DESUGAR}"
 }

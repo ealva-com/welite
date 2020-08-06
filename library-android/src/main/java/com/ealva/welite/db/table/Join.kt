@@ -38,37 +38,25 @@ fun <C1 : ColumnSet, C2 : ColumnSet> C1.innerJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
-): Join = join(
-  otherTable,
-  JoinType.INNER, onColumn(), otherColumn(otherTable)
-)
+): Join = join(otherTable, JoinType.INNER, onColumn(), otherColumn(otherTable))
 
 fun <C1 : ColumnSet, C2 : ColumnSet> C1.leftJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
-): Join = join(
-  otherTable,
-  JoinType.LEFT, onColumn(), otherTable.otherColumn()
-)
+): Join = join(otherTable, JoinType.LEFT, onColumn(), otherTable.otherColumn())
 
 fun <C1 : ColumnSet, C2 : ColumnSet> C1.crossJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
-): Join = join(
-  otherTable,
-  JoinType.CROSS, onColumn(), otherTable.otherColumn()
-)
+): Join = join(otherTable, JoinType.CROSS, onColumn(), otherTable.otherColumn())
 
 fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
-): Join = join(
-  otherTable,
-  JoinType.NATURAL, onColumn(), otherTable.otherColumn()
-)
+): Join = join(otherTable, JoinType.NATURAL, onColumn(), otherTable.otherColumn())
 
 class Join(val columnSet: ColumnSet) : ColumnSet {
 
@@ -119,7 +107,7 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
   override infix fun innerJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.INNER)
   override infix fun leftJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.LEFT)
   override infix fun crossJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.CROSS)
-  override fun naturalJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.NATURAL)
+  override infix fun naturalJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.NATURAL)
 
   private fun doJoin(
     otherTable: ColumnSet,
@@ -161,8 +149,6 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
       .map { a_pk -> a_pk to b.columns.filter { it.refersTo == a_pk } }
       .filter { it.second.isNotEmpty() }
       .takeIf { it.isNotEmpty() }
-
-  fun alreadyInJoin(table: Table): Boolean = _joinParts.any { it.joinPart == table }
 
   internal class JoinPart(
     val joinType: JoinType,

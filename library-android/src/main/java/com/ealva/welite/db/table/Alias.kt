@@ -47,6 +47,7 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
   private fun <T : Any?> Column<T>.clone(): Column<T> =
     Column(this@Alias, name, persistentType)
 
+  @Suppress("unused")
   fun <R> originalColumn(column: Column<R>): Column<R>? {
     @Suppress("UNCHECKED_CAST")
     return if (column.inTable(this))
@@ -138,15 +139,14 @@ class QueryBuilderAlias(
     thisColumn: Expression<*>?,
     otherColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join =
-    Join(
-      this,
-      joinTo,
-      joinType,
-      thisColumn,
-      otherColumn,
-      additionalConstraint
-    )
+  ): Join = Join(
+    this,
+    joinTo,
+    joinType,
+    thisColumn,
+    otherColumn,
+    additionalConstraint
+  )
 
   override infix fun innerJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.INNER)
   override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
@@ -173,6 +173,7 @@ fun Join.joinQuery(
   return join(qAlias, joinType, additionalConstraint = { on(qAlias) })
 }
 
+@Suppress("unused")
 fun Table.joinQuery(
   on: (QueryBuilderAlias) -> Op<Boolean>,
   joinType: JoinType = JoinType.INNER,
@@ -186,6 +187,7 @@ private fun Join.lastPartAsQueryBuilderAlias() = joinParts.map {
   it.joinPart as? QueryBuilderAlias
 }.firstOrNull()
 
+@Suppress("unused")
 fun <T : Any> wrapAsExpression(query: QueryBuilder) = object : BaseExpression<T?>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
     append("(")

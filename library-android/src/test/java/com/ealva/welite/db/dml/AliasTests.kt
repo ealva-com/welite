@@ -77,6 +77,7 @@ class AliasTests {
     }
   }
 
+  @ExperimentalUnsignedTypes
   @Test
   fun `test joinQuery subquery alias expr alias query`() = coroutineRule.runBlockingTest {
     withTestDatabase(
@@ -86,16 +87,15 @@ class AliasTests {
     ) {
       query {
         val expAlias: SqlTypeExpressionAlias<String> = Person.name.max().alias("pxa")
-        val usersAlias: QueryBuilderAlias = Person.select(Person.cityId, expAlias)
+        val personAlias: QueryBuilderAlias = Person.select(Person.cityId, expAlias)
           .all()
           .groupBy(Person.cityId)
-          .alias("uqa")
+          .alias("pqa")
 
         expect(
-          Join(Person)
-            .join(usersAlias, JoinType.INNER, Person.name, usersAlias[expAlias])
+          Person.join(personAlias, JoinType.INNER, Person.name, personAlias[expAlias])
             .selectAll()
-            .sequence { usersAlias[expAlias] }
+            .sequence { personAlias[expAlias] }
             .count()
         ).toBe(3)
       }

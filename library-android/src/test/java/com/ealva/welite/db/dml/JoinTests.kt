@@ -28,7 +28,6 @@ import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.expr.stringLiteral
 import com.ealva.welite.db.table.Alias
 import com.ealva.welite.db.table.Cursor
-import com.ealva.welite.db.table.Join
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.alias
@@ -68,7 +67,8 @@ class JoinTests {
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
-        (Person innerJoin Place).select(Person.name, Place.name)
+        Person.innerJoin(Place)
+          .select(Person.name, Place.name)
           .where {
             (Person.id eq "louis" or (Person.name eq "Rick") and (Person.cityId eq Place.id))
           }
@@ -93,15 +93,15 @@ class JoinTests {
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
-        (Person innerJoin Place)
+        Person.innerJoin(Place)
           .select(Person.name, Place.name)
           .where { Place.name eq "Cleveland" or Person.cityId.isNull() }
-          .flow { cursor: Cursor ->
-            Pair(cursor[Person.name], cursor[Place.name])
-          }.singleOrNull()?.let { (user, city) ->
-          expect(user).toBe("Louis")
-          expect(city).toBe("Cleveland")
-        } ?: fail("Expected an item from the flow")
+          .flow { cursor: Cursor -> Pair(cursor[Person.name], cursor[Place.name]) }
+          .singleOrNull()
+          ?.let { (user, city) ->
+            expect(user).toBe("Louis")
+            expect(city).toBe("Cleveland")
+          } ?: fail("Expected an item from the flow")
       }
     }
   }
@@ -140,8 +140,12 @@ class JoinTests {
 
   @Test
   fun `test join with relationship table`() = coroutineRule.runBlockingTest {
-    val numbers = object : Table() { val id = long("id") { primaryKey() } }
-    val names = object : Table() { val name = text("name") { primaryKey() } }
+    val numbers = object : Table() {
+      val id = long("id") { primaryKey() }
+    }
+    val names = object : Table() {
+      val name = text("name") { primaryKey() }
+    }
     val numberNameRel = object : Table() {
       @Suppress("unused")
       val id = long("id") { primaryKey() }
@@ -168,12 +172,12 @@ class JoinTests {
       query {
         (numbers innerJoin numberNameRel innerJoin names)
           .selectAll()
-          .flow {
-            Pair(it[numbers.id], it[names.name])
-          }.singleOrNull()?.let { (id, name) ->
-          expect(id).toBe(2)
-          expect(name).toBe("Francis")
-        } ?: fail("Expected only 1 item")
+          .flow { Pair(it[numbers.id], it[names.name]) }
+          .singleOrNull()
+          ?.let { (id, name) ->
+            expect(id).toBe(2)
+            expect(name).toBe("Francis")
+          } ?: fail("Expected only 1 item")
       }
     }
   }
@@ -208,7 +212,7 @@ class JoinTests {
   }
 
   @Test(expected = SQLiteException::class)
-  fun `test join multiple references`() = coroutineRule.runBlockingTest {
+  fun `test join multiple references fk violation`() = coroutineRule.runBlockingTest {
     val fooTable = object : Table("foo") {
       val baz = long("baz") { uniqueIndex() }
     }
@@ -256,9 +260,12 @@ class JoinTests {
       val person = Person
       query {
         val personAlias: Alias<Person> = person.alias("u2")
-        val pair = Join(person)
-          .join(personAlias, JoinType.LEFT, personAlias[person.id], stringLiteral("nathalia"))
-          .selectWhere { person.id eq "amber" }
+        val pair = Person.join(
+          personAlias,
+          JoinType.LEFT,
+          stringLiteral("nathalia"),
+          personAlias[person.id]
+        ).selectWhere { person.id eq "amber" }
           .flow { Pair(it[person.name], it[personAlias[person.name]]) }
           .singleOrNull() ?: fail("expected single item")
 

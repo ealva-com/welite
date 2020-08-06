@@ -22,7 +22,6 @@ plugins {
   id("com.android.library") version BuildPluginsVersion.AGP apply false
   kotlin("android") version BuildPluginsVersion.KOTLIN apply false
   id("io.gitlab.arturbosch.detekt") version BuildPluginsVersion.DETEKT
-  id("org.jlleitschuh.gradle.ktlint") version BuildPluginsVersion.KTLINT
   id("com.github.ben-manes.versions") version BuildPluginsVersion.VERSIONS_PLUGIN
 }
 
@@ -39,23 +38,6 @@ allprojects {
 subprojects {
   apply {
     plugin("io.gitlab.arturbosch.detekt")
-    plugin("org.jlleitschuh.gradle.ktlint")
-  }
-
-  ktlint {
-    verbose.set(true)
-    outputToConsole.set(true)
-    coloredOutput.set(true)
-    debug.set(false)
-    version.set(Versions.KTLINT)
-    android.set(true)
-    ignoreFailures.set(false)
-    enableExperimentalRules.set(false)
-    filter {
-      exclude("**/generated/**")
-      include("**/kotlin/**")
-      include("**/java/**")
-    }
   }
 
   detekt {

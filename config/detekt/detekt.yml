@@ -79,7 +79,7 @@ complexity:
     active: true
     threshold: 600
   LongMethod:
-    active: true
+    active: false
     threshold: 60
   LongParameterList:
     active: false
@@ -239,10 +239,10 @@ formatting:
     active: false
     autoCorrect: true
   Indentation:
-    active: false
+    active: true
     autoCorrect: false
     indentSize: 2
-    continuationIndentSize: 2
+    continuationIndentSize: 4
   MaximumLineLength:
     active: true
     maxLineLength: 120
@@ -250,7 +250,7 @@ formatting:
     active: true
     autoCorrect: true
   MultiLineIfElse:
-    active: true
+    active: false
     autoCorrect: true
   NoBlankLineBeforeRbrace:
     active: true
@@ -293,7 +293,7 @@ formatting:
   ParameterListWrapping:
     active: true
     autoCorrect: true
-    indentSize: 4
+    indentSize: 2
   SpacingAroundColon:
     active: true
     autoCorrect: true

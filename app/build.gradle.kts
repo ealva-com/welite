@@ -33,6 +33,7 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
+    coreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
@@ -53,9 +54,9 @@ android {
 }
 
 dependencies {
-  implementation(kotlin("stdlib-jdk8"))
-
   implementation(project(":library-android"))
+  coreLibraryDesugaring(ToolsLib.DESUGARING)
+  implementation(kotlin("stdlib-jdk8"))
 
   implementation(SupportLibs.ANDROIDX_APPCOMPAT)
   implementation(SupportLibs.ANDROIDX_CONSTRAINT_LAYOUT)
