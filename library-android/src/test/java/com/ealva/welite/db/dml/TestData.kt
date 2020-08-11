@@ -34,8 +34,8 @@ object Person : Table() {
   override val primaryKey = PrimaryKey(id)
 }
 
-object PersonInfo : Table() {
-  val userId: Column<String> = references("person_id", Person.id)
+object Review : Table() {
+  val userId: Column<String> = reference("person_id", Person.id)
   val post: Column<String> = text("post")
   val value: Column<Int> = integer("value")
 }
@@ -93,25 +93,25 @@ suspend fun withTestDatabase(
         it[cityId] = null
       }
 
-      PersonInfo.insert {
+      Review.insert {
         it[userId] = "nathalia"
         it[post] = "Nathalia is here"
         it[value] = 2
       }
 
-      PersonInfo.insert {
+      Review.insert {
         it[userId] = "nathalia"
         it[post] = "Where's McDreamy"
         it[value] = 3
       }
 
-      PersonInfo.insert {
+      Review.insert {
         it[userId] = "mike"
         it[post] = "Mike's post"
         it[value] = 4
       }
 
-      PersonInfo.insert {
+      Review.insert {
         it[userId] = "rick"
         it[post] = "Sup Dude"
         it[value] = 5

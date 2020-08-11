@@ -18,19 +18,19 @@
 
 package com.ealva.welite.db.expr
 
-import com.ealva.welite.db.type.BooleanPersistentType
-import com.ealva.welite.db.type.BytePersistentType
-import com.ealva.welite.db.type.DoublePersistentType
-import com.ealva.welite.db.type.FloatPersistentType
-import com.ealva.welite.db.type.IntegerPersistentType
-import com.ealva.welite.db.type.LongPersistentType
+import com.ealva.welite.db.type.NullableBooleanPersistentType
+import com.ealva.welite.db.type.NullableBytePersistentType
+import com.ealva.welite.db.type.NullableDoublePersistentType
+import com.ealva.welite.db.type.NullableFloatPersistentType
+import com.ealva.welite.db.type.NullableIntegerPersistentType
+import com.ealva.welite.db.type.NullableLongPersistentType
+import com.ealva.welite.db.type.NullableShortPersistentType
+import com.ealva.welite.db.type.NullableStringPersistentType
+import com.ealva.welite.db.type.NullableUIntegerPersistentType
+import com.ealva.welite.db.type.NullableULongPersistentType
+import com.ealva.welite.db.type.NullableUShortPersistentType
 import com.ealva.welite.db.type.PersistentType
-import com.ealva.welite.db.type.ShortPersistentType
-import com.ealva.welite.db.type.StringPersistentType
 import com.ealva.welite.db.type.UBytePersistentType
-import com.ealva.welite.db.type.UIntegerPersistentType
-import com.ealva.welite.db.type.ULongPersistentType
-import com.ealva.welite.db.type.UShortPersistentType
 import com.ealva.welite.db.type.toStatementString
 
 abstract class Op<T> : BaseExpression<T>() {
@@ -134,46 +134,49 @@ class IsNotNullOp(private val expr: Expression<*>) : Op<Boolean>() {
 class LikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "LIKE")
 class NotLikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "NOT LIKE")
 
-fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, BytePersistentType())
-fun shortParam(value: Short): Expression<Short> = QueryParameter(value, ShortPersistentType())
-fun intParam(value: Int): Expression<Int> = QueryParameter(value, IntegerPersistentType())
-fun longParam(value: Long): Expression<Long> = QueryParameter(value, LongPersistentType())
-fun floatParam(value: Float): Expression<Float> = QueryParameter(value, FloatPersistentType())
-fun doubleParam(value: Double): Expression<Double> = QueryParameter(value, DoublePersistentType())
-fun stringParam(value: String): Expression<String> = QueryParameter(value, StringPersistentType())
+fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, NullableBytePersistentType())
+fun shortParam(value: Short): Expression<Short> = QueryParameter(
+  value,
+  NullableShortPersistentType()
+)
+
+fun intParam(value: Int): QueryParameter<Int> =
+  QueryParameter(value, NullableIntegerPersistentType())
+
+fun longParam(value: Long): Expression<Long> = QueryParameter(value, NullableLongPersistentType())
+fun floatParam(value: Float): Expression<Float> =
+  QueryParameter(value, NullableFloatPersistentType())
+
+fun doubleParam(value: Double): Expression<Double> =
+  QueryParameter(value, NullableDoublePersistentType())
+
+fun stringParam(value: String): Expression<String> =
+  QueryParameter(value, NullableStringPersistentType())
+
 fun booleanParam(value: Boolean): Expression<Boolean> =
-  QueryParameter(value, BooleanPersistentType())
+  QueryParameter(value, NullableBooleanPersistentType())
 
 @ExperimentalUnsignedTypes
 fun ubyteParam(value: UByte): Expression<UByte> = QueryParameter(value, UBytePersistentType())
 
 @ExperimentalUnsignedTypes
-fun ushortParam(value: UShort): Expression<UShort> = QueryParameter(value, UShortPersistentType())
+fun ushortParam(value: UShort): Expression<UShort> =
+  QueryParameter(value, NullableUShortPersistentType())
 
 @ExperimentalUnsignedTypes
-fun uintParam(value: UInt): Expression<UInt> = QueryParameter(value, UIntegerPersistentType())
+fun uintParam(value: UInt): Expression<UInt> =
+  QueryParameter(value, NullableUIntegerPersistentType())
 
 @ExperimentalUnsignedTypes
-fun ulongParam(value: ULong): Expression<ULong> = QueryParameter(value, ULongPersistentType())
+fun ulongParam(value: ULong): Expression<ULong> =
+  QueryParameter(value, NullableULongPersistentType())
 
-class BindableParameter<T>(private val sqlType: PersistentType<T?>) : BaseExpression<T>() {
+class BindableParameter<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       registerBindable(sqlType)
     }
 }
-
-fun bindBoolean(): Expression<Boolean> = BindableParameter(BooleanPersistentType())
-fun bindByte(): Expression<Byte> = BindableParameter(BytePersistentType())
-fun bindShort(): Expression<Short> = BindableParameter(ShortPersistentType())
-fun bindInt(): Expression<Int> = BindableParameter(IntegerPersistentType())
-fun bindLong(): Expression<Long> = BindableParameter(LongPersistentType())
-fun bindFloat(): Expression<Float> = BindableParameter(FloatPersistentType())
-fun bindDouble(): Expression<Double> = BindableParameter(DoublePersistentType())
-fun bindString(): BindableParameter<String> = BindableParameter(StringPersistentType())
-
-@ExperimentalUnsignedTypes
-fun ulong(): Expression<ULong> = BindableParameter(ULongPersistentType())
 
 private fun SqlBuilder.appendExpression(expr: Expression<*>) {
   if (expr is CompoundBooleanOp<*>) {
@@ -183,8 +186,10 @@ private fun SqlBuilder.appendExpression(expr: Expression<*>) {
   } else append(expr)
 }
 
-class QueryParameter<T>(private val value: T, private val sqlType: PersistentType<T?>) :
-  BaseExpression<T>() {
+class QueryParameter<T>(
+  private val value: T,
+  private val sqlType: PersistentType<T>
+) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder { registerArgument(sqlType, value) }
 }

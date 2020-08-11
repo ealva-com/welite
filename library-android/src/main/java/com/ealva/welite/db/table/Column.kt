@@ -17,6 +17,7 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.BaseSqlTypeExpression
+import com.ealva.welite.db.expr.BindableParameter
 import com.ealva.welite.db.expr.Count
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
@@ -27,6 +28,11 @@ import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.type.PersistentType
 import java.util.Comparator
 
+/**
+ * Represents a column in a table with the type [T]. [T] is the Kotlin type and not necessarily
+ * what is stored in the database. To be stored in the DB some types may be converted to
+ * a String, stored in a Blob, stored as a wider numerical type, etc.
+ */
 interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
   val name: String
 
@@ -77,6 +83,9 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
    */
   fun descriptionDdl(): String
 
+  /**
+   * True if this column is in [table]
+   */
   fun inTable(table: Table): Boolean
 
   /**
@@ -84,11 +93,20 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
    */
   fun markPrimaryKey()
 
+  /**
+   * Create a Bindable parameter for this column to represent that the actual value will be bound
+   * into the statement/query when executed.
+   */
+  fun bindParam() = BindableParameter(persistentType)
+
   companion object {
+    /**
+     * Create a column implementation using syntax similar to a constructor
+     */
     operator fun <T> invoke(
       table: Table,
       name: String,
-      persistentType: PersistentType<T?>,
+      persistentType: PersistentType<T>,
       initialConstraints: List<ColumnConstraint> = emptyList(),
       addTo: (Column<T>) -> Unit = {},
       block: ColumnConstraints<T>.() -> Unit = {}
@@ -107,7 +125,7 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
 private class ColumnImpl<T>(
   override val table: Table,
   override val name: String,
-  override val persistentType: PersistentType<T?>,
+  override val persistentType: PersistentType<T>,
   initialConstraints: List<ColumnConstraint>
 ) : BaseSqlTypeExpression<T>(), Column<T>, ColumnConstraints<T> {
 

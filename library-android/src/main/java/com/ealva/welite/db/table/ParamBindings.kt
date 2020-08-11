@@ -25,7 +25,7 @@ interface ParamBindings {
    * Set the bind parameter at [index] to [value]. The underlying persistent type object handles any
    * necessary conversions of value or throws on error
    */
-  operator fun set(index: Int, value: Any?)
+  operator fun <T> set(index: Int, value: T?)
 
   /**
    * Total number of bindable parameters

@@ -24,22 +24,25 @@ import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.Database
-import com.ealva.welite.db.expr.bindString
 import com.ealva.welite.db.expr.like
+import com.ealva.welite.db.javatime.localDate
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.weliteapp.app.MediaFileTable.fileName
+import com.ealva.weliteapp.app.MediaFileTable.localDate
 import com.ealva.weliteapp.app.MediaFileTable.mediaTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
+import java.time.LocalDate
 
 object MediaFileTable : Table() {
   val id = integer("_id") { primaryKey() }
   val mediaUri = text("MediaUri") { unique() }
   val fileName = text("MediaFileName") { collateNoCase() }
   val mediaTitle = text("MediaTitle") { collateNoCase() }
+  val localDate = localDate("local_date")
 }
 
 private val LOG by lazyLogger(MainActivity::class)
@@ -62,9 +65,10 @@ class MainActivity : AppCompatActivity() {
 
         // ignore conflict because we're calling this during onCreate
         val insertStatement = MediaFileTable.insertValues(OnConflict.Ignore) {
-          it[mediaUri] = bindString()
-          it[fileName] = bindString()
-          it[mediaTitle] = bindString()
+          it[mediaUri].bindParam()
+          it[fileName].bindParam()
+          it[mediaTitle].bindParam()
+          it[localDate] = LocalDate.now()
         }
 
         insertStatement.insert {
@@ -86,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         MediaFileTable.insert(OnConflict.Ignore, { it[0] = "/dir/Music/fourth.mp3" }) {
-          it[mediaUri] = bindString()
+          it[mediaUri].bindParam()
           it[fileName] = "fourth"
           it[mediaTitle] = "Fourth Title"
         }
@@ -99,17 +103,17 @@ class MainActivity : AppCompatActivity() {
         launch(Dispatchers.Main) { LOG.i { it("count=%d", count) } }
 
         MediaFileTable
-          .select(mediaTitle)
+          .select(mediaTitle, localDate)
           .where { mediaTitle like "%Title%" }
-          .flow { it[mediaTitle].also { title -> LOG.i { +it("flow %s", title) } } }
-          .collect { title -> LOG.i { +it("collect %s", title) } }
+          .flow { Pair(it[mediaTitle], it[localDate]) }
+          .collect { (title, date) -> LOG.i { +it("collect %s %s", title, date) } }
 
         MediaFileTable
-          .select(mediaTitle)
+          .select(mediaTitle, localDate)
           .where { mediaTitle like "%Title%" }
-          .sequence { it[mediaTitle].also { title -> LOG.i { +it("factory %s", title) } } }
-          .forEach { title ->
-            LOG.i { +it("forEach %s", title) }
+          .sequence { Pair(it[mediaTitle], it[localDate]) }
+          .forEach { (title, date) ->
+            LOG.i { +it("forEach %s %s", title, date) }
           }
       }
     }

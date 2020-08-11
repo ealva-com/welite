@@ -26,12 +26,10 @@ import com.ealva.welite.db.dml.Specialty.description
 import com.ealva.welite.db.dml.Visits.patientName
 import com.ealva.welite.db.dml.Visits.visitDate
 import com.ealva.welite.db.expr.SortOrder
-import com.ealva.welite.db.expr.bindInt
-import com.ealva.welite.db.expr.bindString
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.sharedtest.CoroutineRule
-import com.ealva.welite.sharedtest.TestTable
-import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.test.common.CoroutineRule
+import com.ealva.welite.test.common.TestTable
+import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -175,9 +173,9 @@ class NaturalJoinTests {
   private suspend fun Database.insertData() {
     transaction {
       val doctorInsert = Doctors.insertValues {
-        it[doctorId] = bindInt()
-        it[doctorName] = bindString()
-        it[degree] = bindString()
+        it[doctorId].bindParam()
+        it[doctorName].bindParam()
+        it[degree].bindParam()
       }
       doctorInsert.insert {
         it[0] = 210
@@ -201,9 +199,9 @@ class NaturalJoinTests {
       }
 
       val splInsert = Specialty.insertValues {
-        it[splId] = bindInt()
-        it[description] = bindString()
-        it[doctorId] = bindInt()
+        it[splId].bindParam()
+        it[description].bindParam()
+        it[doctorId].bindParam()
       }
       splInsert.insert {
         it[0] = 1
@@ -227,9 +225,9 @@ class NaturalJoinTests {
       }
 
       val visitInsert = Visits.insertValues {
-        it[doctorId] = bindInt()
-        it[patientName] = bindString()
-        it[visitDate] = bindString()
+        it[doctorId].bindParam()
+        it[patientName].bindParam()
+        it[visitDate].bindParam()
       }
       visitInsert.insert {
         it[0] = 210

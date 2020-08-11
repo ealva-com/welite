@@ -13,9 +13,10 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/library-android" />
+            <option value="$PROJECT_DIR$/library-javatime" />
+            <option value="$PROJECT_DIR$/library-test" />
           </set>
         </option>
-        <option name="useQualifiedModuleNames" value="true" />
       </GradleProjectSettings>
     </option>
   </component>

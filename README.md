@@ -50,7 +50,7 @@ object MediaFileTable : TestTable() {
 
 object ArtistTable : TestTable() {
   val id = long("_id") { primaryKey() }
-  val comment = nullableText("comment")
+  val comment = optText("comment")
   val artistName = text("ArtistName") { collateNoCase().uniqueIndex() }
 }
 
@@ -176,7 +176,12 @@ SELECT "Person"."id", "Person"."name", "Person"."place_id", "uqa"."place_id"
   ) uqa ON "Person"."name" = uqa.pxa
 */
 ```
-In the above example the Person table is joined to an query alias of itself, and the join further uses an alias expression. The sequence generator yields the Person's name and a count of sequence items is taken. Examining the generated SQL gives some idea of what is happening in the lower layers of the library.
+In the above example the Person table is joined to a query alias of itself, and the join further uses an alias expression. The sequence generator yields the Person's name and a count of sequence items is taken. Examining the generated SQL gives some idea of what is happening in the lower layers of the library.
+### Modules
+  * library-android - contains the core classes of WeLite
+  * library-javatime - contains column types for LocalDate and LocalDateTime. Requires dependency on "com.android.tools:desugar_jdk_libs:${Versions.DESUGAR}" and coreLibraryDesugaringEnabled = true in compile options
+  * library-test - contains shared test classes, won't be published
+  * app - skeleton application demos configuration, Koin injection, simple database creation, table population, query, etc.   
 ### Why this library?
 
 For WeLite the desire is to push all SQL down into the library and treat it as an implementation detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe tables and relationships, and then use the resulting objects for CRUD work, keeping SQL and SQLite API hidden (objects versus SQL string handling). 

@@ -28,8 +28,8 @@ import com.ealva.welite.db.table.SqlTypeExpressionAlias
 import com.ealva.welite.db.table.alias
 import com.ealva.welite.db.table.joinQuery
 import com.ealva.welite.db.table.lastQueryBuilderAlias
-import com.ealva.welite.sharedtest.CoroutineRule
-import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.test.common.CoroutineRule
+import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
@@ -56,7 +56,7 @@ class AliasTests {
   fun `test joinQuery with expression alias`() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
@@ -82,7 +82,7 @@ class AliasTests {
   fun `test joinQuery subquery alias expr alias query`() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
@@ -106,7 +106,7 @@ class AliasTests {
   fun `test query alias table`() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {

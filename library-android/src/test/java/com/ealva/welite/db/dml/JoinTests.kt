@@ -31,8 +31,8 @@ import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.alias
-import com.ealva.welite.sharedtest.CoroutineRule
-import com.ealva.welite.sharedtest.runBlockingTest
+import com.ealva.welite.test.common.CoroutineRule
+import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,6 +45,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.ealva.welite.db.dml.withTestDatabase as withTestDatabase1
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -61,9 +62,9 @@ class JoinTests {
 
   @Test
   fun `test join inner join`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withTestDatabase1(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
@@ -87,9 +88,9 @@ class JoinTests {
 
   @Test
   fun `test fk join`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withTestDatabase1(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
@@ -108,17 +109,17 @@ class JoinTests {
 
   @Test
   fun `test join with order by`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withTestDatabase1(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
-        (Place innerJoin Person innerJoin PersonInfo)
+        (Place innerJoin Person innerJoin Review)
           .selectAll()
           .orderBy(Person.id)
           .flow { cursor ->
-            Triple(cursor[Person.name], cursor[PersonInfo.post], cursor[Place.name])
+            Triple(cursor[Person.name], cursor[Review.post], cursor[Place.name])
           }.collectIndexed { index, (person, post, city) ->
             when (index) {
               0 -> {
@@ -149,11 +150,11 @@ class JoinTests {
     val numberNameRel = object : Table() {
       @Suppress("unused")
       val id = long("id") { primaryKey() }
-      val numberId = references("id_ref", numbers.id)
-      val name = references("name_ref", names.name)
+      val numberId = reference("id_ref", numbers.id)
+      val name = reference("name_ref", names.name)
     }
 
-    withTestDatabase(
+    withTestDatabase1(
       context = appCtx,
       tables = listOf(numbers, names, numberNameRel),
       testDispatcher = coroutineRule.testDispatcher
@@ -184,9 +185,9 @@ class JoinTests {
 
   @Test
   fun `test cross join`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withTestDatabase1(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       query {
@@ -217,12 +218,12 @@ class JoinTests {
       val baz = long("baz") { uniqueIndex() }
     }
     val barTable = object : Table("bar") {
-      val foo = references("foo", fooTable.baz)
-      val foo2 = references("foo2", fooTable.baz)
-      val baz = references("baz", fooTable.baz)
+      val foo = reference("foo", fooTable.baz)
+      val foo2 = reference("foo2", fooTable.baz)
+      val baz = reference("baz", fooTable.baz)
     }
 
-    withTestDatabase(
+    withTestDatabase1(
       context = appCtx,
       tables = listOf(fooTable, barTable),
       testDispatcher = coroutineRule.testDispatcher
@@ -252,9 +253,9 @@ class JoinTests {
   @ExperimentalUnsignedTypes
   @Test
   fun `test join with alias`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withTestDatabase1(
       context = appCtx,
-      tables = listOf(Place, Person, PersonInfo),
+      tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       val person = Person

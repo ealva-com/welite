@@ -18,9 +18,9 @@
 
 package com.ealva.welite.db.expr
 
-import com.ealva.welite.db.type.LongPersistentType
+import com.ealva.welite.db.type.NullableLongPersistentType
 import com.ealva.welite.db.type.PersistentType
-import com.ealva.welite.db.type.StringPersistentType
+import com.ealva.welite.db.type.NullableStringPersistentType
 
 infix fun <T> SqlTypeExpression<T>.eq(t: T): Op<Boolean> =
   if (t == null) isNull() else EqOp(this, param(t))
@@ -183,14 +183,14 @@ fun Expression<String>.groupConcat(separator: String? = null) = GroupConcat(this
 
 fun SqlTypeExpression<*>.count(): Count = Count(this)
 
-fun <R> Expression<*>.cast(persistentType: PersistentType<R?>): SqlTypeExpression<R> =
+fun <R> Expression<*>.cast(persistentType: PersistentType<R>): SqlTypeExpression<R> =
   Cast(this, persistentType)
 
 fun <T : Any> SqlTypeExpression<T>.function(name: String): CustomFunction<T> =
   CustomFunction(name, persistentType, listOf(this))
 
 fun customStringFunction(name: String, vararg params: Expression<*>): CustomFunction<String> =
-  CustomFunction(name, StringPersistentType(), params.toList())
+  CustomFunction(name, NullableStringPersistentType(), params.toList())
 
 fun customLongFunction(name: String, vararg params: Expression<*>): CustomFunction<Long> =
-  CustomFunction(name, LongPersistentType(), params.toList())
+  CustomFunction(name, NullableLongPersistentType(), params.toList())

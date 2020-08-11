@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 version = LibraryAndroidCoordinates.LIBRARY_VERSION
 
 plugins {
@@ -72,6 +71,9 @@ android {
 
   packagingOptions {
     exclude("META-INF/*")
+    exclude("META-INF/LICENSE.txt")
+    exclude("META-INF/license.txt")
+    exclude("META-INF/javolution*")
   }
 
   kotlinOptions {
@@ -99,7 +101,9 @@ dependencies {
   testImplementation(ThirdParty.EALVALOG)
   testImplementation(ThirdParty.EALVALOG_CORE)
   testImplementation(ThirdParty.EALVALOG_ANDROID)
+  testImplementation(project(":library-test"))
 
+  androidTestImplementation(project(":library-test"))
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER)
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT)
   androidTestImplementation(TestingLib.EXPECT)

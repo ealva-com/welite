@@ -33,18 +33,18 @@ interface Cursor {
    * Get value [T], which is possibly null, of the column [expression] at the current
    * cursor [position]
    */
-  fun <T : Any> getOptional(expression: SqlTypeExpression<T>): T?
+  fun <T> getOptional(expression: SqlTypeExpression<T>): T?
 
   /**
    * Get value [T] of the column [expression] at the current cursor [position]
    * @throws IllegalStateException if the value in the DB is null
    */
-  operator fun <T : Any> get(expression: SqlTypeExpression<T>): T
+  operator fun <T> get(expression: SqlTypeExpression<T>): T
 
   /**
    * Get value [T] of the column [expression] at the current cursor [position] or return
    * [defaultValue] if the value in the DB is null
    */
-  operator fun <T : Any> get(expression: SqlTypeExpression<T>, defaultValue: T): T =
+  operator fun <T> get(expression: SqlTypeExpression<T>, defaultValue: T): T =
     getOptional(expression) ?: defaultValue
 }

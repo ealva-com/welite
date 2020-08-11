@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.sharedtest
+package com.ealva.welite.test.common
 
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table

@@ -30,6 +30,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
+import java.lang.IllegalStateException
 import java.util.Arrays
 import kotlin.sequences.sequence as ksequence
 import kotlinx.coroutines.flow.flow as kflow
@@ -128,7 +129,7 @@ private const val UNBOUND = "Unbound"
 private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ParamBindings {
   private val args = Array(argTypes.size) { UNBOUND }
 
-  override operator fun set(index: Int, value: Any?) {
+  override operator fun <T> set(index: Int, value: T?) {
     require(index in argTypes.indices) { "Arg types $index out of bounds ${argTypes.indices}" }
     require(index in args.indices) { "Args $index out of bounds ${args.indices}" }
     args[index] = argTypes[index].valueToString(value)
@@ -228,13 +229,14 @@ private class DbCursorWrapper(
 
   fun moveToNext(): Boolean = cursor.moveToNext()
 
-  private fun <T : Any> SqlTypeExpression<T>.index() = exprMap.getInt(this)
+  private fun <T> SqlTypeExpression<T>.index() = exprMap.getInt(this)
 
-  override fun <T : Any> getOptional(expression: SqlTypeExpression<T>): T? =
+  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
     expression.persistentType.columnValue(this, expression.index())
 
-  override fun <T : Any> get(expression: SqlTypeExpression<T>): T =
-    checkNotNull(getOptional(expression)) { unexpectedNullMessage(expression) }
+  override fun <T> get(expression: SqlTypeExpression<T>): T {
+    return getOptional(expression) ?: throw IllegalStateException(unexpectedNullMessage(expression))
+  }
 
   override fun getBlob(columnIndex: Int): ByteArray = cursor.getBlob(columnIndex)
 
@@ -256,10 +258,10 @@ private class DbCursorWrapper(
 
   override fun close() = cursor.close()
 
-  private fun <T : Any> unexpectedNullMessage(expression: SqlTypeExpression<T>) =
+  private fun <T> unexpectedNullMessage(expression: SqlTypeExpression<T>) =
     "Unexpected NULL reading column=${expression.name()} of expected type ${expression.sqlType}"
 
-  private fun <T : Any> SqlTypeExpression<T>.name() = cursor.getColumnName(index())
+  private fun <T> SqlTypeExpression<T>.name() = cursor.getColumnName(index())
 }
 
 internal fun SQLiteDatabase.select(sql: String, args: Array<String>? = null): ACursor {

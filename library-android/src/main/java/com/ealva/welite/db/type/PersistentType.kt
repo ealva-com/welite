@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("UNCHECKED_CAST")
+
 package com.ealva.welite.db.type
 
 import com.ealva.ealvalog.e
@@ -28,14 +30,25 @@ internal object DefaultValueMarker {
   override fun toString(): String = "DEFAULT"
 }
 
+fun Any.cannotConvert(convertedType: String) {
+  throw IllegalArgumentException(
+    "Cannot convert type:${this::class.qualifiedName} value:$this to $convertedType"
+  )
+}
+
 /**
  * A PersistentType represents a type that decouples the Kotlin type from the underlying
  * database type. The generic parameter [T] is the Kotlin type, while the underlying type is
  * described by [sqlType], eg. INTEGER, TEXT, REAL... Instances are able to convert between the
  * types, bind values in a [Bindable] and read values from a [Row].
  *
- * Also [nullable],the concept of "nullability", resides here: does the underlying database column
- * allow null values.
+ * Also [nullable],the concept of "nullability", does the underlying database column
+ * allow null values, resides here.
+ *
+ * The type parameter [T] is not specified as bound by Any to allow for null. Since by default
+ * [T] is nullable, implementations support null but subclasses can tighten the contract to
+ * remove nullability. Instantiating a "Nullable????" class with a non-null type provides the
+ * non-null version. Typically the compiler can infer the type given the left hand side.
  *
  * The standard SQLite SQL types are supported along with some simple 1 column translation,
  * such as UUID and Enumerations (by ordinal or name).
@@ -64,6 +77,8 @@ interface PersistentType<T> {
   fun columnValue(row: Row, columnIndex: Int): T?
 
   fun valueToString(value: Any?): String
+
+  fun asNullable(): PersistentType<T?>
 }
 
 private val LOG by lazyLogger(PersistentType::class)
@@ -72,7 +87,7 @@ private const val NULL_NOT_ALLOWED_MSG: String = "Value at index=%d null but col
 abstract class BasePersistentType<T>(
   override val sqlType: String,
   override var nullable: Boolean = true
-) : PersistentType<T?> {
+) : PersistentType<T> {
   override val isIntegerType: Boolean
     get() = false
 
@@ -125,6 +140,12 @@ abstract class BasePersistentType<T>(
   }
 
   abstract fun Row.readColumnValue(index: Int): T
+
+  override fun asNullable(): PersistentType<T?> {
+    return clone().apply { nullable = true }
+  }
+
+  abstract fun clone(): PersistentType<T?>
 }
 
 abstract class BaseIntegerPersistentType<T> : BasePersistentType<T>("INTEGER") {
@@ -134,62 +155,69 @@ abstract class BaseIntegerPersistentType<T> : BasePersistentType<T>("INTEGER") {
 
 abstract class BaseRealPersistentType<T> : BasePersistentType<T>("REAL")
 
-private fun cannotConvert(value: Any, convertedType: String) {
-  throw IllegalArgumentException(
-    "Cannot convert type:${value::class.qualifiedName} value:$value to $convertedType"
-  )
-}
-
-class BytePersistentType : BaseIntegerPersistentType<Byte?>() {
-
-  override fun Row.readColumnValue(index: Int) = getShort(index).toByte()
-
+open class NullableBytePersistentType<T : Byte?> : BaseIntegerPersistentType<T>() {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
       is Byte -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toByte().toLong())
       is String -> bindable.bind(index, value.toByte().toLong())
-      else -> cannotConvert(value, "Byte")
+      else -> value.cannotConvert("Byte")
     }
+  }
+
+  override fun Row.readColumnValue(index: Int) = getShort(index).toByte() as T
+
+  override fun clone(): PersistentType<T?> {
+    return NullableBytePersistentType()
   }
 }
 
 @ExperimentalUnsignedTypes
-class UBytePersistentType : BaseIntegerPersistentType<UByte?>() {
-  override fun Row.readColumnValue(index: Int) = getLong(index).toUByte()
-
-  override fun notNullValueToDB(value: Any): Any {
-    return if (value is UByte) value.toLong() else value
-  }
-
+open class NullableUBytePersistentType<T : UByte?> : BaseIntegerPersistentType<T>() {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
       is UByte -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toLong().toUByte().toLong())
       is String ->
         value.toUByteOrNull()?.toLong()?.let { bindable.bind(index, it) }
-          ?: cannotConvert(value, "UByte")
-      else -> cannotConvert(value, "UByte")
+          ?: value.cannotConvert("UByte")
+      else -> value.cannotConvert("UByte")
     }
+  }
+
+  override fun Row.readColumnValue(index: Int) = getLong(index).toUByte() as T
+
+  override fun notNullValueToDB(value: Any): Any {
+    return if (value is UByte) value.toLong() else value
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableUBytePersistentType()
   }
 }
 
-class ShortPersistentType : BaseIntegerPersistentType<Short?>() {
-  override fun Row.readColumnValue(index: Int) = getShort(index)
+@ExperimentalUnsignedTypes class UBytePersistentType : NullableUBytePersistentType<UByte>()
+
+open class NullableShortPersistentType<T : Short?> : BaseIntegerPersistentType<T>() {
+  override fun Row.readColumnValue(index: Int) = getShort(index) as T
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
       is Short -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toShort().toLong())
       is String -> bindable.bind(index, value.toShort().toLong())
-      else -> cannotConvert(value, "Short")
+      else -> value.cannotConvert("Short")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableShortPersistentType()
   }
 }
 
 @ExperimentalUnsignedTypes
-class UShortPersistentType : BaseIntegerPersistentType<UShort?>() {
-  override fun Row.readColumnValue(index: Int) = getLong(index).toUShort()
+open class NullableUShortPersistentType<T : UShort?> : BaseIntegerPersistentType<T>() {
+  override fun Row.readColumnValue(index: Int) = getLong(index).toUShort() as T
 
   override fun notNullValueToDB(value: Any): Any {
     return if (value is UShort) value.toLong() else value
@@ -201,14 +229,18 @@ class UShortPersistentType : BaseIntegerPersistentType<UShort?>() {
       is Number -> bindable.bind(index, value.toLong().toUShort().toLong())
       is String ->
         value.toUShortOrNull()?.toLong()?.let { bindable.bind(index, it) }
-          ?: cannotConvert(value, "UShort")
-      else -> cannotConvert(value, "UShort")
+          ?: value.cannotConvert("UShort")
+      else -> value.cannotConvert("UShort")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableUShortPersistentType()
   }
 }
 
-class IntegerPersistentType : BaseIntegerPersistentType<Int?>() {
-  override fun Row.readColumnValue(index: Int) = getInt(index)
+open class NullableIntegerPersistentType<T : Int?> : BaseIntegerPersistentType<T>() {
+  override fun Row.readColumnValue(index: Int) = getInt(index) as T
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
@@ -216,15 +248,19 @@ class IntegerPersistentType : BaseIntegerPersistentType<Int?>() {
       is Number -> bindable.bind(index, value.toInt().toLong())
       is String ->
         value.toIntOrNull()?.toLong()?.let { bindable.bind(index, it) }
-          ?: cannotConvert(value, "Int")
-      else -> cannotConvert(value, "Int")
+          ?: value.cannotConvert("Int")
+      else -> value.cannotConvert("Int")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableIntegerPersistentType()
   }
 }
 
 @ExperimentalUnsignedTypes
-class UIntegerPersistentType : BaseIntegerPersistentType<UInt?>() {
-  override fun Row.readColumnValue(index: Int) = getLong(index).toUInt()
+open class NullableUIntegerPersistentType<T : UInt?> : BaseIntegerPersistentType<T>() {
+  override fun Row.readColumnValue(index: Int) = getLong(index).toUInt() as T
 
   override fun notNullValueToDB(value: Any): Any {
     return if (value is UInt) value.toLong() else value
@@ -236,28 +272,37 @@ class UIntegerPersistentType : BaseIntegerPersistentType<UInt?>() {
       is Number -> bindable.bind(index, value.toLong().toUInt().toLong())
       is String ->
         value.toUIntOrNull()?.toLong()?.let { bindable.bind(index, it) }
-          ?: cannotConvert(value, "UInt")
-      else -> cannotConvert(value, "UInt")
+          ?: value.cannotConvert("UInt")
+      else -> value.cannotConvert("UInt")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableUIntegerPersistentType()
   }
 }
 
-class LongPersistentType : BaseIntegerPersistentType<Long?>() {
-  override fun Row.readColumnValue(index: Int) = getLong(index)
+open class NullableLongPersistentType<T : Long?> : BaseIntegerPersistentType<T>() {
+  override fun Row.readColumnValue(index: Int) = getLong(index) as T
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
       is Long -> bindable.bind(index, value)
       is Number -> bindable.bind(index, value.toLong())
       is String -> bindable.bind(index, value.toLong())
-      else -> cannotConvert(value, "Long")
+      else -> value.cannotConvert("Long")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableLongPersistentType()
   }
 }
 
 @ExperimentalUnsignedTypes
-class ULongPersistentType : BaseIntegerPersistentType<ULong?>() {
-  override fun Row.readColumnValue(index: Int) = getLong(index).toULong()
+open class NullableULongPersistentType<T : ULong?> : BaseIntegerPersistentType<T>() {
+  @Suppress("UNCHECKED_CAST")
+  override fun Row.readColumnValue(index: Int) = getLong(index).toULong() as T
 
   override fun notNullValueToDB(value: Any): Any {
     return if (value is ULong) value.toLong() else value
@@ -268,13 +313,18 @@ class ULongPersistentType : BaseIntegerPersistentType<ULong?>() {
       is ULong -> bindable.bind(index, value.toLong())
       is Number -> bindable.bind(index, value.toLong().toULong().toLong())
       is String -> bindable.bind(index, value.toULong().toLong())
-      else -> cannotConvert(value, "ULong")
+      else -> value.cannotConvert("ULong")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableULongPersistentType()
   }
 }
 
-class FloatPersistentType : BaseRealPersistentType<Float?>() {
-  override fun Row.readColumnValue(index: Int) = getFloat(index)
+open class NullableFloatPersistentType<T : Float?> : BaseRealPersistentType<T>() {
+  @Suppress("UNCHECKED_CAST")
+  override fun Row.readColumnValue(index: Int) = getFloat(index) as T
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
@@ -282,14 +332,19 @@ class FloatPersistentType : BaseRealPersistentType<Float?>() {
       is Number -> bindable.bind(index, value.toDouble())
       is String ->
         value.toFloatOrNull()?.toDouble()?.let { bindable.bind(index, it) }
-          ?: cannotConvert(value, "Float")
-      else -> cannotConvert(value, "Float")
+          ?: value.cannotConvert("Float")
+      else -> value.cannotConvert("Float")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableFloatPersistentType()
   }
 }
 
-class DoublePersistentType : BaseRealPersistentType<Double?>() {
-  override fun Row.readColumnValue(index: Int) = getDouble(index)
+open class NullableDoublePersistentType<T : Double?> : BaseRealPersistentType<T>() {
+  @Suppress("UNCHECKED_CAST")
+  override fun Row.readColumnValue(index: Int) = getDouble(index) as T
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
@@ -297,14 +352,19 @@ class DoublePersistentType : BaseRealPersistentType<Double?>() {
       is Number -> bindable.bind(index, value.toDouble())
       is String ->
         value.toDoubleOrNull()?.let { bindable.bind(index, it) }
-          ?: cannotConvert(value, "Double")
-      else -> cannotConvert(value, "Double")
+          ?: value.cannotConvert("Double")
+      else -> value.cannotConvert("Double")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableDoublePersistentType()
   }
 }
 
-open class StringPersistentType : BasePersistentType<String?>("TEXT") {
-  override fun Row.readColumnValue(index: Int) = getString(index)
+open class NullableStringPersistentType<T : String?> : BasePersistentType<T>("TEXT") {
+  @Suppress("UNCHECKED_CAST")
+  override fun Row.readColumnValue(index: Int) = getString(index) as T
 
   override fun nonNullValueToString(value: Any): String = buildString {
     append('\'')
@@ -332,12 +392,14 @@ open class StringPersistentType : BasePersistentType<String?>("TEXT") {
     '\r' to "\\r",
     '\n' to "\\n"
   )
+
+  override fun clone(): PersistentType<T?> {
+    return NullableStringPersistentType()
+  }
 }
 
-open class BlobPersistentType : BasePersistentType<Blob?>("BLOB") {
-  override fun Row.readColumnValue(index: Int): Blob {
-    return Blob(getBlob(index))
-  }
+open class NullableBlobPersistentType<T : Blob?> : BasePersistentType<T>("BLOB") {
+  override fun Row.readColumnValue(index: Int): T = Blob(getBlob(index)) as T
 
   override fun notNullValueToDB(value: Any): ByteArray {
     return (value as Blob).bytes
@@ -350,16 +412,20 @@ open class BlobPersistentType : BasePersistentType<Blob?>("BLOB") {
       is Blob -> bindable.bind(index, value.bytes)
       is ByteArray -> bindable.bind(index, value)
       is InputStream -> bindable.bind(index, value.readBytes())
-      else -> cannotConvert(value, "String")
+      else -> value.cannotConvert("String")
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableBlobPersistentType()
   }
 }
 
 private const val SIZE_UUID = 16
 
-class UUIDPersistentType private constructor(
-  private val blobColumn: BlobPersistentType
-) : BasePersistentType<UUID?>(blobColumn.sqlType) {
+open class NullableUUIDPersistentType<T : UUID?> internal constructor(
+  private val blobType: NullableBlobPersistentType<Blob>
+) : BasePersistentType<T>(blobType.sqlType) {
   private fun ByteBuffer.getUuid(): UUID {
     return UUID(long, long)
   }
@@ -382,24 +448,22 @@ class UUIDPersistentType private constructor(
 
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
-      is UUID -> blobColumn.bind(
+      is UUID -> blobType.bind(
         bindable,
         index,
         value.toBlob()
       )
-      is String -> blobColumn.bind(bindable, index, UUID.fromString(value).toBlob())
-      is ByteArray -> blobColumn.bind(
+      is String -> blobType.bind(bindable, index, UUID.fromString(value).toBlob())
+      is ByteArray -> blobType.bind(
         bindable,
         index,
         ByteBuffer.wrap(value).let { UUID(it.long, it.long) }.toBlob()
       )
-      else -> cannotConvert(value, "UUID")
+      else -> value.cannotConvert("UUID")
     }
   }
 
-  override fun Row.readColumnValue(index: Int): UUID {
-    return ByteBuffer.wrap(getBlob(index)).getUuid()
-  }
+  override fun Row.readColumnValue(index: Int) = ByteBuffer.wrap(getBlob(index)).getUuid() as T
 
   override fun notNullValueToDB(value: Any): Any {
     val uuid = valueToUUID(value)
@@ -424,12 +488,17 @@ class UUIDPersistentType private constructor(
   }
 
   companion object {
-    operator fun invoke(): UUIDPersistentType = UUIDPersistentType(BlobPersistentType())
+    operator fun <T : UUID?> invoke(): NullableUUIDPersistentType<T> =
+      NullableUUIDPersistentType(NullableBlobPersistentType())
+  }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableUUIDPersistentType()
   }
 }
 
-class BooleanPersistentType : BaseIntegerPersistentType<Boolean?>() {
-  override fun Row.readColumnValue(index: Int): Boolean = getInt(index) != 0
+open class NullableBooleanPersistentType<T : Boolean?> : BaseIntegerPersistentType<T>() {
+  override fun Row.readColumnValue(index: Int) = (getInt(index) != 0) as T
   override fun nonNullValueToString(value: Any): String = (value as Boolean).toStatementString()
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     when (value) {
@@ -438,11 +507,18 @@ class BooleanPersistentType : BaseIntegerPersistentType<Boolean?>() {
       else -> bindable.bind(index, value.toString().toBoolean().toLong())
     }
   }
+
+  override fun clone(): PersistentType<T?> {
+    return NullableBooleanPersistentType()
+  }
 }
 
+/**
+ * No nullable version of this, use a special enum member to denote "absent" or "unknown"
+ */
 class EnumerationPersistentType<T : Enum<T>>(
   private val klass: KClass<T>
-) : BasePersistentType<T?>("INTEGER") {
+) : BasePersistentType<T>("INTEGER") {
 
   private val enums = checkNotNull(klass.java.enumConstants) { "${klass.qualifiedName} not Enum" }
 
@@ -487,16 +563,23 @@ class EnumerationPersistentType<T : Enum<T>>(
         val ordinal = value.toInt()
         if (ordinal in enums.indices) {
           bindable.bind(index, ordinal.toLong())
-        } else cannotConvert(value, klass.qualifiedName ?: klass.toString())
+        } else value.cannotConvert(klass.qualifiedName ?: klass.toString())
       }
-      else -> cannotConvert(value, klass.qualifiedName ?: klass.toString())
+      else -> value.cannotConvert(klass.qualifiedName ?: klass.toString())
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    throw NotImplementedError("This type ${javaClass.canonicalName} is not nullable")
   }
 }
 
+/**
+ * No nullable version of this, use a special enum member to denote "absent" or "unknown"
+ */
 class EnumerationNamePersistentType<T : Enum<T>>(
   val klass: KClass<T>
-) : BasePersistentType<T?>("TEXT") {
+) : BasePersistentType<T>("TEXT") {
   private val enums = checkNotNull(klass.java.enumConstants) { "${klass.qualifiedName} not Enum" }
 
   @Suppress("UNCHECKED_CAST")
@@ -538,8 +621,12 @@ class EnumerationNamePersistentType<T : Enum<T>>(
       }
       is String ->
         enums.firstOrNull { it.name == value }?.let { bindable.bind(index, it.name) }
-          ?: cannotConvert(value, klass.qualifiedName ?: klass.toString())
-      else -> cannotConvert(value, klass.qualifiedName ?: klass.toString())
+          ?: value.cannotConvert(klass.qualifiedName ?: klass.toString())
+      else -> value.cannotConvert(klass.qualifiedName ?: klass.toString())
     }
+  }
+
+  override fun clone(): PersistentType<T?> {
+    throw NotImplementedError("This type ${javaClass.canonicalName} is not nullable")
   }
 }

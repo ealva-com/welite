@@ -55,6 +55,7 @@ android {
 
 dependencies {
   implementation(project(":library-android"))
+  implementation(project(":library-javatime"))
   coreLibraryDesugaring(ToolsLib.DESUGARING)
   implementation(kotlin("stdlib-jdk8"))
 

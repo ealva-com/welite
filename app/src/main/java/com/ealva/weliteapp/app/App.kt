@@ -85,7 +85,6 @@ class App : Application() {
            begin killing background processes.
         */
         Database.releaseMemory()
-//        Glide.get(this).trimMemory(level)
       }
 
       ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
@@ -100,7 +99,6 @@ class App : Application() {
            the first to be terminated.
         */
         Database.releaseMemory()
-//        Glide.get(this).clearMemory()
       }
 
       else -> {

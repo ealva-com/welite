@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.sharedtest
+package com.ealva.welite.test.common
 
 import android.content.Context
 import com.ealva.welite.db.Database
@@ -36,7 +36,7 @@ suspend fun withTestDatabase(
   }
 }
 
-@Suppress("TestFunctionName", "FunctionNaming")
+@Suppress("FunctionNaming", "FunctionName")
 fun TestDatabase(
   context: Context,
   tables: List<Table>,

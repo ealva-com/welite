@@ -24,14 +24,14 @@ import com.ealva.welite.db.schema.FieldType.BlobField
 import com.ealva.welite.db.schema.FieldType.IntegerField
 import com.ealva.welite.db.schema.FieldType.RealField
 import com.ealva.welite.db.schema.FieldType.TextField
-import com.ealva.welite.sharedtest.AlbumTable
-import com.ealva.welite.sharedtest.ArtistAlbumTable
-import com.ealva.welite.sharedtest.ArtistTable
-import com.ealva.welite.sharedtest.CoroutineRule
-import com.ealva.welite.sharedtest.MediaFileTable
-import com.ealva.welite.sharedtest.TestTable
-import com.ealva.welite.sharedtest.runBlockingTest
-import com.ealva.welite.sharedtest.withTestDatabase
+import com.ealva.welite.test.common.AlbumTable
+import com.ealva.welite.test.common.ArtistAlbumTable
+import com.ealva.welite.test.common.ArtistTable
+import com.ealva.welite.test.common.CoroutineRule
+import com.ealva.welite.test.common.MediaFileTable
+import com.ealva.welite.test.common.TestTable
+import com.ealva.welite.test.common.runBlockingTest
+import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.StringMatcher
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -49,7 +49,7 @@ object SomeMediaTable : TestTable() {
   val fileName = text("MediaFileName") { collateNoCase() }
   val mediaTitle = text("MediaTitle") { collateNoCase().default("Title") }
   val real = double("Real")
-  val blob = nullableBlob("Blob")
+  val blob = optBlob("Blob")
 
   init {
     index(fileName, real)

@@ -104,7 +104,7 @@ class SqlTypeExpressionAlias<T>(
     }
   }
 
-  override val persistentType: PersistentType<T?>
+  override val persistentType: PersistentType<T>
     get() = delegate.persistentType
 }
 

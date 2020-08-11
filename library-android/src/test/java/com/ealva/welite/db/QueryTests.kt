@@ -21,17 +21,17 @@ import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.and
-import com.ealva.welite.db.expr.bindString
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.table.OnConflict
-import com.ealva.welite.sharedtest.AlbumTable
-import com.ealva.welite.sharedtest.ArtistAlbumTable
-import com.ealva.welite.sharedtest.ArtistTable
-import com.ealva.welite.sharedtest.CoroutineRule
-import com.ealva.welite.sharedtest.MediaFileTable
-import com.ealva.welite.sharedtest.runBlockingTest
-import com.ealva.welite.sharedtest.withTestDatabase
+import com.ealva.welite.test.common.AlbumTable
+import com.ealva.welite.test.common.AlbumTable.albumName
+import com.ealva.welite.test.common.ArtistAlbumTable
+import com.ealva.welite.test.common.ArtistTable
+import com.ealva.welite.test.common.CoroutineRule
+import com.ealva.welite.test.common.MediaFileTable
+import com.ealva.welite.test.common.runBlockingTest
+import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -195,7 +195,7 @@ class QueryTests {
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { AlbumTable.albumName eq bindString() and (AlbumTable.artistName eq artist) }
+      .where { albumName eq albumName.bindParam() and (AlbumTable.artistName eq artist) }
       .sequence({ it[0] = album }) { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album

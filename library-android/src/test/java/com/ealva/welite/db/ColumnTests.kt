@@ -26,8 +26,8 @@ import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.type.IntegerPersistentType
-import com.ealva.welite.sharedtest.TestTable
+import com.ealva.welite.db.type.NullableIntegerPersistentType
+import com.ealva.welite.test.common.TestTable
 import com.nhaarman.expect.expect
 import org.junit.Before
 import org.junit.Test
@@ -86,8 +86,7 @@ class ColumnTests {
       override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
         sqlBuilder { append("ABS($value)") }
 
-      override val persistentType =
-        IntegerPersistentType()
+      override val persistentType = NullableIntegerPersistentType<Int>()
     }
 
     val tableName2 = "TableName2"

@@ -22,7 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.sharedtest.TestTable
+import com.ealva.welite.test.common.TestTable
 import com.nhaarman.expect.expect
 import org.junit.Before
 import org.junit.Test

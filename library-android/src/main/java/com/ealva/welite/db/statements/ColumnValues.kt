@@ -20,6 +20,11 @@ import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.table.Column
 
+interface BindParam {
+  fun bindParam()
+  fun bindOptParam()
+}
+
 /**
  * Represents a group of columns to which values are bound, such as during an insert or update. eg.
  * ```
@@ -32,9 +37,12 @@ import com.ealva.welite.db.table.Column
  */
 interface ColumnValues {
   val columnValueList: MutableList<ColumnValue<*>>
-  operator fun <S> set(column: Column<S>, value: S)
+
+  operator fun <T> set(column: Column<T>, value: T)
 
   operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E)
+
+  operator fun <T> get(column: Column<T>): BindParam
 
   companion object {
     operator fun invoke(): ColumnValues = ColumnValuesImpl()
@@ -43,12 +51,25 @@ interface ColumnValues {
 
 private class ColumnValuesImpl : ColumnValues {
   override val columnValueList = mutableListOf<ColumnValue<*>>()
+
   override operator fun <S> set(column: Column<S>, value: S) {
     columnValueList.add(ColumnValueWithValue(column, value))
   }
 
   override operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E) {
     columnValueList.add(ColumnValueWithExpression(column, expression))
+  }
+
+  override fun <T> get(column: Column<T>): BindParam {
+    return object : BindParam {
+      override fun bindParam() {
+        columnValueList.add(ColumnValueWithExpression<T>(column, column.bindParam()))
+      }
+
+      override fun bindOptParam() {
+        columnValueList.add(ColumnValueWithExpression(column, column.bindParam()))
+      }
+    }
   }
 }
 
