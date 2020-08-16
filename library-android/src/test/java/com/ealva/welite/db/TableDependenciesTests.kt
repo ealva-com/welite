@@ -20,6 +20,7 @@ package com.ealva.welite.db
 
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import com.ealva.welite.db.schema.TableDependencies
+import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.nhaarman.expect.expect
 import org.junit.Test
@@ -40,17 +41,17 @@ class TableDependenciesTests {
 object TableA : Table() {
   val id = long("_id") { primaryKey() }
   val aName = text("aName") { collateNoCase() }
-  val tableCId = long("tablec_id") { references(TableC.id) }
+  val tableCId = reference("tablec_id", TableC.id)
 }
 
 object TableB : Table() {
   val id = long("_id") { primaryKey() }
   val bName = text("bName") { collateNoCase() }
-  val tableCId = long("tablea_id") { references(TableA.id) }
+  val tableCId: Column<Long> = reference("tablea_id", TableA.id)
 }
 
 object TableC : Table() {
   val id = long("_id") { primaryKey() }
   val cName = text("cName") { collateNoCase() }
-  val tableCId = long("tableb_id") { references(TableB.id) }
+  val tableCId = reference("tableb_id", TableB.id)
 }

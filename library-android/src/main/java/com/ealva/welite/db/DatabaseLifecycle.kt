@@ -21,10 +21,10 @@ import java.util.Locale
 
 interface DatabaseLifecycle {
   /**
-   * Call [block] before the database is opened and pass it [OpenParams] to configure
+   * Call [block] before the database is opened and pass it [PreOpenParams] to configure
    * open parameters.
    */
-  fun preOpen(block: (OpenParams) -> Unit)
+  fun preOpen(block: (PreOpenParams) -> Unit)
 
   /**
    * After the database is open call [block] with a [DatabaseConfiguration] to allow the
@@ -45,7 +45,7 @@ interface DatabaseLifecycle {
   fun onOpen(block: (Database) -> Unit)
 }
 
-interface OpenParams {
+interface PreOpenParams {
   var allowWorkOnUiThread: Boolean
 
   fun enableWriteAheadLogging(enable: Boolean)

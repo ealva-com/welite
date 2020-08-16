@@ -45,7 +45,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.ealva.welite.db.dml.withTestDatabase as withTestDatabase1
+import com.ealva.welite.db.dml.withPlaceTestDatabase as withTestDatabase1
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)

@@ -29,8 +29,8 @@ abstract class TestTable(name: String = "") : Table(name) {
 object MediaFileTable : TestTable() {
   val id = long("_id") { primaryKey() }
   val mediaUri = text("MediaUri") { unique() }
-  val artistId = long("ArtistId") { references(ArtistTable.id) }
-  val albumId = long("AlbumId") { references(AlbumTable.id) }
+  val artistId = reference("ArtistId", ArtistTable.id)
+  val albumId = reference("AlbumId", AlbumTable.id)
 }
 
 object ArtistTable : TestTable() {

@@ -84,6 +84,46 @@ class DatabaseTest {
   }
 
   @Test
+  fun `test db lifecycle`() = coroutineRule.runBlockingTest {
+    var preOpenCalled = false
+    var onConfigureCalled = false
+    var onCreateCalled = false
+    var onOpenCalled = false
+
+    val db = Database(
+      context = appCtx,
+      version = 1,
+      tables = listOf(SomeMediaTable),
+      migrations = emptyList(),
+      requireMigration = false,
+      dispatcher = coroutineRule.testDispatcher
+    ) {
+      preOpen {
+        preOpenCalled = true
+        it.allowWorkOnUiThread = true
+      }
+      onConfigure {
+        onConfigureCalled = true
+        it.enableForeignKeyConstraints(true)
+        it.execPragma("synchronous=NORMAL")
+      }
+      onCreate {
+        onCreateCalled = true
+      }
+      onOpen {
+        onOpenCalled = true
+      }
+    }
+    db.transaction {
+      expect(preOpenCalled).toBe(true) { "preOpen not called" }
+      expect(onConfigureCalled).toBe(true) { "onConfigure not called" }
+      expect(onCreateCalled).toBe(true) { "onCreate not called" }
+      expect(onOpenCalled).toBe(true) { "onOpen not called" }
+      rollback()
+    }
+  }
+
+  @Test
   fun createTableTest() = coroutineRule.runBlockingTest {
     withTestDatabase(
       context = appCtx,

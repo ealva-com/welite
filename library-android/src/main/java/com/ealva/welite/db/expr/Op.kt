@@ -18,19 +18,19 @@
 
 package com.ealva.welite.db.expr
 
-import com.ealva.welite.db.type.NullableBooleanPersistentType
-import com.ealva.welite.db.type.NullableBytePersistentType
-import com.ealva.welite.db.type.NullableDoublePersistentType
-import com.ealva.welite.db.type.NullableFloatPersistentType
-import com.ealva.welite.db.type.NullableIntegerPersistentType
-import com.ealva.welite.db.type.NullableLongPersistentType
-import com.ealva.welite.db.type.NullableShortPersistentType
-import com.ealva.welite.db.type.NullableStringPersistentType
-import com.ealva.welite.db.type.NullableUIntegerPersistentType
-import com.ealva.welite.db.type.NullableULongPersistentType
-import com.ealva.welite.db.type.NullableUShortPersistentType
-import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.BooleanPersistentType
+import com.ealva.welite.db.type.BytePersistentType
+import com.ealva.welite.db.type.DoublePersistentType
+import com.ealva.welite.db.type.FloatPersistentType
+import com.ealva.welite.db.type.IntegerPersistentType
+import com.ealva.welite.db.type.LongPersistentType
+import com.ealva.welite.db.type.ShortPersistentType
+import com.ealva.welite.db.type.StringPersistentType
 import com.ealva.welite.db.type.UBytePersistentType
+import com.ealva.welite.db.type.UIntegerPersistentType
+import com.ealva.welite.db.type.ULongPersistentType
+import com.ealva.welite.db.type.UShortPersistentType
+import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.toStatementString
 
 abstract class Op<T> : BaseExpression<T>() {
@@ -134,42 +134,43 @@ class IsNotNullOp(private val expr: Expression<*>) : Op<Boolean>() {
 class LikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "LIKE")
 class NotLikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "NOT LIKE")
 
-fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, NullableBytePersistentType())
+fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, BytePersistentType())
 fun shortParam(value: Short): Expression<Short> = QueryParameter(
   value,
-  NullableShortPersistentType()
+  ShortPersistentType()
 )
 
 fun intParam(value: Int): QueryParameter<Int> =
-  QueryParameter(value, NullableIntegerPersistentType())
+  QueryParameter(value, IntegerPersistentType())
 
-fun longParam(value: Long): Expression<Long> = QueryParameter(value, NullableLongPersistentType())
+fun longParam(value: Long): Expression<Long> = QueryParameter(value, LongPersistentType())
 fun floatParam(value: Float): Expression<Float> =
-  QueryParameter(value, NullableFloatPersistentType())
+  QueryParameter(value, FloatPersistentType())
 
 fun doubleParam(value: Double): Expression<Double> =
-  QueryParameter(value, NullableDoublePersistentType())
+  QueryParameter(value, DoublePersistentType())
 
 fun stringParam(value: String): Expression<String> =
-  QueryParameter(value, NullableStringPersistentType())
+  QueryParameter(value, StringPersistentType())
 
 fun booleanParam(value: Boolean): Expression<Boolean> =
-  QueryParameter(value, NullableBooleanPersistentType())
+  QueryParameter(value, BooleanPersistentType())
 
 @ExperimentalUnsignedTypes
-fun ubyteParam(value: UByte): Expression<UByte> = QueryParameter(value, UBytePersistentType())
+fun ubyteParam(value: UByte): Expression<UByte> =
+  QueryParameter(value, UBytePersistentType())
 
 @ExperimentalUnsignedTypes
 fun ushortParam(value: UShort): Expression<UShort> =
-  QueryParameter(value, NullableUShortPersistentType())
+  QueryParameter(value, UShortPersistentType())
 
 @ExperimentalUnsignedTypes
 fun uintParam(value: UInt): Expression<UInt> =
-  QueryParameter(value, NullableUIntegerPersistentType())
+  QueryParameter(value, UIntegerPersistentType())
 
 @ExperimentalUnsignedTypes
 fun ulongParam(value: ULong): Expression<ULong> =
-  QueryParameter(value, NullableULongPersistentType())
+  QueryParameter(value, ULongPersistentType())
 
 class BindableParameter<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =

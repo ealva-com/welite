@@ -18,9 +18,9 @@
 
 package com.ealva.welite.db.expr
 
-import com.ealva.welite.db.type.NullableLongPersistentType
+import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
-import com.ealva.welite.db.type.NullableStringPersistentType
+import com.ealva.welite.db.type.StringPersistentType
 
 abstract class Function<T>(override val persistentType: PersistentType<T>) :
   BaseSqlTypeExpression<T>()
@@ -57,7 +57,7 @@ open class CustomOperator<T>(
     }
 }
 
-class Random : Function<Long>(NullableLongPersistentType()) {
+class Random : Function<Long>(LongPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("RANDOM()")
@@ -66,7 +66,7 @@ class Random : Function<Long>(NullableLongPersistentType()) {
 
 class LowerCase(
   private val expr: Expression<String>
-) : Function<String>(NullableStringPersistentType()) {
+) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("LOWER(")
@@ -77,7 +77,7 @@ class LowerCase(
 
 class UpperCase(
   private val expr: Expression<String>
-) : Function<String>(NullableStringPersistentType()) {
+) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("UPPER(")
@@ -89,7 +89,7 @@ class UpperCase(
 class Concat(
   private val separator: String,
   private val exprList: List<Expression<String>>
-) : Function<String>(NullableStringPersistentType()) {
+) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       exprList.appendTo(
@@ -108,7 +108,7 @@ class Concat(
 class GroupConcat(
   private val expr: Expression<String>,
   private val separator: String?
-) : Function<String>(NullableStringPersistentType()) {
+) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("GROUP_CONCAT(")
@@ -124,7 +124,7 @@ class Substring(
   private val expr: Expression<String>,
   private val start: Expression<Int>,
   private val length: Expression<Int>
-) : Function<String>(NullableStringPersistentType()) {
+) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("substr")
@@ -140,7 +140,7 @@ class Substring(
 
 class Trim(
   private val expr: Expression<String>
-) : Function<String>(NullableStringPersistentType()) {
+) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("TRIM(")
@@ -200,7 +200,7 @@ class Sum<T>(
 class Count(
   private val expr: Expression<*>,
   private val distinct: Boolean = false
-) : Function<Long>(NullableLongPersistentType()) {
+) : Function<Long>(LongPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder {
       append("COUNT(")

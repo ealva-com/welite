@@ -92,7 +92,7 @@ class CreateTableTests {
     val otherIdName = "otherId"
     val otherTableName = "Other"
     @Suppress("unused") val other = object : TestTable(otherTableName) {
-      val id1: Column<Int> = integer(otherIdName) { references(account.id1) }
+      val id1: Column<Int> = reference(otherIdName, account.id1)
     }
 
     expect(other.ddlForTest().first()).toBe(
@@ -114,13 +114,12 @@ class CreateTableTests {
     val otherIdName = "otherId"
     val otherTableName = "Other"
     @Suppress("unused") val other = object : TestTable(otherTableName) {
-      val id1: Column<Int> = integer(otherIdName) {
-        references(
-          ref = account.id1,
-          onDelete = ForeignKeyAction.CASCADE,
-          onUpdate = ForeignKeyAction.SET_DEFAULT
-        )
-      }
+      val id1: Column<Int> = reference(
+        name = otherIdName,
+        refColumn = account.id1,
+        onDelete = ForeignKeyAction.CASCADE,
+        onUpdate = ForeignKeyAction.SET_DEFAULT
+      )
     }
 
     expect(other.ddlForTest().first()).toBe(

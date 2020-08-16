@@ -25,23 +25,26 @@ import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.invoke
+import com.ealva.welite.db.type.ScaledBigDecimalAsLongType
 import com.ealva.welite.db.type.Blob
+import com.ealva.welite.db.type.BlobPersistentType
+import com.ealva.welite.db.type.BooleanPersistentType
+import com.ealva.welite.db.type.BytePersistentType
+import com.ealva.welite.db.type.DoublePersistentType
 import com.ealva.welite.db.type.EnumerationNamePersistentType
 import com.ealva.welite.db.type.EnumerationPersistentType
-import com.ealva.welite.db.type.NullableBlobPersistentType
-import com.ealva.welite.db.type.NullableBooleanPersistentType
-import com.ealva.welite.db.type.NullableBytePersistentType
-import com.ealva.welite.db.type.NullableDoublePersistentType
-import com.ealva.welite.db.type.NullableFloatPersistentType
-import com.ealva.welite.db.type.NullableIntegerPersistentType
-import com.ealva.welite.db.type.NullableLongPersistentType
-import com.ealva.welite.db.type.NullableShortPersistentType
-import com.ealva.welite.db.type.NullableStringPersistentType
-import com.ealva.welite.db.type.NullableUBytePersistentType
-import com.ealva.welite.db.type.NullableULongPersistentType
-import com.ealva.welite.db.type.NullableUShortPersistentType
-import com.ealva.welite.db.type.NullableUUIDPersistentType
+import com.ealva.welite.db.type.FloatPersistentType
+import com.ealva.welite.db.type.IntegerPersistentType
+import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.ShortPersistentType
+import com.ealva.welite.db.type.StringPersistentType
+import com.ealva.welite.db.type.UBytePersistentType
+import com.ealva.welite.db.type.ULongPersistentType
+import com.ealva.welite.db.type.UShortPersistentType
+import com.ealva.welite.db.type.UUIDPersistentType
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.UUID
 import kotlin.reflect.KClass
 
@@ -131,82 +134,82 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 //    .takeIf { it.isNotEmpty() }
 
   protected fun byte(name: String, block: SetConstraints<Byte> = {}): Column<Byte> =
-    registerColumn(name, NullableBytePersistentType(), block)
+    registerColumn(name, BytePersistentType(), block)
 
   protected fun optByte(name: String, block: SetConstraints<Byte?> = {}): Column<Byte?> =
-    registerOptColumn(name, NullableBytePersistentType(), block)
+    registerOptColumn(name, BytePersistentType(), block)
 
   protected fun short(name: String, block: SetConstraints<Short> = {}): Column<Short> =
-    registerColumn(name, NullableShortPersistentType(), block)
+    registerColumn(name, ShortPersistentType(), block)
 
   protected fun optShort(name: String, block: SetConstraints<Short?> = {}): Column<Short?> =
-    registerOptColumn(name, NullableShortPersistentType(), block)
+    registerOptColumn(name, ShortPersistentType(), block)
 
   protected fun integer(name: String, block: SetConstraints<Int> = {}): Column<Int> =
-    registerColumn(name, NullableIntegerPersistentType(), block)
+    registerColumn(name, IntegerPersistentType(), block)
 
   protected fun optInteger(name: String, block: SetConstraints<Int?> = {}): Column<Int?> =
-    registerOptColumn(name, NullableIntegerPersistentType(), block)
+    registerOptColumn(name, IntegerPersistentType(), block)
 
   protected fun long(name: String, block: SetConstraints<Long> = {}): Column<Long> =
-    registerColumn(name, NullableLongPersistentType(), block)
+    registerColumn(name, LongPersistentType(), block)
 
   protected fun optLong(name: String, block: SetConstraints<Long?> = {}): Column<Long?> =
-    registerOptColumn(name, NullableLongPersistentType(), block)
+    registerOptColumn(name, LongPersistentType(), block)
 
   protected fun float(name: String, block: SetConstraints<Float> = {}): Column<Float> =
-    registerColumn(name, NullableFloatPersistentType(), block)
+    registerColumn(name, FloatPersistentType(), block)
 
   protected fun optFloat(name: String, block: SetConstraints<Float?> = {}): Column<Float?> =
-    registerOptColumn(name, NullableFloatPersistentType(), block)
+    registerOptColumn(name, FloatPersistentType(), block)
 
   protected fun double(name: String, block: SetConstraints<Double> = {}): Column<Double> =
-    registerColumn(name, NullableDoublePersistentType(), block)
+    registerColumn(name, DoublePersistentType(), block)
 
   protected fun optDouble(name: String, block: SetConstraints<Double?> = {}): Column<Double?> =
-    registerOptColumn(name, NullableDoublePersistentType(), block)
+    registerOptColumn(name, DoublePersistentType(), block)
 
   protected fun text(name: String, block: SetConstraints<String> = {}): Column<String> =
-    registerColumn(name, NullableStringPersistentType(), block)
+    registerColumn(name, StringPersistentType(), block)
 
   protected fun optText(name: String, block: SetConstraints<String?> = {}): Column<String?> =
-    registerOptColumn(name, NullableStringPersistentType(), block)
+    registerOptColumn(name, StringPersistentType(), block)
 
   protected fun blob(name: String, block: SetConstraints<Blob> = {}): Column<Blob> =
-    registerColumn(name, NullableBlobPersistentType(), block)
+    registerColumn(name, BlobPersistentType(), block)
 
   protected fun optBlob(name: String, block: SetConstraints<Blob?> = {}): Column<Blob?> =
-    registerOptColumn(name, NullableBlobPersistentType(), block)
+    registerOptColumn(name, BlobPersistentType(), block)
 
   @ExperimentalUnsignedTypes
   protected fun ubyte(name: String, block: SetConstraints<UByte> = {}): Column<UByte> =
-    registerColumn(name, NullableUBytePersistentType(), block)
+    registerColumn(name, UBytePersistentType(), block)
 
   @ExperimentalUnsignedTypes
   protected fun optUbyte(name: String, block: SetConstraints<UByte?> = {}): Column<UByte?> =
-    registerOptColumn(name, NullableUBytePersistentType(), block)
+    registerOptColumn(name, UBytePersistentType(), block)
 
   @ExperimentalUnsignedTypes
   protected fun uShort(name: String, block: SetConstraints<UShort> = {}): Column<UShort> =
-    registerColumn(name, NullableUShortPersistentType(), block)
+    registerColumn(name, UShortPersistentType(), block)
 
   @ExperimentalUnsignedTypes
   protected fun optUshort(name: String, block: SetConstraints<UShort?> = {}): Column<UShort?> =
-    registerOptColumn(name, NullableUShortPersistentType(), block)
+    registerOptColumn(name, UShortPersistentType(), block)
 
   @ExperimentalUnsignedTypes
   protected fun ulong(name: String, block: SetConstraints<ULong> = {}): Column<ULong> =
-    registerColumn(name, NullableULongPersistentType(), block)
+    registerColumn(name, ULongPersistentType(), block)
 
   @ExperimentalUnsignedTypes
   protected fun optUlong(name: String, block: SetConstraints<ULong?> = {}): Column<ULong?> =
-    registerOptColumn(name, NullableULongPersistentType(), block)
+    registerOptColumn(name, ULongPersistentType(), block)
 
   protected fun bool(name: String, block: SetConstraints<Boolean> = {}): Column<Boolean> =
-    registerColumn(name, NullableBooleanPersistentType(), block)
+    registerColumn(name, BooleanPersistentType(), block)
 
   protected fun optBool(name: String, block: SetConstraints<Boolean?> = {}): Column<Boolean?> =
-    registerOptColumn(name, NullableBooleanPersistentType(), block)
+    registerOptColumn(name, BooleanPersistentType(), block)
 
   protected fun <T : Enum<T>> enumeration(
     name: String,
@@ -221,10 +224,26 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   ): Column<T> = registerColumn(name, EnumerationNamePersistentType(klass), block)
 
   protected fun uuid(name: String, block: SetConstraints<UUID> = {}): Column<UUID> =
-    registerColumn(name, NullableUUIDPersistentType(), block)
+    registerColumn(name, UUIDPersistentType(), block)
 
   protected fun optUuid(name: String, block: SetConstraints<UUID?> = {}): Column<UUID?> =
-    registerOptColumn(name, NullableUUIDPersistentType(), block)
+    registerOptColumn(name, UUIDPersistentType(), block)
+
+  protected fun bigDecimal(
+    name: String,
+    scale: Int,
+    roundingMode: RoundingMode = RoundingMode.HALF_UP,
+    block: SetConstraints<BigDecimal> = {}
+  ): Column<BigDecimal> =
+    registerColumn(name, ScaledBigDecimalAsLongType(scale, roundingMode), block)
+
+  protected fun optBigDecimal(
+    name: String,
+    scale: Int,
+    roundingMode: RoundingMode = RoundingMode.HALF_UP,
+    block: SetConstraints<BigDecimal?> = {}
+  ): Column<BigDecimal?> =
+    registerOptColumn(name, ScaledBigDecimalAsLongType(scale, roundingMode), block)
 
   /**
    * Create a FOREIGN KEY constraint on a table
@@ -506,7 +525,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
         val column = primary.columns.first()
         require(!column.isAutoInc) { "AUTOINCREMENT does not work on WITHOUT ROWID tables" }
         when (column.persistentType) {
-          is NullableIntegerPersistentType, is NullableLongPersistentType -> {
+          is IntegerPersistentType, is LongPersistentType -> {
             LOG.w {
               it(
                 "The WITHOUT ROWID optimization is unlikely to be helpful for tables that " +

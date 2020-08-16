@@ -49,9 +49,6 @@ class ForeignKeySchemaTests {
   @Before
   fun setup() {
     appCtx = ApplicationProvider.getApplicationContext<Context>()
-    // Uncomment for logging
-//    AndroidLogger.setHandler(DebugLogHandler())
-//    Loggers.setFactory(AndroidLoggerFactory)
   }
 
   @Test

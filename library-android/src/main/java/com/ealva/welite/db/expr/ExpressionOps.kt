@@ -18,9 +18,10 @@
 
 package com.ealva.welite.db.expr
 
-import com.ealva.welite.db.type.NullableLongPersistentType
+import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
-import com.ealva.welite.db.type.NullableStringPersistentType
+import com.ealva.welite.db.type.StringPersistentType
+import java.math.BigDecimal
 
 infix fun <T> SqlTypeExpression<T>.eq(t: T): Op<Boolean> =
   if (t == null) isNull() else EqOp(this, param(t))
@@ -132,6 +133,7 @@ fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (value) {
   is ULong -> ulongParam(value)
   is UShort -> ushortParam(value)
   is UByte -> ubyteParam(value)
+  is BigDecimal -> longParam(value.unscaledValue().toLong())
   is BindableParameter<*> -> value
   else -> QueryParameter(value, persistentType)
 } as Expression<T>
@@ -151,6 +153,7 @@ fun <T> SqlTypeExpression<in T>.literal(value: T): LiteralOp<T> = when (value) {
   is ULong -> ulongLiteral(value)
   is UShort -> ushortLiteral(value)
   is UByte -> ubyteLiteral(value)
+  is BigDecimal -> longLiteral(value.unscaledValue().toLong())
   is ByteArray -> stringLiteral(value.toString(Charsets.UTF_8))
   else -> LiteralOp(persistentType, value)
 } as LiteralOp<T>
@@ -190,7 +193,7 @@ fun <T : Any> SqlTypeExpression<T>.function(name: String): CustomFunction<T> =
   CustomFunction(name, persistentType, listOf(this))
 
 fun customStringFunction(name: String, vararg params: Expression<*>): CustomFunction<String> =
-  CustomFunction(name, NullableStringPersistentType(), params.toList())
+  CustomFunction(name, StringPersistentType(), params.toList())
 
 fun customLongFunction(name: String, vararg params: Expression<*>): CustomFunction<Long> =
-  CustomFunction(name, NullableLongPersistentType(), params.toList())
+  CustomFunction(name, LongPersistentType(), params.toList())

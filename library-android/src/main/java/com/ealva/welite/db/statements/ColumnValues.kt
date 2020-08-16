@@ -22,7 +22,6 @@ import com.ealva.welite.db.table.Column
 
 interface BindParam {
   fun bindParam()
-  fun bindOptParam()
 }
 
 /**
@@ -63,10 +62,6 @@ private class ColumnValuesImpl : ColumnValues {
   override fun <T> get(column: Column<T>): BindParam {
     return object : BindParam {
       override fun bindParam() {
-        columnValueList.add(ColumnValueWithExpression<T>(column, column.bindParam()))
-      }
-
-      override fun bindOptParam() {
         columnValueList.add(ColumnValueWithExpression(column, column.bindParam()))
       }
     }

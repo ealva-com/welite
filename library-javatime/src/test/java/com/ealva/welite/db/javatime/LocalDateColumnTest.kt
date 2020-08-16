@@ -19,11 +19,14 @@ package com.ealva.welite.db.javatime
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
+import com.ealva.welite.db.ForeignKeyInfo
+import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.javatime.Visit.localDate
 import com.ealva.welite.db.javatime.Visit.name
 import com.ealva.welite.db.javatime.Visit.optLocalDate
 import com.ealva.welite.db.javatime.Visit.other
+import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.TestTable
 import com.ealva.welite.test.common.runBlockingTest
@@ -31,13 +34,18 @@ import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.hamcrest.Matchers.isA
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeParseException
+import java.util.Date
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -45,6 +53,7 @@ import java.time.LocalDate
 class LocalDateColumnTest {
   @ExperimentalCoroutinesApi
   @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 
@@ -69,19 +78,19 @@ class LocalDateColumnTest {
           it[name] = "Regency"
           it[other] = "Pool"
         }
-        val actInsert = Visit.insertValues {
+        val visitInsert = Visit.insertValues {
           it[localDate].bindParam()
           it[optLocalDate].bindParam()
           it[name].bindParam()
           it[other].bindParam()
         }
-        actInsert.insert {
+        visitInsert.insert {
           it[0] = LocalDate.now()
           it[1] = LocalDate.now().plusYears(2)
           it[2] = "Motel 6"
           it[3] = "Vending Machine"
         }
-        actInsert.insert {
+        visitInsert.insert {
           it[0] = LocalDate.now()
           it[1] = LocalDate.now().plusYears(3)
           it[2] = "The Greenbrier"
@@ -98,24 +107,133 @@ class LocalDateColumnTest {
         val other: String?
       )
       query {
-        Visit.select()
+        val result = Visit.select()
           .where { optLocalDate greaterEq LocalDate.now().plusYears(2) }
           .orderBy(optLocalDate)
           .sequence { Accom(it[localDate], it[optLocalDate], it[name], it[other]) }
-          .take(2)
-          .forEachIndexed { i, visit ->
-            when (i) {
-              0 -> {
-                expect(visit.name).toBe("Motel 6")
-                expect(visit.optDate).toBe(LocalDate.now().plusYears(2))
-              }
-              1 -> {
-                expect(visit.name).toBe("The Greenbrier")
-                expect(visit.optDate).toBe(LocalDate.now().plusYears(3))
-              }
-              else -> fail("Too many results")
+          .toList()
+
+        expect(result).toHaveSize(2)
+        result.forEachIndexed { i, visit ->
+          when (i) {
+            0 -> {
+              expect(visit.name).toBe("Motel 6")
+              expect(visit.optDate).toBe(LocalDate.now().plusYears(2))
+            }
+            1 -> {
+              expect(visit.name).toBe("The Greenbrier")
+              expect(visit.optDate).toBe(LocalDate.now().plusYears(3))
             }
           }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `test bind other than LocalDate`() = coroutineRule.runBlockingTest {
+    withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher) {
+      transaction {
+        val visitInsert = Visit.insertValues {
+          it[localDate].bindParam()
+          it[optLocalDate].bindParam()
+          it[name] = "name"
+          it[other] = "other"
+        }
+        visitInsert.insert {
+          it[0] = LocalDateTime.now()
+          it[1] = "2007-12-03"
+        }
+        setSuccessful()
+      }
+      query {
+        expect(Visit.selectAll().count()).toBe(1)
+      }
+    }
+  }
+
+  @Test
+  fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
+    thrown.expect(WeLiteException::class.java)
+    withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher) {
+      transaction {
+        val visitInsert = Visit.insertValues {
+          it[localDate].bindParam()
+          it[optLocalDate].bindParam()
+          it[name] = "name"
+          it[other] = "other"
+        }
+        visitInsert.insert {
+          it[0] = null
+          it[1] = "2007-12-03"
+        }
+        setSuccessful()
+      }
+      fail("bind of null should be exceptional")
+    }
+  }
+
+  @Test
+  fun `test bind malformed LocalDate string`() = coroutineRule.runBlockingTest {
+    thrown.expectCause(isA(DateTimeParseException::class.java))
+    withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher) {
+      transaction {
+        val visitInsert = Visit.insertValues {
+          it[localDate].bindParam()
+          it[optLocalDate].bindParam()
+          it[name] = "name"
+          it[other] = "other"
+        }
+        visitInsert.insert {
+          it[0] = LocalDate.now()
+          it[1] = "20071203"  // bad date format
+        }
+        setSuccessful()
+      }
+      fail("bind of null should be exceptional")
+    }
+  }
+
+  @Test
+  fun `test bind bad type`() = coroutineRule.runBlockingTest {
+    thrown.expectCause(isA(DateTimeParseException::class.java))
+    withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher) {
+      transaction {
+        val visitInsert = Visit.insertValues {
+          it[localDate].bindParam()
+          it[optLocalDate].bindParam()
+          it[name] = "name"
+          it[other] = "other"
+        }
+        visitInsert.insert {
+          it[0] = LocalDate.now()
+          it[1] = Date()  // doesn't accept
+        }
+        setSuccessful()
+      }
+      fail("bind of date should be exceptional")
+    }
+  }
+
+  @Test
+  fun `test opt reference`() = coroutineRule.runBlockingTest {
+    expect(HasVisitRef.ref.descriptionDdl()).toBe(""""ref" TEXT""")
+    withTestDatabase(appCtx, listOf(Visit, HasVisitRef), coroutineRule.testDispatcher) {
+      query {
+        HasVisitRef.foreignKeyList.let { list ->
+          expect(list).toHaveSize(1)
+          expect(list[0]).toBe(
+            ForeignKeyInfo(
+              id = 0,
+              seq = 0,
+              table = "Visit",
+              from = "ref",
+              to = "date",
+              onUpdate = ForeignKeyAction.NO_ACTION,
+              onDelete = ForeignKeyAction.CASCADE
+            )
+          )
+        }
       }
     }
   }
@@ -126,4 +244,8 @@ private object Visit : TestTable() {
   val optLocalDate = optLocalDate("opt_date")
   val name = text("name")
   val other = optText("other")
+}
+
+object HasVisitRef : TestTable() {
+  val ref = optReference("ref", localDate, ForeignKeyAction.CASCADE)
 }

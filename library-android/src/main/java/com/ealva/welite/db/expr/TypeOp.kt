@@ -16,19 +16,19 @@
 
 package com.ealva.welite.db.expr
 
-import com.ealva.welite.db.type.NullableBooleanPersistentType
-import com.ealva.welite.db.type.NullableBytePersistentType
-import com.ealva.welite.db.type.NullableDoublePersistentType
-import com.ealva.welite.db.type.NullableFloatPersistentType
-import com.ealva.welite.db.type.NullableIntegerPersistentType
-import com.ealva.welite.db.type.NullableLongPersistentType
+import com.ealva.welite.db.type.BooleanPersistentType
+import com.ealva.welite.db.type.BytePersistentType
+import com.ealva.welite.db.type.DoublePersistentType
+import com.ealva.welite.db.type.FloatPersistentType
+import com.ealva.welite.db.type.IntegerPersistentType
+import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
-import com.ealva.welite.db.type.NullableShortPersistentType
-import com.ealva.welite.db.type.NullableStringPersistentType
-import com.ealva.welite.db.type.NullableUBytePersistentType
-import com.ealva.welite.db.type.NullableUIntegerPersistentType
-import com.ealva.welite.db.type.NullableULongPersistentType
-import com.ealva.welite.db.type.NullableUShortPersistentType
+import com.ealva.welite.db.type.ShortPersistentType
+import com.ealva.welite.db.type.StringPersistentType
+import com.ealva.welite.db.type.UBytePersistentType
+import com.ealva.welite.db.type.UIntegerPersistentType
+import com.ealva.welite.db.type.ULongPersistentType
+import com.ealva.welite.db.type.UShortPersistentType
 
 class LiteralOp<T>(
   override val persistentType: PersistentType<T>,
@@ -44,42 +44,42 @@ class LiteralOp<T>(
 }
 
 fun booleanLiteral(value: Boolean): LiteralOp<Boolean> =
-  LiteralOp(NullableBooleanPersistentType(), value)
+  LiteralOp(BooleanPersistentType(), value)
 
-fun byteLiteral(value: Byte): LiteralOp<Byte> = LiteralOp(NullableBytePersistentType(), value)
+fun byteLiteral(value: Byte): LiteralOp<Byte> = LiteralOp(BytePersistentType(), value)
 
 @ExperimentalUnsignedTypes
-fun ubyteLiteral(value: UByte): LiteralOp<UByte> = LiteralOp(NullableUBytePersistentType(), value)
+fun ubyteLiteral(value: UByte): LiteralOp<UByte> = LiteralOp(UBytePersistentType(), value)
 
 fun shortLiteral(value: Short): LiteralOp<Short> =
-  LiteralOp(NullableShortPersistentType(), value)
+  LiteralOp(ShortPersistentType(), value)
 
 @ExperimentalUnsignedTypes
 fun ushortLiteral(value: UShort): LiteralOp<UShort> =
-  LiteralOp(NullableUShortPersistentType(), value)
+  LiteralOp(UShortPersistentType(), value)
 
 fun intLiteral(value: Int): LiteralOp<Int> =
-  LiteralOp(NullableIntegerPersistentType(), value)
+  LiteralOp(IntegerPersistentType(), value)
 
 @ExperimentalUnsignedTypes
 fun uintLiteral(value: UInt): LiteralOp<UInt> =
-  LiteralOp(NullableUIntegerPersistentType(), value)
+  LiteralOp(UIntegerPersistentType(), value)
 
 fun longLiteral(value: Long): LiteralOp<Long> =
-  LiteralOp(NullableLongPersistentType(), value)
+  LiteralOp(LongPersistentType(), value)
 
 @ExperimentalUnsignedTypes
 fun ulongLiteral(value: ULong): LiteralOp<ULong> =
-  LiteralOp(NullableULongPersistentType(), value)
+  LiteralOp(ULongPersistentType(), value)
 
 fun floatLiteral(value: Float): LiteralOp<Float> =
-  LiteralOp(NullableFloatPersistentType(), value)
+  LiteralOp(FloatPersistentType(), value)
 
 fun doubleLiteral(value: Double): LiteralOp<Double> =
-  LiteralOp(NullableDoublePersistentType(), value)
+  LiteralOp(DoublePersistentType(), value)
 
 fun stringLiteral(value: String): LiteralOp<String> =
-  LiteralOp(NullableStringPersistentType(), value)
+  LiteralOp(StringPersistentType(), value)
 
 class ModOp<T : Number?, S : Number?>(
   private val lhs: Expression<T>,

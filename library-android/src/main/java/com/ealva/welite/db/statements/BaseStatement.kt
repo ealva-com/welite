@@ -58,8 +58,8 @@ abstract class BaseStatement : Bindable, ParamBindings {
 
   override fun <T> set(index: Int, value: T?) {
     // PersistentType will call back on this to do the actual bind and the index should just be
-    // passed through, so we won't check the index until one of the other bind functions are called
-    if (value == null) bindNull(index + 1) else types[index].bind(this, index, value)
+    // passed through, so we won't check the index until one of the other bind functions are called.
+    types[index].bind(this, index, value)
   }
 
   private fun ensureIndexInBounds(index: Int) {

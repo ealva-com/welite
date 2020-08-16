@@ -40,8 +40,7 @@ object Review : Table() {
   val value: Column<Int> = integer("value")
 }
 
-@Suppress("LongMethod") // detekt
-suspend fun withTestDatabase(
+suspend fun withPlaceTestDatabase(
   context: Context,
   tables: List<Table>,
   testDispatcher: CoroutineDispatcher,

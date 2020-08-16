@@ -55,7 +55,7 @@ class NaturalJoinTests {
 
   @Test
   fun `test natural join`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Doctors, Specialty, Visits),
       testDispatcher = coroutineRule.testDispatcher
@@ -113,7 +113,7 @@ class NaturalJoinTests {
 
   @Test
   fun `test natural join three tables`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Doctors, Specialty, Visits),
       testDispatcher = coroutineRule.testDispatcher

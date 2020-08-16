@@ -16,80 +16,61 @@
 
 package com.ealva.welite.db.javatime
 
-import com.ealva.ealvalog.invoke
-import com.ealva.ealvalog.lazyLogger
-import com.ealva.ealvalog.unaryPlus
-import com.ealva.ealvalog.w
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.SetConstraints
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.BasePersistentType
 import com.ealva.welite.db.type.Bindable
-import com.ealva.welite.db.type.NullableStringPersistentType
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
-import com.ealva.welite.db.type.cannotConvert
+import com.ealva.welite.db.type.StringPersistentType
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
-private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
-fun Table.localDateTime(
+fun Table.localDateTimeText(
   name: String,
   block: SetConstraints<LocalDateTime> = {}
-): Column<LocalDateTime> = registerColumn(name, LocalDateTimeType(), block)
+): Column<LocalDateTime> = registerColumn(name, LocalDateTimeAsTextType(), block)
 
-fun Table.optLocalDateTime(
+fun Table.optLocalDateTimeText(
   name: String,
   block: SetConstraints<LocalDateTime?> = {}
-): Column<LocalDateTime?> = registerOptColumn(name, NullableLocalDateTimeType(), block)
+): Column<LocalDateTime?> = registerOptColumn(name, LocalDateTimeAsTextType(), block)
 
-private val LOG by lazyLogger(NullableLocalDateTimeType::class)
+private fun String.toLocalDateTime(): LocalDateTime = LocalDateTime.parse(this)
 
-private const val CONVERT_WARNING_MSG =
-  "Converting LocalDate to LocalDateDate.atStartOfDay may lead to unexpected errors." +
-    " Prefer LocalDateTime for this column."
+private fun Any.valueToLocalDateTime(): LocalDateTime = when (this) {
+  is LocalDateTime -> this
+  is LocalDate -> atStartOfDay()
+  is String -> toLocalDateTime()
+  else -> toString().toLocalDateTime()
+}
 
-open class NullableLocalDateTimeType<T : LocalDateTime?>(
-  private val textColumn: NullableStringPersistentType<String?>
+/**
+ * Text form nicely compares in the database
+ */
+class LocalDateTimeAsTextType<T : LocalDateTime?>(
+  private val textColumn: StringPersistentType<String?>
 ) : BasePersistentType<T>(textColumn.sqlType) {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
-    when (value) {
-      is LocalDateTime -> textColumn.bind(bindable, index, formatter.format(value))
-      is LocalDate -> {
-        LOG.w { +it(CONVERT_WARNING_MSG) }
-        value.atStartOfDay()
-      }
-      is String -> textColumn.bind(bindable, index, value)
-      else -> value.cannotConvert("LocalDateTime")
-    }
+    textColumn.bind(bindable, index, value.valueToLocalDateTime().toString())
   }
 
   @Suppress("UNCHECKED_CAST")
   override fun Row.readColumnValue(index: Int) = LocalDateTime.parse(getString(index)) as T
 
   override fun notNullValueToDB(value: Any): Any {
-    return valueToLocalDateTime(value)
+    return value.valueToLocalDateTime()
   }
 
-  override fun nonNullValueToString(value: Any): String = "'${valueToLocalDateTime(value)}'"
-
-  private fun valueToLocalDateTime(value: Any): LocalDateTime = when (value) {
-    is LocalDateTime -> value
-    is LocalDate -> value.atStartOfDay()
-    is String -> LocalDateTime.parse(value)
-    else -> LocalDateTime.parse(value.toString())
-  }
+  override fun nonNullValueToString(value: Any): String = "'${value.valueToLocalDateTime()}'"
 
   companion object {
-    operator fun <T : LocalDateTime?> invoke(): NullableLocalDateTimeType<T> =
-      NullableLocalDateTimeType(NullableStringPersistentType())
+    operator fun <T : LocalDateTime?> invoke(): LocalDateTimeAsTextType<T> =
+      LocalDateTimeAsTextType(StringPersistentType())
   }
 
   override fun clone(): PersistentType<T?> {
-    return NullableLocalDateTimeType()
+    return LocalDateTimeAsTextType()
   }
 }
-
-class LocalDateTimeType : NullableLocalDateTimeType<LocalDateTime>(NullableStringPersistentType())

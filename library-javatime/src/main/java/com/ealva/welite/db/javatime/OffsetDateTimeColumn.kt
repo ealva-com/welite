@@ -24,51 +24,48 @@ import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.StringPersistentType
-import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
-fun Table.localDate(name: String, block: SetConstraints<LocalDate> = {}): Column<LocalDate> =
-  registerColumn(name, LocalDateAsTextType(), block)
-
-fun Table.optLocalDate(
+fun Table.offsetDateTimeText(
   name: String,
-  block: SetConstraints<LocalDate?> = {}
-): Column<LocalDate?> = registerOptColumn(name, LocalDateAsTextType(), block)
+  block: SetConstraints<OffsetDateTime> = {}
+): Column<OffsetDateTime> = registerColumn(name, OffsetDateTimeAsTextType(), block)
 
-private fun String.toLocalDate(): LocalDate = LocalDate.parse(this)
+fun Table.optOffsetDateTimeText(
+  name: String,
+  block: SetConstraints<OffsetDateTime?> = {}
+): Column<OffsetDateTime?> = registerOptColumn(name, OffsetDateTimeAsTextType(), block)
 
-private fun Any.valueToLocalDate(): LocalDate = when (this) {
-  is LocalDate -> this
-  is LocalDateTime -> toLocalDate()
-  is String -> toLocalDate()
-  else -> toString().toLocalDate()
+private fun Any.valueToOffsetDateTime(): OffsetDateTime = when (this) {
+  is OffsetDateTime -> this
+  is LocalDateTime -> atOffset(ZoneOffset.UTC)
+  is String -> OffsetDateTime.parse(this)
+  else -> OffsetDateTime.parse(toString())
 }
 
 /**
  * Text form nicely compares in the database
  */
-class LocalDateAsTextType<T : LocalDate?>(
+open class OffsetDateTimeAsTextType<T : OffsetDateTime?>(
   private val textColumn: StringPersistentType<String?>
 ) : BasePersistentType<T>(textColumn.sqlType) {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
-    textColumn.bind(bindable, index, value.valueToLocalDate().toString())
+    textColumn.bind(bindable, index, value.valueToOffsetDateTime().toString())
   }
 
   @Suppress("UNCHECKED_CAST")
-  override fun Row.readColumnValue(index: Int) = LocalDate.parse(getString(index)) as T
+  override fun Row.readColumnValue(index: Int) = OffsetDateTime.parse(getString(index)) as T
 
-  override fun notNullValueToDB(value: Any): Any {
-    return value.valueToLocalDate()
-  }
+  override fun notNullValueToDB(value: Any): Any = value.valueToOffsetDateTime()
 
-  override fun nonNullValueToString(value: Any): String = "'${value.valueToLocalDate()}'"
+  override fun nonNullValueToString(value: Any): String = "'${value.valueToOffsetDateTime()}'"
 
   companion object {
-    operator fun <T : LocalDate?> invoke(): LocalDateAsTextType<T> =
-      LocalDateAsTextType(StringPersistentType())
+    operator fun <T : OffsetDateTime?> invoke(): OffsetDateTimeAsTextType<T> =
+      OffsetDateTimeAsTextType(StringPersistentType())
   }
 
-  override fun clone(): PersistentType<T?> {
-    return LocalDateAsTextType()
-  }
+  override fun clone(): PersistentType<T?> = OffsetDateTimeAsTextType()
 }

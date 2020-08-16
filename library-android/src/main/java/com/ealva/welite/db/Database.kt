@@ -311,16 +311,15 @@ private class WeLiteDatabase(
     work: suspend Transaction.() -> R
   ): R {
     check(!closed) { "Database has been closed" }
-    return when (
-      val result = withContext(dispatcher) {
-        try {
-          assertNotUiThread() // client can set dispatcher, need to check
-          Success(beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { it.work() })
-        } catch (e: Exception) {
-          e.asUnsuccessful { "Exception during transaction" }
-        }
+    val result = withContext(dispatcher) {
+      try {
+        assertNotUiThread() // client can set dispatcher, need to check
+        Success(beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { it.work() })
+      } catch (e: Exception) {
+        e.asUnsuccessful { "Exception during transaction" }
       }
-    ) {
+    }
+    return when (result) {
       is Success -> result.value
       is Unsuccessful -> throw result.exception
     }
@@ -336,18 +335,17 @@ private class WeLiteDatabase(
     work: suspend Queryable.() -> R
   ): R {
     check(!closed) { "Database has been closed" }
-    return when (
-      val result = withContext(dispatcher) {
-        try {
-          assertNotUiThread() // client can set dispatcher, need to check
-          beginTransaction(exclusive, unitOfWork, true).use { txn ->
-            Success(txn.work().also { txn.setSuccessful() })
-          }
-        } catch (e: Exception) {
-          e.asUnsuccessful { "Exception during query" }
+    val result = withContext(dispatcher) {
+      try {
+        assertNotUiThread() // client can set dispatcher, need to check
+        beginTransaction(exclusive, unitOfWork, true).use { txn ->
+          Success(txn.work().also { txn.setSuccessful() })
         }
+      } catch (e: Exception) {
+        e.asUnsuccessful { "Exception during query" }
       }
-    ) {
+    }
+    return when (result) {
       is Success -> result.value
       is Unsuccessful -> throw result.exception
     }
@@ -417,7 +415,7 @@ private class OpenHelper private constructor(
   private val requireMigration: Boolean
 ) : SQLiteOpenHelper(context, name, null, version), DatabaseLifecycle {
 
-  private var preOpen: ((OpenParams) -> Unit) = {}
+  private var preOpen: ((PreOpenParams) -> Unit) = {}
   private var onConfigure: ((DatabaseConfiguration) -> Unit) = {}
   private var onCreate: ((Database) -> Unit) = {}
   private var onOpen: ((Database) -> Unit) = {}
@@ -435,7 +433,7 @@ private class OpenHelper private constructor(
       return tableDependencies.sortedTableList
     }
 
-  override fun preOpen(block: (OpenParams) -> Unit) {
+  override fun preOpen(block: (PreOpenParams) -> Unit) {
     preOpen = block
   }
 
@@ -452,11 +450,11 @@ private class OpenHelper private constructor(
   }
 
   override fun onConfigure(db: SQLiteDatabase) {
-    onConfigure.invoke(ConfigurationImpl(db))
+    onConfigure(ConfigurationImpl(db))
   }
 
   private fun doPreOpen() {
-    preOpen(OpenParamsImpl(this))
+    preOpen(PreOpenParamsImpl(this))
   }
 
   override fun onCreate(db: SQLiteDatabase) {
@@ -561,7 +559,7 @@ private class OpenHelper private constructor(
   }
 }
 
-private class OpenParamsImpl(private val openHelper: OpenHelper) : OpenParams {
+private class PreOpenParamsImpl(private val openHelper: OpenHelper) : PreOpenParams {
   override var allowWorkOnUiThread: Boolean
     get() = openHelper.allowWorkOnUiThread
     set(value) {

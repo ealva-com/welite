@@ -54,7 +54,7 @@ class AliasTests {
 
   @Test
   fun `test joinQuery with expression alias`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
@@ -80,7 +80,7 @@ class AliasTests {
   @ExperimentalUnsignedTypes
   @Test
   fun `test joinQuery subquery alias expr alias query`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
@@ -104,7 +104,7 @@ class AliasTests {
 
   @Test
   fun `test query alias table`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher

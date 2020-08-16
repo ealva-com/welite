@@ -48,7 +48,7 @@ fun TestDatabase(
     version = 1,
     tables = tables,
     migrations = emptyList(),
-    requireMigration = enableForeignKeyConstraints,
+    requireMigration = false,
     dispatcher = testDispatcher
   ) {
     preOpen { it.allowWorkOnUiThread = true }
