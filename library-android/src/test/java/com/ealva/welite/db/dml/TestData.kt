@@ -18,6 +18,7 @@ package com.ealva.welite.db.dml
 
 import android.content.Context
 import com.ealva.welite.db.Database
+import com.ealva.welite.db.OpenParams
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
@@ -141,10 +142,10 @@ fun TestDatabase(
     version = 1,
     tables = tables,
     migrations = emptyList(),
-    requireMigration = enableForeignKeyConstraints,
-    dispatcher = testDispatcher
-  ) {
-    preOpen { it.allowWorkOnUiThread = true }
-    onConfigure { it.enableForeignKeyConstraints(enableForeignKeyConstraints) }
-  }
+    openParams = OpenParams(
+      dispatcher = testDispatcher,
+      allowWorkOnUiThread = true,
+      enableForeignKeyConstraints = enableForeignKeyConstraints
+    )
+  )
 }

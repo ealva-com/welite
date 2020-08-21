@@ -57,7 +57,8 @@ class DeleteTests {
     withTestDatabase(
       context = appCtx,
       tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       val (_, _, mediaId) = transaction {
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))

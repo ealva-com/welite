@@ -16,10 +16,11 @@
 
 package com.ealva.welite.db.expr
 
-import com.ealva.welite.db.table.Column
-import com.ealva.welite.db.table.QueryBuilder
-import com.ealva.welite.db.type.DefaultValueMarker
 import com.ealva.welite.db.type.PersistentType
+
+interface AppendsToSqlBuilder {
+  fun appendTo(builder: SqlBuilder): SqlBuilder
+}
 
 class SqlBuilder {
   private val internalBuilder = StringBuilder()
@@ -55,14 +56,6 @@ class SqlBuilder {
     append("?")
   }
 
-  fun <T> registerArgument(column: Column<T>, argument: T) {
-    when (argument) {
-      is Expression<*> -> append(argument)
-      DefaultValueMarker -> column.dbDefaultValue?.let { append(it) } ?: append("NULL")
-      else -> registerArgument(column.persistentType, argument)
-    }
-  }
-
   fun <T> registerArgument(sqlType: PersistentType<T>, argument: T): Unit =
     registerArguments(sqlType, listOf(argument))
 
@@ -78,7 +71,7 @@ fun SqlBuilder.append(vararg values: Any): SqlBuilder = apply {
     when (value) {
       is Expression<*> -> append(value)
       is String -> append(value)
-      is QueryBuilder -> value.appendTo(this)
+      is AppendsToSqlBuilder -> value.appendTo(this)
       is Long -> append(value)
       is Char -> append(value)
       else -> append(value.toString())

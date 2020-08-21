@@ -33,7 +33,6 @@ import com.ealva.welite.test.common.MediaFileTable
 import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
-import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
 import org.junit.Rule
@@ -61,9 +60,10 @@ class QueryTests {
     withTestDatabase(
       context = appCtx,
       tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
-      val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
+      val uri = "/Music/Song.mp3"
       val (_, _, mediaId) = transaction {
         insertData("Led Zeppelin", "Houses of the Holy", uri).also { setSuccessful() }
       }
@@ -82,7 +82,7 @@ class QueryTests {
           count++
           val id = cursor[MediaFileTable.id]
           expect(id).toBe(mediaId)
-          expect(cursor[MediaFileTable.mediaUri]).toBe(uri.toString())
+          expect(cursor[MediaFileTable.mediaUri]).toBe(uri)
         }
         expect(count).toBe(1)
       }
@@ -95,21 +95,16 @@ class QueryTests {
     withTestDatabase(
       context = appCtx,
       tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       transaction {
-        val song1Path =
-          """/Music/Song1.mp3"""
-        val uri1 = Uri.fromFile(File(song1Path))
-        val song2Path =
-          """/Music/Song2.mp3"""
-        val uri2 = Uri.fromFile(File(song2Path))
-        val song3Path =
-          """/Music/Song3.mp3"""
-        val uri3 = Uri.fromFile(File(song3Path))
-        val ids1 = insertData("Led Zeppelin", "Houses of the Holy", uri1)
-        val ids2 = insertData("Led Zeppelin", "Physical Graffiti", uri2)
-        val ids3 = insertData("The Beatles", "Revolver", uri3)
+        val song1Path = "/Music/Song1.mp3"
+        val song2Path = "/Music/Song2.mp3"
+        val song3Path = "/Music/Song3.mp3"
+        val ids1 = insertData("Led Zeppelin", "Houses of the Holy", song1Path)
+        val ids2 = insertData("Led Zeppelin", "Physical Graffiti", song2Path)
+        val ids3 = insertData("The Beatles", "Revolver", song3Path)
 
         expect(ids1.first).toBe(ids2.first) // same artist ID, different albums
 
@@ -122,24 +117,15 @@ class QueryTests {
             """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
         )
 
-        var haveQueryResults = false
+        val results = mutableListOf<String>()
         query.forEach { cursor ->
-          haveQueryResults = true
-          expect(cursor.count).toBe(3)
-          when (cursor.position) {
-            0 -> {
-              expect(cursor[MediaFileTable.mediaUri]).toBe("file://$song1Path")
-            }
-            1 -> {
-              expect(cursor[MediaFileTable.mediaUri]).toBe("file://$song2Path")
-            }
-            2 -> {
-              expect(cursor[MediaFileTable.mediaUri]).toBe("file://$song3Path")
-            }
-            else -> fail("Unexpected count=${cursor.count}")
-          }
+          results.add(cursor[MediaFileTable.mediaUri])
         }
-        expect(haveQueryResults).toBe(true)
+
+        expect(results.size).toBe(3)
+        expect(results[0]).toBe(song1Path)
+        expect(results[1]).toBe(song2Path)
+        expect(results[2]).toBe(song3Path)
 
         expect(
           ArtistAlbumTable.select(ArtistAlbumTable.id)
@@ -158,21 +144,17 @@ class QueryTests {
     withTestDatabase(
       context = appCtx,
       tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       transaction {
-        val song1Path =
-          """/Music/Song1.mp3"""
-        val uri1 = Uri.fromFile(File(song1Path))
-        val song2Path =
-          """/Music/Song2.mp3"""
-        val uri2 = Uri.fromFile(File(song2Path))
-        val song3Path =
-          """/Music/Song3.mp3"""
+        val song1Path = "/Music/Song1.mp3"
+        val song2Path = "/Music/Song2.mp3"
+        val song3Path = "/Music/Song3.mp3"
         val uri3 = Uri.fromFile(File(song3Path))
-        val ids1 = insertData("Led Zeppelin", "Houses of the Holy", uri1)
-        val ids2 = insertData("Led Zeppelin", "Physical Graffiti", uri2)
-        val ids3 = insertData("The Beatles", "Revolver", uri3)
+        val ids1 = insertData("Led Zeppelin", "Houses of the Holy", song1Path)
+        val ids2 = insertData("Led Zeppelin", "Physical Graffiti", song2Path)
+        val ids3 = insertData("The Beatles", "Revolver", song3Path)
 
         expect(
           ArtistAlbumTable.select(ArtistAlbumTable.id)
@@ -187,7 +169,7 @@ class QueryTests {
   private fun Transaction.insertData(
     artist: String,
     album: String,
-    uri: Uri
+    uri: String
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
@@ -208,7 +190,7 @@ class QueryTests {
     }
 
     val mediaId = MediaFileTable.insert {
-      it[mediaUri] = uri.toString()
+      it[mediaUri] = uri
       it[artistId] = idArtist
       it[albumId] = idAlbum
     }

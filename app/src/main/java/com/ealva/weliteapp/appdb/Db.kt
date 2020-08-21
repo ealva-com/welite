@@ -20,6 +20,10 @@ import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.Database
+import com.ealva.welite.db.JournalMode
+import com.ealva.welite.db.OpenParams
+import com.ealva.welite.db.journalMode
+import com.ealva.welite.db.synchronousMode
 import com.ealva.weliteapp.app.MediaFileTable
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -31,18 +35,18 @@ val dbModule = module {
     Database(
       context = androidContext(),
       fileName = "WeLiteTest",
-      version = 1,
       tables = listOf(MediaFileTable),
-      migrations = emptyList(),
+      version = 1,
+      openParams = OpenParams(
+        enableWriteAheadLogging = false,
+        journalMode = JournalMode.TRUNCATE
+      ),
       configure = {
-        preOpen { params ->
-          LOG.i { it("preOpen") }
-          params.enableWriteAheadLogging(true)
-        }
         onConfigure { configuration ->
           LOG.i { it("onConfigure") }
-          configuration.enableForeignKeyConstraints(true)
-          configuration.execPragma("synchronous=NORMAL")
+          LOG.i { it("    JournalMode=%s", configuration.journalMode) }
+          LOG.i { it("    SynchronousMode=%s", configuration.synchronousMode) }
+          LOG.i { it("    maxSize=%d", configuration.maximumSize) }
         }
         onCreate { database ->
           LOG.i { it("onCreate %d", database.tables.size) }

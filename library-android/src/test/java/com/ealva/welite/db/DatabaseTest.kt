@@ -19,11 +19,11 @@ package com.ealva.welite.db
 import android.content.Context
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.schema.ColumnMetadata
-import com.ealva.welite.db.schema.FieldType.BlobField
-import com.ealva.welite.db.schema.FieldType.IntegerField
-import com.ealva.welite.db.schema.FieldType.RealField
-import com.ealva.welite.db.schema.FieldType.TextField
+import com.ealva.welite.db.table.ColumnMetadata
+import com.ealva.welite.db.table.FieldType.BlobField
+import com.ealva.welite.db.table.FieldType.IntegerField
+import com.ealva.welite.db.table.FieldType.RealField
+import com.ealva.welite.db.table.FieldType.TextField
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.ArtistAlbumTable
 import com.ealva.welite.test.common.ArtistTable
@@ -35,13 +35,19 @@ import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.StringMatcher
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import org.hamcrest.CoreMatchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.concurrent.Semaphore
 
 object SomeMediaTable : TestTable() {
   val id = integer("_id") { primaryKey() }
@@ -63,10 +69,61 @@ class DatabaseTest {
   @get:Rule var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
+  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  private var config: DatabaseConfiguration? = null
 
   @Before
   fun setup() {
     appCtx = ApplicationProvider.getApplicationContext()
+    config = null
+  }
+
+  @Test
+  fun `test isUiThread`() {
+    var testedOnUi = false
+    var testedOnNonUi = false
+    val lock = Semaphore(1, true).apply { acquire() }
+    GlobalScope.launch(Dispatchers.IO) {
+      expect(isUiThread).toBe(false)
+      testedOnNonUi = true
+      lock.release()
+    }
+    lock.acquire()
+    GlobalScope.launch(Dispatchers.Main) {
+      expect(isUiThread).toBe(true)
+      testedOnUi = true
+      lock.release()
+    }
+    lock.acquire()
+    expect(testedOnUi).toBe(true)
+    expect(testedOnNonUi).toBe(true)
+    lock.release()
+  }
+
+  @Test
+  fun `test inTransaction`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(SomeMediaTable),
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      var visitedOngoing = false
+      expect(inTransaction).toBe(false)
+      transaction {
+        expect(this@withTestDatabase.inTransaction).toBe(true)
+        this@withTestDatabase.ongoingTransaction {
+          visitedOngoing = true
+        }
+        expect(visitedOngoing).toBe(true)
+        rollback()
+      }
+      expect(inTransaction).toBe(false)
+      query {
+        expect(this@withTestDatabase.inTransaction).toBe(true)
+      }
+      expect(inTransaction).toBe(false)
+    }
   }
 
   @Test
@@ -74,7 +131,8 @@ class DatabaseTest {
     withTestDatabase(
       context = appCtx,
       tables = listOf(SomeMediaTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       query {
         // supports "n.nn.nn"  nn is 1 or 2 numbers
@@ -85,7 +143,6 @@ class DatabaseTest {
 
   @Test
   fun `test db lifecycle`() = coroutineRule.runBlockingTest {
-    var preOpenCalled = false
     var onConfigureCalled = false
     var onCreateCalled = false
     var onOpenCalled = false
@@ -96,16 +153,13 @@ class DatabaseTest {
       tables = listOf(SomeMediaTable),
       migrations = emptyList(),
       requireMigration = false,
-      dispatcher = coroutineRule.testDispatcher
+      openParams = OpenParams(
+        allowWorkOnUiThread = true,
+        dispatcher = coroutineRule.testDispatcher
+      )
     ) {
-      preOpen {
-        preOpenCalled = true
-        it.allowWorkOnUiThread = true
-      }
       onConfigure {
         onConfigureCalled = true
-        it.enableForeignKeyConstraints(true)
-        it.execPragma("synchronous=NORMAL")
       }
       onCreate {
         onCreateCalled = true
@@ -115,7 +169,6 @@ class DatabaseTest {
       }
     }
     db.transaction {
-      expect(preOpenCalled).toBe(true) { "preOpen not called" }
       expect(onConfigureCalled).toBe(true) { "onConfigure not called" }
       expect(onCreateCalled).toBe(true) { "onCreate not called" }
       expect(onOpenCalled).toBe(true) { "onOpen not called" }
@@ -128,7 +181,8 @@ class DatabaseTest {
     withTestDatabase(
       context = appCtx,
       tables = listOf(SomeMediaTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       query {
         expect(SomeMediaTable.exists).toBe(true)
@@ -170,6 +224,7 @@ class DatabaseTest {
         )
 
         val tableSql = SomeMediaTable.sql
+        expect(tableSql.tableName).toBe("SomeMedia")
         expect(tableSql.table.first()).toBe(
           "CREATE TABLE $tableIdentity (\"_id\" INTEGER NOT NULL PRIMARY KEY, \"MediaUri\" TEXT " +
             "NOT NULL UNIQUE, \"MediaFileName\" TEXT NOT NULL COLLATE NOCASE, \"MediaTitle\" " +
@@ -179,6 +234,8 @@ class DatabaseTest {
           "CREATE INDEX \"SomeMedia_MediaFileName_Real\" ON " +
             "\"SomeMedia\"(\"MediaFileName\", \"Real\")"
         )
+        expect(tableSql.triggers).toBeEmpty()
+        expect(tableSql.views).toBeEmpty()
       }
     }
   }
@@ -188,7 +245,8 @@ class DatabaseTest {
     withTestDatabase(
       context = appCtx,
       tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       query {
         expect(MediaFileTable.exists).toBe(true)
@@ -212,7 +270,8 @@ class DatabaseTest {
     withTestDatabase(
       context = appCtx,
       tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       query {
         expect(MediaFileTable.exists).toBe(true)
@@ -233,7 +292,8 @@ class DatabaseTest {
     withTestDatabase(
       context = appCtx,
       tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       query {
         expect(MediaFileTable.exists).toBe(true)
@@ -299,6 +359,65 @@ class DatabaseTest {
         }
       }
     }
+  }
+
+  @Test(expected = IllegalStateException::class)
+  fun `test execPragma called in wrong scope`() = coroutineRule.runBlockingTest {
+    getDatabase().let { db ->
+      db.transaction { rollback() }
+      checkNotNull(config).execPragma("do my pragma")
+      fail("Should not reach here")
+    }
+  }
+
+  private fun getDatabase(): Database {
+    return Database(
+      context = appCtx,
+      version = 1,
+      tables = listOf(SomeMediaTable),
+      migrations = emptyList(),
+      requireMigration = false,
+      openParams = OpenParams(
+        allowWorkOnUiThread = true,
+        dispatcher = coroutineRule.testDispatcher
+      )
+    ) {
+      onConfigure { config = it }
+    }
+  }
+
+  @Test
+  fun `test transaction on UI thread throws`() = coroutineRule.runBlockingTest {
+    thrown.expectCause(CoreMatchers.isA(IllegalStateException::class.java))
+    val db = Database(
+      context = appCtx,
+      version = 1,
+      tables = listOf(SomeMediaTable),
+      migrations = emptyList(),
+      requireMigration = false,
+      openParams = OpenParams(
+        allowWorkOnUiThread = false,
+        dispatcher = Dispatchers.Main
+      )
+    )
+    db.transaction { setSuccessful() }
+  }
+
+  @Test
+  fun `test query on UI thread throws`() = coroutineRule.runBlockingTest {
+    thrown.expectCause(CoreMatchers.isA(IllegalStateException::class.java))
+    val db = Database(
+      context = appCtx,
+      version = 1,
+      tables = listOf(SomeMediaTable),
+      migrations = emptyList(),
+      requireMigration = false,
+      openParams = OpenParams(
+        allowWorkOnUiThread = false,
+        dispatcher = Dispatchers.Main
+      )
+    )
+    db.query {}
   }
 }
 

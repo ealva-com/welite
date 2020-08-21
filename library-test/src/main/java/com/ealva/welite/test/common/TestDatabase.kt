@@ -18,6 +18,7 @@ package com.ealva.welite.test.common
 
 import android.content.Context
 import com.ealva.welite.db.Database
+import com.ealva.welite.db.OpenParams
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -25,7 +26,7 @@ suspend fun withTestDatabase(
   context: Context,
   tables: List<Table>,
   testDispatcher: CoroutineDispatcher,
-  enableForeignKeyConstraints: Boolean = true,
+  enableForeignKeyConstraints: Boolean,
   block: suspend Database.() -> Unit
 ) {
   val db = TestDatabase(context, tables, testDispatcher, enableForeignKeyConstraints)
@@ -49,9 +50,10 @@ fun TestDatabase(
     tables = tables,
     migrations = emptyList(),
     requireMigration = false,
-    dispatcher = testDispatcher
-  ) {
-    preOpen { it.allowWorkOnUiThread = true }
-    onConfigure { it.enableForeignKeyConstraints(enableForeignKeyConstraints) }
-  }
+    openParams = OpenParams(
+      allowWorkOnUiThread = true,
+      dispatcher = testDispatcher,
+      enableForeignKeyConstraints = enableForeignKeyConstraints
+    )
+  )
 }

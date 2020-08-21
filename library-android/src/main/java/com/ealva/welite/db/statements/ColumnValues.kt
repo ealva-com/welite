@@ -19,6 +19,7 @@ package com.ealva.welite.db.statements
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.table.Column
+import com.ealva.welite.db.type.DefaultValueMarker
 
 interface BindParam {
   fun bindParam()
@@ -76,6 +77,14 @@ interface ColumnValue<S> {
     appendColumnTo(builder)
     builder.append("=")
     appendValueTo(builder)
+  }
+}
+
+private fun <T> SqlBuilder.registerArgument(column: Column<T>, argument: T) {
+  when (argument) {
+    is Expression<*> -> append(argument)
+    DefaultValueMarker -> column.dbDefaultValue?.let { append(it) } ?: append("NULL")
+    else -> registerArgument(column.persistentType, argument)
   }
 }
 

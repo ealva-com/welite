@@ -17,6 +17,8 @@
 package com.ealva.welite.db
 
 import android.content.Context
+import android.database.DatabaseErrorHandler
+import android.database.DefaultDatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteOpenHelper
@@ -31,12 +33,14 @@ import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.schema.MasterType
 import com.ealva.welite.db.schema.SQLiteMaster
 import com.ealva.welite.db.schema.TableDependencies
+import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
+import com.ealva.welite.db.table.longForQuery
+import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.toStatementString
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.util.Locale
@@ -68,14 +72,17 @@ interface Database {
   val tables: List<Table>
 
   /**
-   * If false an IllegalStateException is thrown if work is dispatched the UI thread. Default is
+   * If false an IllegalStateException is thrown if work is dispatched on the UI thread. Default is
    * false (don't do I/O on the UI thread). This is here primarily for testing coroutines. WeLite
    * tests use a rule that confines coroutines to a single thread to simplify testing.
+   *
+   * Initially set via [OpenParams] when a Database instance is created
    */
   var allowWorkOnUiThread: Boolean
 
   /**
    * Begin a [Transaction] named [unitOfWork] and call [work] with the transaction as the receiver.
+   * Whatever type [R] is returned from the [work] function is returned from this function.
    * WeLite attempts to require an explicit transaction be started for all DB access (otherwise
    * SQLite will start an implicit txn). By default [exclusive] is false and the transaction runs in
    * IMMEDIATE mode. All db work should be completed within the [work] block and the txn must be
@@ -118,7 +125,8 @@ interface Database {
 
   /**
    * Called to do queries and no other CRUD operation. This is the same as starting a [transaction]
-   * and only doing queries.
+   * and only doing queries. Whatever type [R] is returned from the [work] function is returned
+   * from this function.
    *
    * WeLite attempts to require an explicit transaction be started for all DB access (otherwise
    * SQLite will start an implicit txn). This function is fundamentally the same as [transaction],
@@ -126,7 +134,7 @@ interface Database {
    * [Transaction.setSuccessful] is always called on the underlying transaction as queries don't
    * require commit/rollback
    *
-   * The work function will be executed on the underlying CoroutineDispatcher which is typically
+   * The [work] function will be executed on the underlying CoroutineDispatcher which is typically
    * either Dispatchers.IO or a custom dispatcher just for DB work.
    *
    * [SQLite docs](https://www.sqlite.org/lang_transaction.html): No reads or writes occur
@@ -182,26 +190,41 @@ interface Database {
    */
   fun close()
 
+  /** The path to the database file */
+  val path: String
+
+  /** True if the database exists in memory. If true [path] will be ":memory:" */
+  val isInMemoryDatabase: Boolean
+
   companion object {
     /**
      * Attempts to release memory that SQLite holds but does not require to operate properly.
      * Typically this memory will come from the page cache. This function may be called when
      * when Android reports low memory to the app via [android.app.Application.onTrimMemory] or
-     * other [android.content.ComponentCallbacks2] instance.
-     * @return the number of bytes actually released
+     * other [android.content.ComponentCallbacks2] instance. Returns the number of bytes actually
+     * released.
      */
     fun releaseMemory(): Int {
       return SQLiteDatabase.releaseMemory()
     }
 
+    /**
+     * Construct a Database instance with the given [fileName] and [context] used to locate the
+     * database file path. The database instance maintains the list of [tables] and will construct
+     * them if Android calls onCreate. [version] is used to determine if the schema needs to be
+     * migrated to a new version using [migrations]. [openParams] provide various configuration
+     * settings and has reasonable defaults. See [OpenParams] for details. An optional [configure]
+     * function will be called to provide for configuring the database connection at various points
+     * during creation.
+     */
     operator fun invoke(
       context: Context,
       fileName: String,
-      version: Int,
       tables: List<Table>,
-      migrations: List<Migration>,
+      version: Int,
       requireMigration: Boolean = true,
-      dispatcher: CoroutineDispatcher = Dispatchers.IO,
+      migrations: List<Migration> = emptyList(),
+      openParams: OpenParams = OpenParams(),
       configure: DatabaseLifecycle.() -> Unit = {}
     ): Database {
       return doMake(
@@ -211,18 +234,27 @@ interface Database {
         tables,
         migrations,
         requireMigration,
-        dispatcher,
+        openParams,
         configure
       )
     }
 
+    /**
+     * Construct an in-memory Database instance with the given [context] used to locate the
+     * database file path. The database instance maintains the list of [tables] and will construct
+     * them if Android calls onCreate. [version] is used to determine if the schema needs to be
+     * migrated to a new version using [migrations]. [openParams] provide various configuration
+     * settings and has reasonable defaults. See [OpenParams] for details. An optional [configure]
+     * function will be called to provide for configuring the database connection at various points
+     * during creation.
+     */
     operator fun invoke(
       context: Context,
-      version: Int,
       tables: List<Table>,
+      version: Int,
       migrations: List<Migration>,
       requireMigration: Boolean = true,
-      dispatcher: CoroutineDispatcher = Dispatchers.IO,
+      openParams: OpenParams = OpenParams(),
       configure: DatabaseLifecycle.() -> Unit = {}
     ): Database {
       return doMake(
@@ -232,7 +264,7 @@ interface Database {
         tables,
         migrations,
         requireMigration,
-        dispatcher,
+        openParams,
         configure
       )
     }
@@ -244,17 +276,17 @@ interface Database {
       tables: List<Table>,
       migrations: List<Migration>,
       requireMigration: Boolean,
-      dispatcher: CoroutineDispatcher,
+      openParams: OpenParams,
       configure: (DatabaseLifecycle) -> Unit
     ): Database {
       return WeLiteDatabase(
-        context,
+        context.applicationContext,
         fileName,
         version,
         tables,
         migrations,
         requireMigration,
-        dispatcher,
+        openParams,
         configure
       )
     }
@@ -263,11 +295,6 @@ interface Database {
 
 private val LOG by lazyLogger(Database::class)
 
-interface DbConfig {
-  val dispatcher: CoroutineDispatcher
-  val db: SQLiteDatabase
-}
-
 private class WeLiteDatabase(
   context: Context,
   fileName: String?,
@@ -275,18 +302,30 @@ private class WeLiteDatabase(
   tables: List<Table>,
   migrations: List<Migration>,
   requireMigration: Boolean,
-  override val dispatcher: CoroutineDispatcher,
+  openParams: OpenParams,
   configure: DatabaseLifecycle.() -> Unit
 ) : Database, DbConfig, AutoCloseable {
+  override val dispatcher: CoroutineDispatcher = openParams.dispatcher
+
   private var closed = false
 
   private val openHelper: OpenHelper =
-    OpenHelper(context, this, fileName, version, tables, migrations, requireMigration, configure)
+    OpenHelper(
+      context = context,
+      database = this,
+      name = fileName,
+      version = version,
+      tables = tables,
+      migrations = migrations,
+      requireMigration = requireMigration,
+      openParams = openParams,
+      configure = configure
+    )
 
   override val tables: List<Table>
     get() = openHelper.tablesInCreateOrder
 
-  override var allowWorkOnUiThread: Boolean = false
+  override var allowWorkOnUiThread: Boolean = openParams.allowWorkOnUiThread
 
   override fun close() {
     if (!closed) {
@@ -296,7 +335,13 @@ private class WeLiteDatabase(
     }
   }
 
-  inline fun Exception.asUnsuccessful(errorMessage: () -> String): Unsuccessful {
+  override val path: String
+    get() = db.path
+
+  override val isInMemoryDatabase: Boolean
+    get() = ":memory:" == path
+
+  fun Exception.asUnsuccessful(errorMessage: () -> String): Unsuccessful {
     return Unsuccessful.make(errorMessage(), this)
   }
 
@@ -326,7 +371,7 @@ private class WeLiteDatabase(
   }
 
   /**
-   * Note: The client may not use the transaction return value (could be of type Unit) so we don't
+   * Note: The client may not use query return value (could be of type Unit) so we don't
    * return WeResult<R> and instead rethrow exceptions occurring in work coroutine.
    */
   override suspend fun <R> query(
@@ -388,6 +433,16 @@ private class WeLiteDatabase(
   }
 }
 
+private class ErrorHandler(private val database: Database) : DatabaseErrorHandler {
+  private val defaultDatabaseErrorHandler = DefaultDatabaseErrorHandler()
+  override fun onCorruption(dbObj: SQLiteDatabase?) {
+    defaultDatabaseErrorHandler.onCorruption(dbObj)
+    onError(database)
+  }
+
+  var onError: ((Database) -> Unit) = {}
+}
+
 /**
  * OpenHelper startup
  * onConfigure(db)  - after DB is opened
@@ -412,10 +467,13 @@ private class OpenHelper private constructor(
   version: Int,
   private val tables: List<Table>,
   private val migrations: List<Migration>,
-  private val requireMigration: Boolean
-) : SQLiteOpenHelper(context, name, null, version), DatabaseLifecycle {
+  private val requireMigration: Boolean,
+  openParams: OpenParams,
+  private val errorHandler: ErrorHandler
+) : SQLiteOpenHelper(context, name, null, version, errorHandler), DatabaseLifecycle {
 
-  private var preOpen: ((PreOpenParams) -> Unit) = {}
+  private val openParams = openParams.copy()
+
   private var onConfigure: ((DatabaseConfiguration) -> Unit) = {}
   private var onCreate: ((Database) -> Unit) = {}
   private var onOpen: ((Database) -> Unit) = {}
@@ -428,14 +486,10 @@ private class OpenHelper private constructor(
 
   val tablesInCreateOrder: List<Table>
     get() {
-      val tableDependencies = TableDependencies(tables)
-      if (tableDependencies.tablesAreCyclic()) LOG.w { it("Tables dependencies are cyclic ") }
-      return tableDependencies.sortedTableList
+      return TableDependencies(tables).also { deps ->
+        if (deps.tablesAreCyclic()) LOG.w { it("Tables dependencies are cyclic") }
+      }.sortedTableList
     }
-
-  override fun preOpen(block: (PreOpenParams) -> Unit) {
-    preOpen = block
-  }
 
   override fun onConfigure(block: (DatabaseConfiguration) -> Unit) {
     onConfigure = block
@@ -449,12 +503,29 @@ private class OpenHelper private constructor(
     onOpen = block
   }
 
-  override fun onConfigure(db: SQLiteDatabase) {
-    onConfigure(ConfigurationImpl(db))
+  override fun onCorruption(block: (Database) -> Unit) {
+    errorHandler.onError = block
   }
 
-  private fun doPreOpen() {
-    preOpen(PreOpenParamsImpl(this))
+  override fun onConfigure(db: SQLiteDatabase) {
+    val config = ConfigurationImpl(db)
+    db.setForeignKeyConstraintsEnabled(openParams.enableForeignKeyConstraints)
+    if (openParams.enableWriteAheadLogging) {
+      db.enableWriteAheadLogging()
+    } else {
+      db.disableWriteAheadLogging()
+      config.journalMode = openParams.journalMode
+      LOG.i { it("journal_mode=%s", config.journalMode) }
+    }
+    config.synchronousMode = openParams.synchronousMode
+    LOG.i { it("sync=%s", config.synchronousMode) }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      openParams.lookasideSlot?.let { lookaside ->
+        setLookasideConfig(lookaside.size, lookaside.count)
+      }
+    }
+    onConfigure(config)
+    config.closed = true
   }
 
   override fun onCreate(db: SQLiteDatabase) {
@@ -501,7 +572,8 @@ private class OpenHelper private constructor(
   private fun dropAll() {
     database.ongoingTransaction {
       setSchemaWritable(true)
-      SQLiteMaster.deleteWhere { SQLiteMaster.type inList MasterType.knownTypes.map { it.value } }
+      SQLiteMaster
+        .deleteWhere { SQLiteMaster.type inList MasterType.knownTypes.map { it.value } }
         .delete()
       setSchemaWritable(false)
       vacuum()
@@ -514,15 +586,12 @@ private class OpenHelper private constructor(
   }
 
   private fun setSchemaWritable(writable: Boolean) {
-    if (writable) execPragma("writable_schema = ${writable.toStatementString()}")
+    if (writable)
+      execPragma("writable_schema = ${writable.toStatementString()}")
   }
 
   /**
-   * "PRAGMA " is prepended to [statement] and then it's executed as SQL. For example:
-   * ```
-   * execPragma("synchronous=NORMAL")
-   * ```
-   * results in [SQLiteDatabase.execSQL] ("PRAGMA synchronous=NORMAL;")
+   * "PRAGMA " is prepended to [statement] and then it's executed as SQL
    * @throws SQLException if the SQL string is invalid
    */
   @Throws(SQLException::class)
@@ -533,16 +602,18 @@ private class OpenHelper private constructor(
   companion object {
     private val LOG by lazyLogger()
 
-    operator fun invoke(
+    internal operator fun invoke(
       context: Context,
-      database: Database,
+      database: WeLiteDatabase,
       name: String?,
       version: Int,
       tables: List<Table>,
       migrations: List<Migration>,
       requireMigration: Boolean,
+      openParams: OpenParams,
       configure: (DatabaseLifecycle) -> Unit
     ): OpenHelper {
+      val errorHandler = ErrorHandler(database)
       return OpenHelper(
         context,
         database,
@@ -550,71 +621,46 @@ private class OpenHelper private constructor(
         version,
         tables,
         migrations,
-        requireMigration
+        requireMigration,
+        openParams,
+        errorHandler
       ).apply {
         configure(this)
-        doPreOpen()
       }
     }
   }
 }
 
-private class PreOpenParamsImpl(private val openHelper: OpenHelper) : PreOpenParams {
-  override var allowWorkOnUiThread: Boolean
-    get() = openHelper.allowWorkOnUiThread
-    set(value) {
-      openHelper.allowWorkOnUiThread = value
-    }
-
-  /**
-   * Enables or disables the use of write-ahead logging for the database.
-   *
-   * Write-ahead logging cannot be used with read-only databases so the value of
-   * this flag is ignored if the database is opened read-only.
-   *
-   * @param enable True if write-ahead logging should be enabled, false if it
-   * should be disabled.
-   */
-  override fun enableWriteAheadLogging(enable: Boolean) {
-    openHelper.setWriteAheadLoggingEnabled(enable)
-  }
-
-  /**
-   * Configures <a href="https://sqlite.org/malloc.html#lookaside">lookaside memory allocator</a>
-   *
-   * <p> lookaside memory configuration can only be changed when no connection is using it
-   *
-   * <p>SQLite default settings will be used, if this method isn't called.
-   * Use {@code setLookasideConfig(0,0)} to disable lookaside
-   *
-   * <p><strong>Note:</strong> Provided slotSize/slotCount configuration is just a recommendation.
-   * The system may choose different values depending on a device, e.g. lookaside allocations
-   * can be disabled on low-RAM devices
-   *
-   * @param slotSize The size in bytes of each lookaside slot.
-   * @param slotCount The total number of lookaside memory slots per database connection.
-   */
-  override fun setLookasideConfig(slotSize: Int, slotCount: Int) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-      openHelper.setLookasideConfig(slotSize, slotCount)
-    }
-  }
+private fun ConfigurationImpl.checkNotClosed() {
+  if (closed) throw IllegalStateException("Configuration may only be performed during onConfigure")
 }
 
 private class ConfigurationImpl(private val db: SQLiteDatabase) : DatabaseConfiguration {
-  override fun enableForeignKeyConstraints(enable: Boolean) =
-    db.setForeignKeyConstraintsEnabled(enable)
+  var closed = false
 
-  override fun setLocale(locale: Locale) = db.setLocale(locale)
+  override fun setLocale(locale: Locale) {
+    checkNotClosed()
+    db.setLocale(locale)
+  }
 
   override var maximumSize: Long
     get() = db.maximumSize
     set(value) {
+      checkNotClosed()
       db.maximumSize = value
     }
 
   override fun execPragma(statement: String) {
-    db.execSQL("PRAGMA $statement")
+    checkNotClosed()
+    db.execSQL("PRAGMA $statement;")
+  }
+
+  override fun queryPragmaString(statement: String): String {
+    return db.stringForQuery("PRAGMA $statement;")
+  }
+
+  override fun queryPragmaLong(statement: String): Long {
+    return db.longForQuery("PRAGMA $statement;")
   }
 }
 

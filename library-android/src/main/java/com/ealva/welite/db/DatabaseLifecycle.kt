@@ -21,67 +21,80 @@ import java.util.Locale
 
 interface DatabaseLifecycle {
   /**
-   * Call [block] before the database is opened and pass it [PreOpenParams] to configure
-   * open parameters.
-   */
-  fun preOpen(block: (PreOpenParams) -> Unit)
-
-  /**
-   * After the database is open call [block] with a [DatabaseConfiguration] to allow the
+   * After the database is open [block] is called with a [DatabaseConfiguration] to allow the
    * database connection to be configured
    */
   fun onConfigure(block: (DatabaseConfiguration) -> Unit)
 
   /**
    * After the database has been opened, configured, all tables created, and all table post
-   * processing, call [block] with the fully created Database instance
+   * processing, call [block] with the fully created Database instance. This function is called
+   * if the database tables need to be created - typically first app run.
    */
   fun onCreate(block: (Database) -> Unit)
 
   /**
-   * After the database has been opened, configured, and either created or migrated, call [block]
-   * with the fully configured Database instance
+   * After the database has been opened, configured, and either created or migrated, as
+   * necessary, call [block] with the fully configured Database instance
    */
   fun onOpen(block: (Database) -> Unit)
-}
 
-interface PreOpenParams {
-  var allowWorkOnUiThread: Boolean
-
-  fun enableWriteAheadLogging(enable: Boolean)
-
-  /** No-op if Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1 */
-  fun setLookasideConfig(slotSize: Int, slotCount: Int)
-}
-
-interface DatabaseConfiguration {
   /**
-   * Sets whether foreign key constraints are enabled for the database.
-   * <p>
-   * By default, foreign key constraints are not enforced by the database.
-   * This method allows an application to enable foreign key constraints.
-   * It must be called each time the database is opened to ensure that foreign
-   * key constraints are enabled for the session.
-   * </p><p>
-   * When foreign key constraints are disabled, the database does not check whether
-   * changes to the database will violate foreign key constraints.  Likewise, when
-   * foreign key constraints are disabled, the database will not execute cascade
-   * delete or update triggers.  As a result, it is possible for the database
-   * state to become inconsistent.
-   * </p><p>
-   * This method must not be called while a transaction is in progress.
-   * </p><p>
-   * See also <a href="http://sqlite.org/foreignkeys.html">SQLite Foreign Key Constraints</a>
-   * for more details about foreign key constraint support.
-   * </p>
-   *
-   * @param enable True to enable foreign key constraints, false to disable them.
-   *
-   * @throws IllegalStateException if the are transactions is in progress
-   * when this method is called.
+   * Call [block] when database corruption is detected. If this is not set the default
+   * behavior is to close the Database if open and delete the database file
    */
-  fun enableForeignKeyConstraints(enable: Boolean)
+  fun onCorruption(block: (Database) -> Unit)
+}
 
+interface PragmaExec {
+  /**
+   * "PRAGMA " is prepended to [statement] and then it's executed as SQL.
+   * @throws SQLException if the SQL string is invalid
+   */
+  fun execPragma(statement: String)
+
+  /**
+   * Execute the pragma as a query which returns a single row, single column, string
+   */
+  fun queryPragmaString(statement: String): String
+
+  /**
+   * Execute the pragma as a query which returns a single row, single column, long
+   */
+  fun queryPragmaLong(statement: String): Long
+}
+
+/**
+ * If [JournalMode.UNKNOWN] is returned, an error occurred. If [JournalMode.UNKNOWN] is set an
+ * IllegalArgumentException is thrown
+ */
+var PragmaExec.journalMode: JournalMode
+  get() = queryPragmaString("journal_mode").toJournalMode()
+  set(value) {
+    require(value != JournalMode.UNKNOWN) {
+      "${JournalMode.UNKNOWN} indicates an error. Do not set."
+    }
+    queryPragmaString("journal_mode=$value")
+  }
+
+/**
+ * If [SynchronousMode.UNKNOWN] is returned, an error occurred. If [SynchronousMode.UNKNOWN] is
+ * set an IllegalArgumentException is thrown
+ */
+var PragmaExec.synchronousMode: SynchronousMode
+  get() = queryPragmaLong("synchronous").toSynchronousMode()
+  set(value) {
+    require(value != SynchronousMode.UNKNOWN) {
+      "${SynchronousMode.UNKNOWN} indicates an error. Do not set."
+    }
+    execPragma("synchronous=$value")
+  }
+
+/**
+ * Provides the interface to configure the database connection. Do not retain a reference to this
+ * and call it's functions later.
+ */
+interface DatabaseConfiguration : PragmaExec {
   /**
    * Sets the locale for this database.  Does nothing if this database has
    * the {@link #NO_LOCALIZED_COLLATORS} flag set or was opened read only.
@@ -99,15 +112,4 @@ interface DatabaseConfiguration {
    * be set below the current size.
    */
   var maximumSize: Long
-
-  /**
-   * "PRAGMA " is prepended to [statement] and then it's executed as SQL. For example:
-   * ```
-   * execPragma("synchronous=NORMAL")
-   * ```
-   * results in [android.database.sqlite.SQLiteDatabase.execSQL] ("PRAGMA synchronous=NORMAL")
-   * @throws SQLException if the SQL string is invalid
-   */
-  @Throws(SQLException::class)
-  fun execPragma(statement: String)
 }

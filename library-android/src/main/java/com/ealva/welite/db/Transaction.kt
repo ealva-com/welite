@@ -16,6 +16,7 @@
 
 package com.ealva.welite.db
 
+import android.database.Cursor
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import android.os.Build
@@ -28,10 +29,11 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.schema.ColumnMetadata
+import com.ealva.welite.db.table.ColumnMetadata
+import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.schema.MasterType
 import com.ealva.welite.db.schema.SQLiteMaster
-import com.ealva.welite.db.schema.TableDescription
+import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.schema.asMasterType
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
@@ -39,6 +41,7 @@ import com.ealva.welite.db.statements.InsertStatement
 import com.ealva.welite.db.statements.UpdateBuilder
 import com.ealva.welite.db.statements.UpdateStatement
 import com.ealva.welite.db.table.ColumnSet
+import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.NO_BIND
 import com.ealva.welite.db.table.OnConflict
@@ -201,7 +204,8 @@ interface TransactionInProgress : Queryable {
   fun vacuum()
 
   companion object {
-    operator fun invoke(db: DbConfig): TransactionInProgress = TransactionInProgressImpl(db)
+    internal operator fun invoke(db: DbConfig): TransactionInProgress =
+      TransactionInProgressImpl(db)
   }
 }
 
@@ -283,9 +287,7 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
       val columnsMetadata = mutableListOf<ColumnMetadata>()
       val tableIdentity = this.identity.unquoted
       db.select("""PRAGMA table_info("$tableIdentity")""").use { cursor ->
-        while (cursor.moveToNext()) {
-          columnsMetadata.add(ColumnMetadata.fromCursor(cursor))
-        }
+        while (cursor.moveToNext()) columnsMetadata.add(cursor.columnMetadata)
       }
       return TableDescription(tableIdentity, columnsMetadata)
     }
@@ -322,7 +324,7 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
     get() = DatabaseUtils.stringForQuery(db, "SELECT sqlite_version() AS sqlite_version", null)
 
   override fun tegridyCheck(maxErrors: Int): List<String> {
-    db.select(buildString { append("PRAGMA INTEGRITY_CHECK(", maxErrors, ")") }).use { cursor ->
+    db.select("PRAGMA INTEGRITY_CHECK($maxErrors)").use { cursor ->
       if (cursor.moveToFirst()) {
         return ArrayList<String>(cursor.count).apply {
           do {
@@ -340,9 +342,7 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
 
   override val Table.foreignKeyList: List<ForeignKeyInfo>
     get() {
-      db.select(
-        buildString { append("PRAGMA foreign_key_list('", identity.unquoted, "')") }
-      ).use { cursor ->
+      db.select("PRAGMA foreign_key_list(${identity.value})").use { cursor ->
         return if (cursor.count > 0) {
           ArrayList<ForeignKeyInfo>(cursor.count).apply {
             while (cursor.moveToNext()) {
@@ -406,6 +406,11 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
   override fun vacuum() {
     db.execSQL("VACUUM;")
   }
+
+  @Suppress("unused")
+  fun execSql(sql: String, bindArgs: List<Any?> = emptyList()) {
+    if (bindArgs.isEmpty()) db.execSQL(sql) else db.execSQL(sql, bindArgs.toTypedArray())
+  }
 }
 
 private const val INDEX_FK_ID = 0
@@ -460,7 +465,7 @@ interface Transaction : TransactionInProgress, AutoCloseable {
   override fun close()
 
   companion object {
-    operator fun invoke(
+    internal operator fun invoke(
       database: DbConfig,
       exclusiveLock: Boolean,
       unitOfWork: String,
@@ -535,3 +540,20 @@ private class TransactionImpl(
       " success=" + successful + " rolledBack=" + rolledBack
   }
 }
+
+private const val ID_COLUMN = 0
+private const val NAME_COLUMN = 1
+private const val TYPE_COLUMN = 2
+private const val NULLABLE_COLUMN = 3
+private const val DEF_VAL_COLUMN = 4
+private const val PK_COLUMN = 5
+private const val NOT_NULLABLE = 1
+private val Cursor.columnMetadata: ColumnMetadata
+  get() = ColumnMetadata(
+    getInt(ID_COLUMN),
+    getString(NAME_COLUMN),
+    FieldType.fromType(getString(TYPE_COLUMN)),
+    getInt(NULLABLE_COLUMN) != NOT_NULLABLE, // 1 = not nullable
+    if (isNull(DEF_VAL_COLUMN)) "NULL" else getString(DEF_VAL_COLUMN),
+    getInt(PK_COLUMN)
+  )

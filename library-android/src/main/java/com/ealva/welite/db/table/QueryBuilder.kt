@@ -16,7 +16,7 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.DbConfig
+import com.ealva.welite.db.expr.AppendsToSqlBuilder
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SortOrder
@@ -43,12 +43,12 @@ inline val OrderByPair.ascDesc
   get() = second
 
 @WeLiteMarker
-class QueryBuilder(
+class QueryBuilder private constructor(
   private val dbConfig: DbConfig,
   private var set: SelectFrom,
   private var where: Op<Boolean>?,
   private var count: Boolean = false
-) : PerformQuery {
+) : PerformQuery, AppendsToSqlBuilder {
   private var groupBy = mutableListOf<Expression<*>>()
   private var orderBy = mutableListOf<OrderByPair>()
   private var having: Op<Boolean>? = null
@@ -160,7 +160,7 @@ class QueryBuilder(
     }
   }
 
-  fun appendTo(builder: SqlBuilder): SqlBuilder {
+  override fun appendTo(builder: SqlBuilder): SqlBuilder {
     return builder.append(this)
   }
 
@@ -212,6 +212,15 @@ class QueryBuilder(
     @Suppress("UNCHECKED_CAST")
     return set.resultColumns.find { it == original } as? SqlTypeExpressionAlias<T>
   }
+
+  companion object {
+    internal operator fun invoke(
+      dbConfig: DbConfig,
+      set: SelectFrom,
+      where: Op<Boolean>?,
+      count: Boolean = false
+    ): QueryBuilder = QueryBuilder(dbConfig, set, where, count)
+  }
 }
 
 /**
@@ -225,11 +234,11 @@ fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>) = adjustWhere {
 }
 
 /**
- * Add `andPart` to where condition with `or` operator.
+ * Add `orPart` to where condition with `or` operator.
  * @return same Query instance which was provided as a receiver.
  */
-fun QueryBuilder.orWhere(andPart: () -> Op<Boolean>) = adjustWhere {
-  val expr = Op.build { andPart() }
+fun QueryBuilder.orWhere(orPart: () -> Op<Boolean>) = adjustWhere {
+  val expr = Op.build { orPart() }
   if (this == null) expr
   else this or expr
 }

@@ -31,7 +31,6 @@ import com.ealva.welite.db.table.Table
 import com.ealva.weliteapp.app.MediaFileTable.fileName
 import com.ealva.weliteapp.app.MediaFileTable.localDate
 import com.ealva.weliteapp.app.MediaFileTable.mediaTitle
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -100,7 +99,7 @@ class MainActivity : AppCompatActivity() {
 
       db.query {
         val count = MediaFileTable.select(fileName).where { mediaTitle like "%Title%" }.count()
-        launch(Dispatchers.Main) { LOG.i { it("count=%d", count) } }
+        LOG.i { it("count=%d", count) }
 
         MediaFileTable
           .select(mediaTitle, localDate)

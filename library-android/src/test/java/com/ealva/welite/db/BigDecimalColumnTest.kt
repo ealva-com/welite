@@ -113,7 +113,7 @@ class BigDecimalColumnTest {
 
   @Test
   fun `test bind other than BigDecimal`() = coroutineRule.runBlockingTest {
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -139,7 +139,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -159,7 +159,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test bind malformed BigDecimal string`() = coroutineRule.runBlockingTest {
     thrown.expectCause(isA(NumberFormatException::class.java))
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -179,7 +179,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test bind bad type`() = coroutineRule.runBlockingTest {
     thrown.expectCause(isA(NumberFormatException::class.java))
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -199,21 +199,19 @@ class BigDecimalColumnTest {
   @Test
   fun `test opt reference`() = coroutineRule.runBlockingTest {
     expect(HasBigTableRef.ref.descriptionDdl()).toBe(""""ref" INTEGER""")
-    withTestDatabase(appCtx, listOf(BigTable, HasBigTableRef), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, listOf(BigTable, HasBigTableRef), coroutineRule.testDispatcher, true) {
       query {
         HasBigTableRef.foreignKeyList.let { list ->
           expect(list).toHaveSize(1)
-          expect(list[0]).toBe(
-            ForeignKeyInfo(
-              id = 0,
-              seq = 0,
-              table = "Big",
-              from = "ref",
-              to = "bigd",
-              onUpdate = ForeignKeyAction.NO_ACTION,
-              onDelete = ForeignKeyAction.CASCADE
-            )
-          )
+          list[0].let {
+            expect(it.id).toBe(0)
+            expect(it.seq).toBe(0)
+            expect(it.table).toBe("Big")
+            expect(it.from).toBe("ref")
+            expect(it.to).toBe("bigd")
+            expect(it.onUpdate).toBe(ForeignKeyAction.NO_ACTION)
+            expect(it.onDelete).toBe(ForeignKeyAction.CASCADE)
+          }
         }
       }
     }

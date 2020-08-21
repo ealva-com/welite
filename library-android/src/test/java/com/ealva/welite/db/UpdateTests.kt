@@ -57,7 +57,8 @@ class UpdateTests {
     withTestDatabase(
       context = appCtx,
       tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
     ) {
       val badName = "Led Zepelin"
       val goodName = "Led Zeppelin"

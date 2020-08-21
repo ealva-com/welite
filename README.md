@@ -22,13 +22,6 @@ Database(
   tables = listOf(TableA, TableB, TableC),
   migrations = emptyList()
 ) {
-  preOpen { params ->
-    params.enableWriteAheadLogging(true)
-  }
-  onConfigure { configuration ->
-    configuration.enableForeignKeyConstraints(true)
-    configuration.execPragma("synchronous=NORMAL")
-  }
   onCreate { database -> /* your code */ }
   onOpen { database -> /* your code */  }
 }

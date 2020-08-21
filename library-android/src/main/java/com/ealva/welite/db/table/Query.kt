@@ -21,7 +21,6 @@ import android.database.sqlite.SQLiteDatabase
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
-import com.ealva.welite.db.DbConfig
 import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.PersistentType

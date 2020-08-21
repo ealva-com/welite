@@ -45,7 +45,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.ealva.welite.db.dml.withPlaceTestDatabase as withTestDatabase1
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -62,7 +61,7 @@ class JoinTests {
 
   @Test
   fun `test join inner join`() = coroutineRule.runBlockingTest {
-    withTestDatabase1(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
@@ -88,7 +87,7 @@ class JoinTests {
 
   @Test
   fun `test fk join`() = coroutineRule.runBlockingTest {
-    withTestDatabase1(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
@@ -109,7 +108,7 @@ class JoinTests {
 
   @Test
   fun `test join with order by`() = coroutineRule.runBlockingTest {
-    withTestDatabase1(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
@@ -154,7 +153,7 @@ class JoinTests {
       val name = reference("name_ref", names.name)
     }
 
-    withTestDatabase1(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(numbers, names, numberNameRel),
       testDispatcher = coroutineRule.testDispatcher
@@ -185,7 +184,7 @@ class JoinTests {
 
   @Test
   fun `test cross join`() = coroutineRule.runBlockingTest {
-    withTestDatabase1(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
@@ -223,7 +222,7 @@ class JoinTests {
       val baz = reference("baz", fooTable.baz)
     }
 
-    withTestDatabase1(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(fooTable, barTable),
       testDispatcher = coroutineRule.testDispatcher
@@ -253,7 +252,7 @@ class JoinTests {
   @ExperimentalUnsignedTypes
   @Test
   fun `test join with alias`() = coroutineRule.runBlockingTest {
-    withTestDatabase1(
+    withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher

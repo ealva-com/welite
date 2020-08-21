@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.schema
+package com.ealva.welite.db.table
 
-import android.database.Cursor
+data class TableDescription(val tableName: String, val columnsMetadata: List<ColumnMetadata>)
 
-@Suppress("unused")
 enum class FieldType(val type: Int, val display: String) {
-  NullField(Cursor.FIELD_TYPE_NULL, "NULL"),
-  IntegerField(Cursor.FIELD_TYPE_INTEGER, "INTEGER"),
-  RealField(Cursor.FIELD_TYPE_FLOAT, "REAL"),
-  TextField(Cursor.FIELD_TYPE_STRING, "TEXT"),
-  BlobField(Cursor.FIELD_TYPE_BLOB, "BLOB"),
+  @Suppress("unused")
+  NullField(android.database.Cursor.FIELD_TYPE_NULL, "NULL"),
+  IntegerField(android.database.Cursor.FIELD_TYPE_INTEGER, "INTEGER"),
+  RealField(android.database.Cursor.FIELD_TYPE_FLOAT, "REAL"),
+  TextField(android.database.Cursor.FIELD_TYPE_STRING, "TEXT"),
+  BlobField(android.database.Cursor.FIELD_TYPE_BLOB, "BLOB"),
   UnknownField(Int.MAX_VALUE, "UNKNOWN");
 
   companion object {
@@ -40,19 +40,11 @@ enum class FieldType(val type: Int, val display: String) {
   }
 }
 
-fun Cursor.columnType(index: Int): FieldType {
+/*
+ fun Cursor.columnType(index: Int): FieldType {
   return FieldType.fromInt(getType(index))
-}
-
-data class TableDescription(val tableName: String, val columnsMetadata: List<ColumnMetadata>)
-
-private const val ID_COLUMN = 0
-private const val NAME_COLUMN = 1
-private const val TYPE_COLUMN = 2
-private const val NULLABLE_COLUMN = 3
-private const val DEF_VAL_COLUMN = 4
-private const val PK_COLUMN = 5
-private const val NOT_NULLABLE = 1
+  }
+*/
 
 data class ColumnMetadata(
   val id: Int,
@@ -61,17 +53,4 @@ data class ColumnMetadata(
   val nullable: Boolean,
   val defVal: String,
   val pk: Int
-) {
-  companion object {
-    fun fromCursor(cursor: Cursor): ColumnMetadata {
-      return ColumnMetadata(
-        cursor.getInt(ID_COLUMN),
-        cursor.getString(NAME_COLUMN),
-        FieldType.fromType(cursor.getString(TYPE_COLUMN)),
-        cursor.getInt(NULLABLE_COLUMN) != NOT_NULLABLE, // 1 = not nullable
-        if (cursor.isNull(DEF_VAL_COLUMN)) "NULL" else cursor.getString(DEF_VAL_COLUMN),
-        cursor.getInt(PK_COLUMN)
-      )
-    }
-  }
-}
+)
