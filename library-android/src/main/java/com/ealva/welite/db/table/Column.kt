@@ -21,11 +21,12 @@ import com.ealva.welite.db.expr.BindableParameter
 import com.ealva.welite.db.expr.Count
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
-import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.expr.literal
+import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.SqlBuilder
+import com.ealva.welite.db.type.buildStr
 import java.util.Comparator
 
 /**
@@ -110,12 +111,7 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
       initialConstraints: List<ColumnConstraint> = emptyList(),
       addTo: (Column<T>) -> Unit = {},
       block: ColumnConstraints<T>.() -> Unit = {}
-    ): Column<T> = ColumnImpl(
-      table,
-      name,
-      persistentType,
-      initialConstraints
-    ).apply {
+    ): Column<T> = ColumnImpl(table, name, persistentType, initialConstraints).apply {
       addTo(this)
       block()
     }
@@ -156,34 +152,32 @@ private class ColumnImpl<T>(
   override var dbDefaultValue: Expression<T>? = null
 
   @ExperimentalUnsignedTypes
-  override fun default(defaultValue: T) = apply {
-    dbDefaultValue = literal(defaultValue)
-  }
+  override fun default(defaultValue: T) = apply { dbDefaultValue = literal(defaultValue) }
 
   override fun defaultExpression(defaultValue: Expression<T>) = apply {
     dbDefaultValue = defaultValue
   }
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append(table.identity.value)
-      append('.')
-      append(identity().value)
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(table.identity.value)
+    append('.')
+    append(identity().value)
+  }
 
   override fun isOneColumnPK(): Boolean = table.primaryKey?.columns?.singleOrNull() == this
 
   /** Returns the SQL representation of this column. */
-  override fun descriptionDdl(): String = buildString {
-    appendIdentity(identity())
-    append(" ")
+  override fun descriptionDdl(): String = buildStr {
+    append(identity())
+    append(' ')
     append(persistentType.sqlType)
     constraintList.forEach { constraint ->
-      append(" ")
-      append(constraint)
+      append(' ')
+      append(constraint.toString())
     }
     dbDefaultValue?.let { defaultValue ->
-      append(" DEFAULT ${defaultValue.asDefaultValue()}")
+      append(" DEFAULT ")
+      append(defaultValue.asDefaultValue())
     }
   }
 
@@ -196,16 +190,24 @@ private class ColumnImpl<T>(
 
     if (table != other.table) return false
     if (name != other.name) return false
-    if (persistentType != other.persistentType) return false
-
-    return true
+    return (persistentType == other.persistentType)
   }
 
   override fun hashCode(): Int = table.hashCode() * 31 + name.hashCode()
 
-  override fun toString(): String = "${tableIdentity.unquoted}.$name"
+  override fun toString(): String = buildStr {
+    append(tableIdentity.unquoted)
+    append('.')
+    append(name)
+  }
 
-  override fun asDefaultValue(): String = "(${toString()})"
+  override fun asDefaultValue(): String = buildStr {
+    append("(")
+    append(tableIdentity.unquoted)
+    append('.')
+    append(name)
+    append(")")
+  }
 
   override val nullable: Boolean
     get() = persistentType.nullable || constraintList.isRowId(persistentType.isIntegerType)
@@ -263,15 +265,8 @@ private class ColumnImpl<T>(
     customIndexName?.let { table.uniqueIndex(customIndexName, this) } ?: table.uniqueIndex(this)
   }
 
-  override fun makeAlias(tableAlias: String?): Column<T> {
-    return Column(
-      Alias(
-        table,
-        tableAlias ?: "${table.tableName}_$name"
-      ),
-      name, persistentType
-    )
-  }
+  override fun makeAlias(tableAlias: String?): Column<T> =
+    Column(Alias(table, tableAlias ?: "${table.tableName}_$name"), name, persistentType)
 
   override fun inTable(table: Table) = this.table == table
 

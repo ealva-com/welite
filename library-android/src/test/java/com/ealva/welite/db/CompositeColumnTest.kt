@@ -20,14 +20,13 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.table.BaseCompositeColumn
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.CompositeColumn
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.test.common.TestTable
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -87,7 +86,7 @@ class InstantComposite(
     TODO("Not yet implemented")
   }
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     columns.forEach { column -> append(column) }
   }
 }

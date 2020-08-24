@@ -56,11 +56,9 @@ abstract class BaseStatement : Bindable, ParamBindings {
     statement.bindBlob(index + 1, value)
   }
 
-  override fun <T> set(index: Int, value: T?) {
-    // PersistentType will call back on this to do the actual bind and the index should just be
-    // passed through, so we won't check the index until one of the other bind functions are called.
-    types[index].bind(this, index, value)
-  }
+  // PersistentType will call back on this to do the actual bind and the index should just be
+  // passed through, so we won't check the index until one of the other bind functions are called.
+  override fun <T> set(index: Int, value: T?) = types[index].bind(this, index, value)
 
   private fun ensureIndexInBounds(index: Int) {
     require(index in paramRange) { "Out of bounds index=$index indices=$paramRange" }

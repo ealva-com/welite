@@ -106,13 +106,9 @@ abstract class AscDescConstraint(val value: String) : ColumnConstraint() {
   }
 }
 
-object AscConstraint : AscDescConstraint(
-  ASC
-)
+object AscConstraint : AscDescConstraint(ASC)
 
-object DescConstraint : AscDescConstraint(
-  DESC
-) {
+object DescConstraint : AscDescConstraint(DESC) {
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
     super.allowedToFollow(others, persistentType)
     if (others.find { it is AutoIncrementConstraint } != null) {
@@ -138,8 +134,7 @@ class ConflictConstraint(private val onConflict: OnConflict) : ColumnConstraint(
 
   private val mustFollow = "$this must follow $PRIMARY_KEY, $ASC or $DESC, $NOT_NULL, or $UNIQUE."
 
-  override fun mayAppearFirst(persistentType: PersistentType<*>) =
-    notAllowed { mustFollow }
+  override fun mayAppearFirst(persistentType: PersistentType<*>) = notAllowed { mustFollow }
 
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
     val constraint = others.find { it is ConflictConstraint }
@@ -194,11 +189,6 @@ object UniqueConstraint : ColumnConstraint() {
   override fun mayAppearFirst(persistentType: PersistentType<*>) {}
 
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
-//    when (val prev = others.last()) {
-//      is NotNullConstraint -> {
-//      }
-//      else -> notAllowed { "$this may not follow $prev" }
-//    }
   }
 }
 

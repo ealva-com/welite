@@ -21,18 +21,17 @@ import android.database.sqlite.SQLiteDatabase
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
+import com.ealva.welite.db.type.buildStr
 import it.unimi.dsi.fastutil.objects.Object2IntMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
-import java.lang.IllegalStateException
 import java.util.Arrays
-import kotlin.sequences.sequence as ksequence
 import kotlinx.coroutines.flow.flow as kflow
+import kotlin.sequences.sequence as ksequence
 
 /**
  * Interface with functions that perform a query. Query implements these functions as does
@@ -105,16 +104,14 @@ interface Query : PerformQuery {
     internal operator fun invoke(
       dbConfig: DbConfig,
       fields: List<SqlTypeExpression<*>>,
-      builder: SqlBuilder
-    ): Query {
-      return QueryImpl(dbConfig, fields, builder)
-    }
+      sql: String,
+      types: List<PersistentType<*>>
+    ): Query = QueryImpl(dbConfig, fields, sql, types)
   }
 }
 
 /** Take a subset of the [SelectFrom.resultColumns]  */
-fun SelectFrom.subset(vararg columns: SqlTypeExpression<*>): SelectFrom =
-  subset(columns.asList())
+fun SelectFrom.subset(vararg columns: SqlTypeExpression<*>): SelectFrom = subset(columns.asList())
 
 /** Take a subset of the [SelectFrom.resultColumns]  */
 fun SelectFrom.subset(columns: List<SqlTypeExpression<*>>): SelectFrom =
@@ -144,28 +141,22 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ParamBi
 private class QueryImpl(
   private val dbConfig: DbConfig,
   private val fields: List<SqlTypeExpression<*>>,
-  builder: SqlBuilder
+  override val sql: String,
+  types: List<PersistentType<*>>
 ) : Query {
   private val db = dbConfig.db
-  override val sql = builder.toString()
-  private val queryArgs = QueryArgs(builder.types)
+  private val queryArgs = QueryArgs(types)
 
   override fun forEach(bindArgs: (ParamBindings) -> Unit, action: (Cursor) -> Unit) {
     bindArgs(queryArgs)
-    DbCursorWrapper(
-      db.select(sql, queryArgs.arguments),
-      fields.mapExprToIndex()
-    ).use { cursor ->
+    DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
       while (cursor.moveToNext()) action(cursor)
     }
   }
 
   override fun <T> flow(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T) = kflow {
     bindArgs(queryArgs)
-    DbCursorWrapper(
-      db.select(sql, queryArgs.arguments),
-      fields.mapExprToIndex()
-    ).use { cursor ->
+    DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
       while (cursor.moveToNext()) emit(factory(cursor))
     }
   }.flowOn(dbConfig.dispatcher)
@@ -175,10 +166,7 @@ private class QueryImpl(
     factory: (Cursor) -> T
   ): Sequence<T> = ksequence {
     bindArgs(queryArgs)
-    DbCursorWrapper(
-      db.select(sql, queryArgs.arguments),
-      fields.mapExprToIndex()
-    ).use { cursor ->
+    DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
       while (cursor.moveToNext()) yield(factory(cursor))
     }
   }
@@ -238,23 +226,14 @@ private class DbCursorWrapper(
   }
 
   override fun getBlob(columnIndex: Int): ByteArray = cursor.getBlob(columnIndex)
-
   override fun getString(columnIndex: Int): String = cursor.getString(columnIndex)
-
   override fun getShort(columnIndex: Int) = cursor.getShort(columnIndex)
-
   override fun getInt(columnIndex: Int) = cursor.getInt(columnIndex)
-
   override fun getLong(columnIndex: Int) = cursor.getLong(columnIndex)
-
   override fun getFloat(columnIndex: Int) = cursor.getFloat(columnIndex)
-
   override fun getDouble(columnIndex: Int) = cursor.getDouble(columnIndex)
-
   override fun isNull(columnIndex: Int) = cursor.isNull(columnIndex)
-
   override fun columnName(columnIndex: Int): String = cursor.getColumnName(columnIndex)
-
   override fun close() = cursor.close()
 
   private fun <T> unexpectedNullMessage(expression: SqlTypeExpression<T>) =
@@ -293,9 +272,12 @@ fun SQLiteDatabase.explainQueryPlan(
     rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { c ->
       while (c.moveToNext()) {
         add(
-          buildString {
+          buildStr {
             for (i in 0 until c.columnCount) {
-              append(c.getColumnName(i)).append(":").append(c.getString(i)).append(", ")
+              append(c.getColumnName(i))
+              append(':')
+              append(c.getString(i))
+              append(", ")
             }
           }
         )

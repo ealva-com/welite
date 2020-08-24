@@ -1,5 +1,3 @@
-<!-- Thanks for taking the time to write this Pull Request ❤️ -->
-
 ## 🚀 Description
 <!-- Describe your changes in detail -->
 

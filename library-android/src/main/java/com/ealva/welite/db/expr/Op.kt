@@ -24,24 +24,25 @@ import com.ealva.welite.db.type.DoublePersistentType
 import com.ealva.welite.db.type.FloatPersistentType
 import com.ealva.welite.db.type.IntegerPersistentType
 import com.ealva.welite.db.type.LongPersistentType
+import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.ShortPersistentType
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 import com.ealva.welite.db.type.UBytePersistentType
 import com.ealva.welite.db.type.UIntegerPersistentType
 import com.ealva.welite.db.type.ULongPersistentType
 import com.ealva.welite.db.type.UShortPersistentType
-import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.toStatementString
 
 abstract class Op<T> : BaseExpression<T>() {
   object TRUE : Op<Boolean>() {
-    override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+    override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
       append(true.toStatementString())
     }
   }
 
   object FALSE : Op<Boolean>() {
-    override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+    override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
       append(false.toStatementString())
     }
   }
@@ -52,8 +53,10 @@ abstract class Op<T> : BaseExpression<T>() {
 }
 
 class NotOp<T>(private val expr: Expression<T>) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
-    append("NOT (").append(expr).append(")")
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("NOT (")
+    append(expr)
+    append(")")
   }
 }
 
@@ -61,7 +64,7 @@ abstract class CompoundBooleanOp<T : CompoundBooleanOp<T>>(
   private val operator: String,
   internal val expressions: List<Expression<Boolean>>
 ) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     expressions.appendTo(this, separator = operator) { appendExpression(it) }
   }
 }
@@ -103,9 +106,11 @@ abstract class ComparisonOp(
   private val rhs: Expression<*>,
   private val opSign: String
 ) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     appendExpression(lhs)
-    append(" $opSign ")
+    append(' ')
+    append(opSign)
+    append(' ')
     appendExpression(rhs)
   }
 }
@@ -118,14 +123,14 @@ class GreaterOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1
 class GreaterEqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, ">=")
 
 class IsNullOp(private val expr: Expression<*>) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(expr)
     append(" IS NULL")
   }
 }
 
 class IsNotNullOp(private val expr: Expression<*>) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(expr)
     append(" IS NOT NULL")
   }
@@ -140,18 +145,11 @@ fun shortParam(value: Short): Expression<Short> = QueryParameter(
   ShortPersistentType()
 )
 
-fun intParam(value: Int): QueryParameter<Int> =
-  QueryParameter(value, IntegerPersistentType())
-
+fun intParam(value: Int): QueryParameter<Int> = QueryParameter(value, IntegerPersistentType())
 fun longParam(value: Long): Expression<Long> = QueryParameter(value, LongPersistentType())
-fun floatParam(value: Float): Expression<Float> =
-  QueryParameter(value, FloatPersistentType())
-
-fun doubleParam(value: Double): Expression<Double> =
-  QueryParameter(value, DoublePersistentType())
-
-fun stringParam(value: String): Expression<String> =
-  QueryParameter(value, StringPersistentType())
+fun floatParam(value: Float): Expression<Float> = QueryParameter(value, FloatPersistentType())
+fun doubleParam(value: Double): Expression<Double> = QueryParameter(value, DoublePersistentType())
+fun stringParam(value: String): Expression<String> = QueryParameter(value, StringPersistentType())
 
 fun booleanParam(value: Boolean): Expression<Boolean> =
   QueryParameter(value, BooleanPersistentType())
@@ -174,9 +172,7 @@ fun ulongParam(value: ULong): Expression<ULong> =
 
 class BindableParameter<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      registerBindable(sqlType)
-    }
+    sqlBuilder.apply { registerBindable(sqlType) }
 }
 
 private fun SqlBuilder.appendExpression(expr: Expression<*>) {
@@ -192,5 +188,5 @@ class QueryParameter<T>(
   private val sqlType: PersistentType<T>
 ) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder { registerArgument(sqlType, value) }
+    sqlBuilder.apply { registerArgument(sqlType, value) }
 }

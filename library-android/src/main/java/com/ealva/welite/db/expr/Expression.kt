@@ -16,16 +16,22 @@
 
 package com.ealva.welite.db.expr
 
-interface Expression<T> {
-  fun asDefaultValue(): String
+import com.ealva.welite.db.type.AppendsToSqlBuilder
+import com.ealva.welite.db.type.SqlBuilder
+import com.ealva.welite.db.type.buildStr
 
-  fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
+interface Expression<T> : AppendsToSqlBuilder {
+  fun asDefaultValue(): String
 }
 
 abstract class BaseExpression<T> : Expression<T> {
   private val _hashCode: Int by lazy { toString().hashCode() }
 
-  override fun asDefaultValue(): String = "(${toString()})"
+  override fun asDefaultValue(): String = buildStr {
+    append('(')
+    appendTo(this)
+    append(')')
+  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -38,11 +44,10 @@ abstract class BaseExpression<T> : Expression<T> {
 
   override fun hashCode(): Int = _hashCode
 
-  override fun toString(): String = SqlBuilder().append(this).toString()
+  override fun toString(): String = buildStr { appendTo(this) }
 
   companion object {
-    inline fun <T, E : Expression<T>> build(builder: () -> E): E =
-      builder()
+    inline fun <T, E : Expression<T>> build(builder: () -> E): E = builder()
   }
 }
 
@@ -52,5 +57,4 @@ fun <T> Iterable<T>.appendTo(
   prefix: CharSequence = "",
   postfix: CharSequence = "",
   append: SqlBuilder.(T) -> Unit
-): SqlBuilder =
-  builder.apply { appendEach(separator, prefix, postfix, append) }
+): SqlBuilder =  builder.apply { appendEach(separator, prefix, postfix, append) }

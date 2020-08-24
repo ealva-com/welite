@@ -19,12 +19,13 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.table.NO_BIND
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.ParamBindings
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.buildSql
 
 class UpdateBuilder<T : Table>(
   private val db: SQLiteDatabase,
@@ -71,26 +72,31 @@ private class UpdateStatementImpl<T : Table>(
   private val bind: T.(ColumnValues) -> Unit
 ) : BaseStatement(), UpdateStatement, ParamBindings {
 
-  private val sqlBuilder: SqlBuilder = SqlBuilder().apply {
-    append(onConflict.updateOr)
-    append(table.identity.value)
+  private val sql: String
+  override val types: List<PersistentType<*>>
 
-    val columnValues = ColumnValues()
-    table.bind(columnValues)
+  init {
+    val (_sql, _types) = buildSql {
+      append(onConflict.updateOr)
+      append(table.identity.value)
 
-    columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
-      append(columnValue)
+      val columnValues = ColumnValues()
+      table.bind(columnValues)
+
+      columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
+        append(columnValue)
+      }
+
+      where?.let { where ->
+        append(" WHERE ")
+        append(where)
+      }
     }
-
-    where?.let { where ->
-      append(" WHERE ")
-      append(where)
-    }
+    sql = _sql
+    types = _types
   }
 
-  private val sql = sqlBuilder.toString()
   override val statement: SQLiteStatement = db.compileStatement(sql)
-  override val types = sqlBuilder.types
 
   override fun update(bindArgs: (ParamBindings) -> Unit): Int {
     statement.clearBindings()

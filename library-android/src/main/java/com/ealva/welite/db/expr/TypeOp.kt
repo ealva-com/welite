@@ -24,6 +24,7 @@ import com.ealva.welite.db.type.IntegerPersistentType
 import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.ShortPersistentType
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 import com.ealva.welite.db.type.UBytePersistentType
 import com.ealva.welite.db.type.UIntegerPersistentType
@@ -38,57 +39,38 @@ class LiteralOp<T>(
 
   override fun appendTo(
     sqlBuilder: SqlBuilder
-  ): SqlBuilder = sqlBuilder {
+  ): SqlBuilder = sqlBuilder.apply {
     append(persistentType.valueToString(value))
   }
 }
 
-fun booleanLiteral(value: Boolean): LiteralOp<Boolean> =
-  LiteralOp(BooleanPersistentType(), value)
-
+fun booleanLiteral(value: Boolean): LiteralOp<Boolean> = LiteralOp(BooleanPersistentType(), value)
 fun byteLiteral(value: Byte): LiteralOp<Byte> = LiteralOp(BytePersistentType(), value)
+fun shortLiteral(value: Short): LiteralOp<Short> = LiteralOp(ShortPersistentType(), value)
+fun intLiteral(value: Int): LiteralOp<Int> = LiteralOp(IntegerPersistentType(), value)
+fun longLiteral(value: Long): LiteralOp<Long> = LiteralOp(LongPersistentType(), value)
+fun floatLiteral(value: Float): LiteralOp<Float> = LiteralOp(FloatPersistentType(), value)
+fun doubleLiteral(value: Double): LiteralOp<Double> = LiteralOp(DoublePersistentType(), value)
+fun stringLiteral(value: String): LiteralOp<String> = LiteralOp(StringPersistentType(), value)
 
 @ExperimentalUnsignedTypes
 fun ubyteLiteral(value: UByte): LiteralOp<UByte> = LiteralOp(UBytePersistentType(), value)
 
-fun shortLiteral(value: Short): LiteralOp<Short> =
-  LiteralOp(ShortPersistentType(), value)
+@ExperimentalUnsignedTypes
+fun ushortLiteral(value: UShort): LiteralOp<UShort> = LiteralOp(UShortPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-fun ushortLiteral(value: UShort): LiteralOp<UShort> =
-  LiteralOp(UShortPersistentType(), value)
-
-fun intLiteral(value: Int): LiteralOp<Int> =
-  LiteralOp(IntegerPersistentType(), value)
+fun uintLiteral(value: UInt): LiteralOp<UInt> = LiteralOp(UIntegerPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-fun uintLiteral(value: UInt): LiteralOp<UInt> =
-  LiteralOp(UIntegerPersistentType(), value)
-
-fun longLiteral(value: Long): LiteralOp<Long> =
-  LiteralOp(LongPersistentType(), value)
-
-@ExperimentalUnsignedTypes
-fun ulongLiteral(value: ULong): LiteralOp<ULong> =
-  LiteralOp(ULongPersistentType(), value)
-
-fun floatLiteral(value: Float): LiteralOp<Float> =
-  LiteralOp(FloatPersistentType(), value)
-
-fun doubleLiteral(value: Double): LiteralOp<Double> =
-  LiteralOp(DoublePersistentType(), value)
-
-fun stringLiteral(value: String): LiteralOp<String> =
-  LiteralOp(StringPersistentType(), value)
+fun ulongLiteral(value: ULong): LiteralOp<ULong> = LiteralOp(ULongPersistentType(), value)
 
 class ModOp<T : Number?, S : Number?>(
   private val lhs: Expression<T>,
   private val rhs: Expression<S>,
   override val persistentType: PersistentType<T>
 ) : BaseSqlTypeExpression<T>() {
-  override fun appendTo(
-    sqlBuilder: SqlBuilder
-  ): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append('(')
     append(lhs)
     append(" % ")
@@ -102,8 +84,7 @@ class NoOpConversion<T, S>(
   private val expr: Expression<T>,
   override val persistentType: PersistentType<S>
 ) : BaseSqlTypeExpression<S>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder { append(expr) }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply { append(expr) }
 }
 
 class InListOrNotInListOp<T>(
@@ -111,36 +92,35 @@ class InListOrNotInListOp<T>(
   private val list: Iterable<T>,
   private val isInList: Boolean = true
 ) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      list.iterator().let { i ->
-        if (!i.hasNext()) {
-          if (isInList) {
-            append(FALSE)
-          } else {
-            append(TRUE)
-          }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    list.iterator().let { i ->
+      if (!i.hasNext()) {
+        if (isInList) {
+          append(FALSE)
         } else {
-          val first = i.next()
-          if (!i.hasNext()) {
-            append(expr)
-            when {
-              isInList -> append(" = ")
-              else -> append(" != ")
-            }
-            registerArgument(expr.persistentType, first)
-          } else {
-            append(expr)
-            when {
-              isInList -> append(" IN (")
-              else -> append(" NOT IN (")
-            }
-            registerArguments(expr.persistentType, list)
-            append(")")
+          append(TRUE)
+        }
+      } else {
+        val first = i.next()
+        if (!i.hasNext()) {
+          append(expr)
+          when {
+            isInList -> append(" = ")
+            else -> append(" != ")
           }
+          registerArgument(expr.persistentType, first)
+        } else {
+          append(expr)
+          when {
+            isInList -> append(" IN (")
+            else -> append(" NOT IN (")
+          }
+          registerArguments(expr.persistentType, list)
+          append(")")
         }
       }
     }
+  }
 }
 
 class PlusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T>) :
@@ -150,34 +130,30 @@ class MinusOp<T, S : T>(
   lhs: Expression<T>,
   rhs: Expression<S>,
   persistentType: PersistentType<T>
-) :
-  CustomOperator<T>("-", persistentType, lhs, rhs)
+) : CustomOperator<T>("-", persistentType, lhs, rhs)
 
 class TimesOp<T, S : T>(
   lhs: Expression<T>,
   rhs: Expression<S>,
   persistentType: PersistentType<T>
-) :
-  CustomOperator<T>("*", persistentType, lhs, rhs)
+) : CustomOperator<T>("*", persistentType, lhs, rhs)
 
 class DivideOp<T, S : T>(
   rhs: Expression<T>,
   lhs: Expression<S>,
   persistentType: PersistentType<T>
-) :
-  CustomOperator<T>("/", persistentType, rhs, lhs)
+) : CustomOperator<T>("/", persistentType, rhs, lhs)
 
 class Between(
   private val expr: Expression<*>,
   private val from: LiteralOp<*>,
   private val to: LiteralOp<*>
 ) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append(expr)
-      append(" BETWEEN ")
-      append(from)
-      append(" AND ")
-      append(to)
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(expr)
+    append(" BETWEEN ")
+    append(from)
+    append(" AND ")
+    append(to)
+  }
 }

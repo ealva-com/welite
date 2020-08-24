@@ -18,7 +18,6 @@ package com.ealva.welite.db.statements
 
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.table.NO_BIND
 import com.ealva.welite.db.table.OnConflict
@@ -26,6 +25,7 @@ import com.ealva.welite.db.table.ParamBindings
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.buildSql
 
 /**
  * InsertSeed contains the components that make up an InsertStatement, less the values the user
@@ -38,24 +38,27 @@ private class InsertSeed<T : Table>(
   bind: T.(ColumnValues) -> Unit
 ) {
   val columnValues = ColumnValues().apply { table.bind(this) }
+  val sql: String
+  val types: List<PersistentType<*>>
 
-  private val builder = SqlBuilder().apply {
-    append(onConflict.insertOr)
-    append(" INTO ")
-    append(table.identity.value)
-    columnValues.columnValueList.let { list ->
-      list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
-        appendName(columnValue)
-      }
-      append(" VALUES ")
-      list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
-        appendValue(columnValue)
+  init {
+    val (_sql, _types) = buildSql {
+      append(onConflict.insertOr)
+      append(" INTO ")
+      append(table.identity.value)
+      columnValues.columnValueList.let { list ->
+        list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
+          appendName(columnValue)
+        }
+        append(" VALUES ")
+        list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
+          appendValue(columnValue)
+        }
       }
     }
+    sql = _sql
+    types = _types
   }
-
-  val sql: String = builder.toString()
-  val types: List<PersistentType<*>> = builder.types
 }
 
 /**

@@ -21,47 +21,41 @@ import com.ealva.welite.db.expr.BaseSqlTypeExpression
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Function
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
-import com.ealva.welite.db.expr.append
-import com.ealva.welite.db.expr.invoke
+import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.SqlBuilder
+import com.ealva.welite.db.type.asIdentity
+import com.ealva.welite.db.type.buildStr
 
 @Suppress("NOTHING_TO_INLINE")
 private inline operator fun Identity.plus(identity: Identity): Identity {
-  return """${unquoted}_${identity.unquoted}""".asIdentity()
+  return buildStr {
+    append(unquoted)
+    append('_')
+    append(identity.unquoted)
+  }.asIdentity()
 }
 
 class Alias<out T : Table>(private val delegate: T, private val alias: String) : Table() {
-
   override val tableName: String get() = alias
-
   val tableNameWithAlias: String = "${delegate.tableName} AS $alias"
-
   override val identity: Identity = Identity.make(alias)
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(tableNameWithAlias)
   }
 
-  private fun <T : Any?> Column<T>.clone(): Column<T> =
-    Column(this@Alias, name, persistentType)
+  private fun <T : Any?> Column<T>.clone(): Column<T> = Column(this@Alias, name, persistentType)
 
-  @Suppress("unused")
-  fun <R> originalColumn(column: Column<R>): Column<R>? {
-    @Suppress("UNCHECKED_CAST")
-    return if (column.inTable(this))
-      delegate.columns.first { column.name == it.name } as Column<R>
-    else
-      null
-  }
+  @Suppress("unused", "UNCHECKED_CAST")
+  fun <R> originalColumn(column: Column<R>): Column<R>? =
+    delegate.columns.firstOrNull { column.name == it.name } as Column<R>
 
   override val columns: List<Column<*>> = delegate.columns.map { it.clone() }
 
-  override fun equals(other: Any?): Boolean {
-    if (other !is Alias<*>) return false
-    return this.tableNameWithAlias == other.tableNameWithAlias
-  }
+  override fun equals(other: Any?): Boolean =
+    if (other !is Alias<*>) false else tableNameWithAlias == other.tableNameWithAlias
 
   override fun hashCode(): Int = tableNameWithAlias.hashCode()
 
@@ -73,18 +67,22 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
 }
 
 class ExpressionAlias<T>(val delegate: Expression<T>, val alias: String) : BaseExpression<T>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
-    append(delegate, " $alias")
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(delegate)
+    append(" ")
+    append(alias)
   }
 
   fun aliasOnlyExpression(): Expression<T> {
     return if (delegate is SqlTypeExpression<T>) {
       object : Function<T>(delegate.persistentType) {
-        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder { append(alias) }
+        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
+          sqlBuilder.apply { append(alias) }
       }
     } else {
       object : BaseExpression<T>() {
-        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder { append(alias) }
+        override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
+          sqlBuilder.apply { append(alias) }
       }
     }
   }
@@ -94,13 +92,16 @@ class SqlTypeExpressionAlias<T>(
   val delegate: SqlTypeExpression<T>,
   val alias: String
 ) : BaseSqlTypeExpression<T>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder { append(delegate).append(" $alias") }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(delegate)
+    append(" ")
+    append(alias)
+  }
 
   fun aliasOnlyExpression(): SqlTypeExpression<T> {
     return object : Function<T>(delegate.persistentType) {
       override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-        sqlBuilder { append(alias) }
+        sqlBuilder.apply { append(alias) }
     }
   }
 
@@ -108,12 +109,13 @@ class SqlTypeExpressionAlias<T>(
     get() = delegate.persistentType
 }
 
-class QueryBuilderAlias(
-  private val queryBuilder: QueryBuilder,
-  val alias: String
-) : ColumnSet {
-
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.append("(", queryBuilder, ") ", alias)
+class QueryBuilderAlias(private val queryBuilder: QueryBuilder, val alias: String) : ColumnSet {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("(")
+    append(queryBuilder)
+    append(") ")
+    append(alias)
+  }
 
   override val columns: List<Column<*>>
     get() = queryBuilder.sourceSetColumnsInResult().map { it.clone() }
@@ -139,14 +141,7 @@ class QueryBuilderAlias(
     thisColumn: Expression<*>?,
     otherColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join = Join(
-    this,
-    joinTo,
-    joinType,
-    thisColumn,
-    otherColumn,
-    additionalConstraint
-  )
+  ): Join = Join(this, joinTo, joinType, thisColumn, otherColumn, additionalConstraint)
 
   override infix fun innerJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.INNER)
   override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
@@ -156,13 +151,9 @@ class QueryBuilderAlias(
   private fun <T : Any?> Column<T>.clone(): Column<T> = makeAlias(alias)
 }
 
-fun <T : Table> T.alias(alias: String) =
-  Alias(this, alias)
-
+fun <T : Table> T.alias(alias: String) = Alias(this, alias)
 fun QueryBuilder.alias(alias: String) = QueryBuilderAlias(this, alias)
-
-fun <T> SqlTypeExpression<T>.alias(alias: String) =
-  SqlTypeExpressionAlias(this, alias)
+fun <T> SqlTypeExpression<T>.alias(alias: String) = SqlTypeExpressionAlias(this, alias)
 
 fun Join.joinQuery(
   on: ((QueryBuilderAlias) -> Op<Boolean>),
@@ -189,7 +180,7 @@ private fun Join.lastPartAsQueryBuilderAlias() = joinParts.map {
 
 @Suppress("unused")
 fun <T : Any> wrapAsExpression(query: QueryBuilder) = object : BaseExpression<T?>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("(")
     query.appendTo(this)
     append(")")

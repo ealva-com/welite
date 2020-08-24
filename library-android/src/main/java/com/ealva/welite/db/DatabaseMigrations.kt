@@ -28,7 +28,6 @@ import java.util.TreeMap
 interface Migration {
   val startVersion: Int
   val endVersion: Int
-
   fun execute(db: Database)
 }
 
@@ -36,7 +35,6 @@ abstract class BaseMigration(
   override val startVersion: Int,
   override val endVersion: Int
 ) : Migration {
-
   override fun toString(): String = "Migration from $startVersion to $endVersion"
 }
 

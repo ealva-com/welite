@@ -20,7 +20,6 @@ import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.Database
-import com.ealva.welite.db.JournalMode
 import com.ealva.welite.db.OpenParams
 import com.ealva.welite.db.journalMode
 import com.ealva.welite.db.synchronousMode
@@ -38,8 +37,8 @@ val dbModule = module {
       tables = listOf(MediaFileTable),
       version = 1,
       openParams = OpenParams(
-        enableWriteAheadLogging = false,
-        journalMode = JournalMode.TRUNCATE
+        enableWriteAheadLogging = true,
+        enableForeignKeyConstraints = true
       ),
       configure = {
         onConfigure { configuration ->

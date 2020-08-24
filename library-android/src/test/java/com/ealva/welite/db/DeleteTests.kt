@@ -85,8 +85,6 @@ class DeleteTests {
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    println("artistId:$idArtist ${Thread.currentThread()}")
-
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
       .where { AlbumTable.albumName eq album }
       .sequence { it[AlbumTable.id] }

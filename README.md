@@ -10,6 +10,12 @@ WeLite is a Kotlin DSL, and Statement/Cursor Wrapper, for Android SQLite
   * Encapsulate SQLite statements, eg. insert/update/delete, for reuse and simplified binding   
   * Encapsulate Select results and provide for easy row->POJO conversion. Note: we use POJO and data class interchangeably
 
+### Contributions
+Contributions welcome. Please fill out the template for the situation and include it in the Issue you open.
+  * [Defect Report][bug_report]
+  * [Feature Request][feature_request]
+  * [Pull Request][pull_request]
+
 ## Usage
 
 ### Create Database
@@ -17,11 +23,16 @@ Create a single Database instance and then inject/locate where needed.
 ```kotlin
 Database(
   context = androidContext(),
-  fileName = "Filename",
-  version = 1,
+  fileName = "FileName",
   tables = listOf(TableA, TableB, TableC),
-  migrations = emptyList()
+  version = 1,
+  migrations = emptyList(),
+  openParams = OpenParams(
+    enableWriteAheadLogging = true,
+    enableForeignKeyConstraints = true
+  )
 ) {
+  onConfigure { configuration -> /* your code */ }
   onCreate { database -> /* your code */ }
   onOpen { database -> /* your code */  }
 }
@@ -72,7 +83,7 @@ db.transaction {
     it[mediaTitle] = bindString()
   }
 
-  // use the insert statement to insert the data which is most efficient for bulk inserting
+  // use the insert statement to insert the data, which is most efficient for bulk inserting
   insertStatement.insert {
     it[0] = "file.mpg"
     it[1] = "/dir/Music/file.mpg"
@@ -179,16 +190,16 @@ In the above example the Person table is joined to a query alias of itself, and 
 
 For WeLite the desire is to push all SQL down into the library and treat it as an implementation detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe tables and relationships, and then use the resulting objects for CRUD work, keeping SQL and SQLite API hidden (objects versus SQL string handling). 
 
-There is no goal for this to be an ORM of any type and it only wraps SQLite as shipped in Android. Because of the impedance mismatch between OO and RDBMS, ORMs are hard and, we would argue, often not needed. Instead, this library simplifies reading rows and converting them to POJOs efficiently using RDBMS features, primarily supporting simple types, and putting few lines of the Relational-OO mapping in the client code (specifying which columns are needed to construct a POJO).   
+The goal of this library to not to be a full-blown ORM. Instead, this library simplifies reading rows and converting them to POJOs efficiently using RDBMS features, primarily supporting simple types, and putting few lines of the Relational-OO mapping in the client code (specifying which columns are needed to construct a POJO).   
 
 Both the [Squash] and [Exposed] libraries influence this library, primarily the DSL code. However, WeLite calls directly into the Android SQLite API and does not go through a JDBC driver, which alleviates the need (and code) to deal with variations in SQL and RDBMS features. Also, the WeLite design philosophy differs from these other libraries in specific areas. Pre 1.0 versions will see significant API changes.       
 
 
 ### The name?
 
-Lite=SQLite and We="without entities". After attempting to port an in-house solution to Room and searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a Kotlin DSL to build the underlying SQL. The goal is not to store business objects in a RDBMS but to store and retrieve data with as little friction as possible, while providing benefits of a Kotlin interface. That said, the client controls what objects are created from rows in a query. While we envision flows of data classes or simple types, the user is free to construct any type of object(s).
+Lite=SQLite and We="without entities". After attempting to port an in-house solution to Room and searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a Kotlin DSL to build the underlying SQL. The goal is to store and retrieve data with as little friction as possible, while providing benefits of a Kotlin interface. That said, the client controls what objects are created from rows in a query. While we envision flows of data classes or simple types, the user is free to construct any type of object(s).
 
-Why "without entities"? We often find a one-to-many relationship between a row in a table to a Kotlin object. So we don't try to enforce a row to entity mapping or load data unnecessarily. A higher level abstraction could be built over WeLite but that is not the current focus.  
+Why "without entities"? We often find a one-to-many relationship between a row in a table to a Kotlin object. So we don't try to enforce a row to entity mapping or load data unnecessarily. A higher level layer providing more ORM type functionality could be built over WeLite.  
 
 ### TODO
   * Much more testing
@@ -201,3 +212,6 @@ Why "without entities"? We often find a one-to-many relationship between a row i
 [coroutines]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [flow]: https://kotlinlang.org/docs/reference/coroutines/flow.html  
 [splitties]: https://github.com/LouisCAD/Splitties
+[bug_report]: .github/ISSUE_TEMPLATE/bug_report.md
+[feature_request]: .github/ISSUE_TEMPLATE/feature_request.md
+[pull_request]: .github/pull_request_template.md

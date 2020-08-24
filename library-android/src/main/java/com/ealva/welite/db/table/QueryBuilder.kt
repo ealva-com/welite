@@ -16,14 +16,15 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.expr.AppendsToSqlBuilder
+import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SortOrder
-import com.ealva.welite.db.expr.SqlBuilder
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.or
+import com.ealva.welite.db.type.buildSql
 import kotlinx.coroutines.flow.Flow
 
 typealias LimitOffset = Pair<Long, Long>
@@ -55,11 +56,7 @@ class QueryBuilder private constructor(
   private var distinct: Boolean = false
   private var limitOffset: LimitOffset? = null
 
-  fun copy(): QueryBuilder = QueryBuilder(
-    dbConfig,
-    set,
-    where
-  ).also { copy ->
+  fun copy(): QueryBuilder = QueryBuilder(dbConfig, set, where).also { copy ->
     copy.groupBy = groupBy.toMutableList()
     copy.orderBy = orderBy.toMutableList()
     copy.having = having
@@ -80,7 +77,12 @@ class QueryBuilder private constructor(
   /**
    * Save this query to reuse and possibly bind parameters each time via [Query.forEach]
    */
-  fun build(): Query = Query(dbConfig, set.resultColumns, appendTo(SqlBuilder()))
+  fun build(): Query {
+    val (sql, types) = buildSql {
+      append(this@QueryBuilder)
+    }
+    return Query(dbConfig, set.resultColumns, sql, types)
+  }
 
   /**
    * Build, bind any necessary args, and execute the query calling [action] with each row. The
@@ -113,10 +115,10 @@ class QueryBuilder private constructor(
     return build().stringForQuery(bindArgs)
   }
 
-  fun SqlBuilder.append(builder: QueryBuilder): SqlBuilder = apply {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("SELECT ")
 
-    if (builder.count) {
+    if (count) {
       append("COUNT(*)")
     } else {
       if (distinct) append("DISTINCT ")
@@ -158,10 +160,6 @@ class QueryBuilder private constructor(
         }
       }
     }
-  }
-
-  override fun appendTo(builder: SqlBuilder): SqlBuilder {
-    return builder.append(this)
   }
 
   fun distinct(value: Boolean = true) = apply { distinct = value }
@@ -229,8 +227,7 @@ class QueryBuilder private constructor(
  */
 fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>) = adjustWhere {
   val expr = Op.build { andPart() }
-  if (this == null) expr
-  else this and expr
+  if (this == null) expr else this and expr
 }
 
 /**
@@ -239,6 +236,5 @@ fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>) = adjustWhere {
  */
 fun QueryBuilder.orWhere(orPart: () -> Op<Boolean>) = adjustWhere {
   val expr = Op.build { orPart() }
-  if (this == null) expr
-  else this or expr
+  if (this == null) expr else this or expr
 }

@@ -18,9 +18,8 @@ package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.appendTo
-import com.ealva.welite.db.expr.invoke
+import com.ealva.welite.db.type.SqlBuilder
 
 typealias JoinCondition = Pair<Expression<*>, Expression<*>>
 
@@ -67,10 +66,12 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
   internal val joinParts: List<JoinPart>
     get() = _joinParts.toList()
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     columnSet.appendTo(this)
     _joinParts.forEach { p ->
-      append(" ${p.joinType} JOIN ")
+      append(" ")
+      append(p.joinType.toString())
+      append(" JOIN ")
       val isJoin = p.joinPart is Join
       if (isJoin) {
         append("(")
@@ -162,7 +163,7 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
       }
     }
 
-    fun appendConditions(builder: SqlBuilder) = builder {
+    fun appendConditions(builder: SqlBuilder) = builder.apply {
       conditions.appendTo(this, " AND ") { (pk, fk) ->
         append(pk)
         append(" = ")

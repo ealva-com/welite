@@ -19,11 +19,11 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.table.NO_BIND
 import com.ealva.welite.db.table.ParamBindings
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.buildSql
 
 interface DeleteStatement {
 
@@ -42,17 +42,22 @@ private class DeleteStatementImpl(
   private val where: Op<Boolean>?
 ) : BaseStatement(), DeleteStatement, ParamBindings {
 
-  private val builder = SqlBuilder().apply {
-    append("DELETE FROM ")
-    append(table.identity.value)
-    if (where != null) {
-      append(" WHERE ")
-      append(where)
+  val sql: String
+  override val types: List<PersistentType<*>>
+
+  init {
+    val (_sql, _types) = buildSql {
+      append("DELETE FROM ")
+      append(table.identity.value)
+      if (where != null) {
+        append(" WHERE ")
+        append(where)
+      }
     }
+    sql = _sql
+    types = _types
   }
 
-  val sql: String = builder.toString()
-  override val types: List<PersistentType<*>> = builder.types
   override val statement: SQLiteStatement = db.compileStatement(sql)
 
   override fun delete(binding: (ParamBindings) -> Unit): Int {

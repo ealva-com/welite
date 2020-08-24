@@ -16,18 +16,17 @@
 
 package com.ealva.welite.db.table
 
+import com.ealva.welite.db.type.Identity
+
 /**
  * Column collate clause
  */
 sealed class Collate(val sql: String) {
-
   /** The keyword "TEXT" followed by the COLLATE statement */
   open val textAndCollate: String
     get() = "TEXT $sql"
 
-  override fun toString(): String {
-    return sql
-  }
+  override fun toString() = sql
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -40,23 +39,17 @@ sealed class Collate(val sql: String) {
     return true
   }
 
-  override fun hashCode(): Int {
-    return sql.hashCode()
-  }
+  override fun hashCode() = sql.hashCode()
 }
 
 object CollateBinary : Collate("COLLATE BINARY")
 object CollateNoCase : Collate("COLLATE NOCASE")
 object CollateRTrim : Collate("COLLATE RTRIM")
-object UnspecifiedCollate : Collate("") {
+@Suppress("unused") object UnspecifiedCollate : Collate("") {
   override val textAndCollate = "TEXT"
 }
 
 /**
  * Android doesn't expose ability to create a collating function but...
  */
-class CollateUser(name: String) : Collate(
-  "COLLATE ${Identity.make(
-    name
-  ).value}"
-)
+class CollateUser(name: String) : Collate("COLLATE ${Identity.make(name).value}")

@@ -30,13 +30,11 @@ enum class FieldType(val type: Int, val display: String) {
   companion object {
     private val allValues = values()
 
-    fun fromType(type: String, defaultValue: FieldType = UnknownField): FieldType {
-      return allValues.find { it.display == type } ?: defaultValue
-    }
+    fun fromType(type: String, defaultValue: FieldType = UnknownField): FieldType =
+      allValues.find { it.display == type } ?: defaultValue
 
-    fun fromInt(type: Int, defaultValue: FieldType = UnknownField): FieldType {
-      return allValues.find { it.type == type } ?: defaultValue
-    }
+    fun fromInt(type: Int, defaultValue: FieldType = UnknownField): FieldType =
+      allValues.find { it.type == type } ?: defaultValue
   }
 }
 

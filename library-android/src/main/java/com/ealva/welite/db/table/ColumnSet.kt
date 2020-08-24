@@ -18,7 +18,7 @@ package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
+import com.ealva.welite.db.type.SqlBuilder
 
 /**
  * Represents a set of columns. Conceptually a [ColumnSet] is the ```FROM``` part of a query, eg.
@@ -47,10 +47,7 @@ interface ColumnSet {
   ): Join
 
   fun innerJoin(joinTo: ColumnSet): Join
-
   fun leftJoin(joinTo: ColumnSet): Join
-
   fun crossJoin(joinTo: ColumnSet): Join
-
   fun naturalJoin(joinTo: ColumnSet): Join
 }

@@ -29,19 +29,18 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.table.ColumnMetadata
-import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.schema.MasterType
 import com.ealva.welite.db.schema.SQLiteMaster
-import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.schema.asMasterType
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
 import com.ealva.welite.db.statements.InsertStatement
 import com.ealva.welite.db.statements.UpdateBuilder
 import com.ealva.welite.db.statements.UpdateStatement
+import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.DbConfig
+import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.NO_BIND
 import com.ealva.welite.db.table.OnConflict
@@ -51,8 +50,10 @@ import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.SelectFrom
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.type.buildStr
 
 /**
  * This interface is the entry point of a query DSL and other types of queries. These
@@ -271,10 +272,9 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
 
   override val Table.exists
     get() = try {
-      val tableName = identity.unquoted
       val tableType = MasterType.Table.toString()
       SQLiteMaster.selectWhere {
-        (SQLiteMaster.type eq tableType) and (SQLiteMaster.tbl_name eq tableName)
+        (SQLiteMaster.type eq tableType) and (SQLiteMaster.tbl_name eq identity.unquoted)
       }.count() == 1L
     } catch (e: Exception) {
       LOG.e(e) { it("Error checking table existence") }
@@ -375,11 +375,11 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
   @RequiresApi(Build.VERSION_CODES.O)
   override fun Table.foreignKeyCheck(): List<ForeignKeyViolation> {
     db.select(
-      buildString {
+      buildStr {
         append("PRAGMA foreign_key_check")
-        append("('")
-        append(identity.unquoted)
-        append("')")
+        append("(")
+        append(identity.value)
+        append(")")
       }
     ).use { cursor ->
       return if (cursor.count > 0) {

@@ -16,13 +16,14 @@
 
 package com.ealva.welite.db.table
 
+@Suppress("unused")
 enum class OnConflict(private val onConflict: String, val insertOr: String, val updateOr: String) {
-  Rollback("ON CONFLICT ROLLBACK", "INSERT OR ROLLBACK", "UPDATE OR ROLLBACK"),
-  Abort("ON CONFLICT ABORT", "INSERT OR ABORT", "UPDATE OR ABORT"),
-  Fail("ON CONFLICT FAIL", "INSERT OR FAIL", "UPDATE OR FAIL"),
-  Ignore("ON CONFLICT IGNORE", "INSERT OR IGNORE", "UPDATE OR IGNORE"),
-  Replace("ON CONFLICT REPLACE", "INSERT OR REPLACE", "UPDATE OR REPLACE"),
-  Unspecified("", "INSERT", "UPDATE");
+  Rollback("ON CONFLICT ROLLBACK", "INSERT OR ROLLBACK", "UPDATE OR ROLLBACK "),
+  Abort("ON CONFLICT ABORT", "INSERT OR ABORT", "UPDATE OR ABORT "),
+  Fail("ON CONFLICT FAIL", "INSERT OR FAIL", "UPDATE OR FAIL "),
+  Ignore("ON CONFLICT IGNORE", "INSERT OR IGNORE", "UPDATE OR IGNORE "),
+  Replace("ON CONFLICT REPLACE", "INSERT OR REPLACE", "UPDATE OR REPLACE "),
+  Unspecified("", "INSERT", "UPDATE ");
 
   override fun toString() = onConflict
 }

@@ -20,23 +20,23 @@ package com.ealva.welite.db.expr
 
 import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 
 abstract class Function<T>(override val persistentType: PersistentType<T>) :
   BaseSqlTypeExpression<T>()
 
-open class CustomFunction<T>(
+class CustomFunction<T>(
   private val functionName: String,
   persistentType: PersistentType<T>,
   private val exprList: List<Expression<*>>
 ) : Function<T>(persistentType) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append(functionName)
-      append('(')
-      exprList.appendEach { append(it) }
-      append(')')
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(functionName)
+    append('(')
+    exprList.appendEach { append(it) }
+    append(')')
+  }
 }
 
 open class CustomOperator<T>(
@@ -45,169 +45,155 @@ open class CustomOperator<T>(
   private val expr1: Expression<*>,
   private val expr2: Expression<*>
 ) : Function<T>(persistentType) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append('(')
-      append(expr1)
-      append(' ')
-      append(operatorName)
-      append(' ')
-      append(expr2)
-      append(')')
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append('(')
+    append(expr1)
+    append(' ')
+    append(operatorName)
+    append(' ')
+    append(expr2)
+    append(')')
+  }
 }
 
 class Random : Function<Long>(LongPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("RANDOM()")
-    }
+    sqlBuilder.apply { append("RANDOM()") }
 }
 
-class LowerCase(
-  private val expr: Expression<String>
-) : Function<String>(StringPersistentType()) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("LOWER(")
-      append(expr)
-      append(")")
-    }
+class LowerCase(private val expr: Expression<String>) : Function<String>(StringPersistentType()) {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("LOWER(")
+    append(expr)
+    append(")")
+  }
 }
 
-class UpperCase(
-  private val expr: Expression<String>
-) : Function<String>(StringPersistentType()) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("UPPER(")
-      append(expr)
-      append(")")
-    }
+class UpperCase(private val expr: Expression<String>) : Function<String>(StringPersistentType()) {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("UPPER(")
+    append(expr)
+    append(")")
+  }
 }
 
 class Concat(
   private val separator: String,
   private val exprList: List<Expression<String>>
 ) : Function<String>(StringPersistentType()) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      exprList.appendTo(
-        builder = this,
-        separator = if (separator.isEmpty()) " || " else " || '$separator' || "
-      ) { append(it) }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    exprList.appendTo(
+      builder = this,
+      separator = if (separator.isEmpty()) " || " else " || '$separator' || "
+    ) { append(it) }
 
-      if (separator.isEmpty()) {
-        exprList.appendTo(this, separator = " || ") { append(it) }
-      } else {
-        exprList.appendTo(this, separator = " || '$separator' || ") { append(it) }
-      }
+    if (separator.isEmpty()) {
+      exprList.appendTo(this, separator = " || ") { append(it) }
+    } else {
+      exprList.appendTo(this, separator = " || '$separator' || ") { append(it) }
     }
+  }
 }
 
 class GroupConcat(
   private val expr: Expression<String>,
   private val separator: String?
 ) : Function<String>(StringPersistentType()) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("GROUP_CONCAT(")
-      append(expr)
-      separator?.let {
-        append(" SEPARATOR '$it'")
-      }
-      append(")")
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("GROUP_CONCAT(")
+    append(expr)
+    separator?.let {
+      append(" SEPARATOR ")
+      append('\'')
+
+      append(it)
+      append('\'')
     }
+    append(")")
+  }
 }
 
 class Substring(
   private val expr: Expression<String>,
   private val start: Expression<Int>,
-  private val length: Expression<Int>
+  private val subLength: Expression<Int>
 ) : Function<String>(StringPersistentType()) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("substr")
-      append("(")
-      append(expr)
-      append(", ")
-      append(start)
-      append(", ")
-      append(length)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("substr")
+    append("(")
+    append(expr)
+    append(", ")
+    append(start)
+    append(", ")
+    append(subLength)
+    append(")")
+  }
 }
 
 class Trim(
   private val expr: Expression<String>
 ) : Function<String>(StringPersistentType()) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("TRIM(")
-      append(expr)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("TRIM(")
+    append(expr)
+    append(")")
+  }
 }
 
 class Min<T : Comparable<T>>(
   private val expr: Expression<in T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("MIN(")
-      append(expr)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("MIN(")
+    append(expr)
+    append(")")
+  }
 }
 
 class Max<T : Comparable<T>>(
   private val expr: Expression<T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("MAX(")
-      append(expr)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("MAX(")
+    append(expr)
+    append(")")
+  }
 }
 
 class Avg<T : Comparable<T>>(
   private val expr: Expression<in T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("AVG(")
-      append(expr)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("AVG(")
+    append(expr)
+    append(")")
+  }
 }
 
 class Sum<T>(
   private val expr: Expression<T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("SUM(")
-      append(expr)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("SUM(")
+    append(expr)
+    append(")")
+  }
 }
 
 class Count(
   private val expr: Expression<*>,
   private val distinct: Boolean = false
 ) : Function<Long>(LongPersistentType()) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("COUNT(")
-      append(if (distinct) "DISTINCT " else "")
-      append(expr)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("COUNT(")
+    append(if (distinct) "DISTINCT " else "")
+    append(expr)
+    append(")")
+  }
 }
 
 class Case(val value: Expression<*>? = null) {
@@ -226,8 +212,7 @@ class CaseWhen<T>(val value: Expression<*>?) {
   }
 
   @Suppress("FunctionName")
-  fun <R : T> Else(e: Expression<R>): Expression<R> =
-    CaseWhenElse(this, e)
+  fun <R : T> Else(e: Expression<R>): Expression<R> = CaseWhenElse(this, e)
 }
 
 class CaseWhenElse<T, R : T>(
@@ -235,22 +220,21 @@ class CaseWhenElse<T, R : T>(
   private val elseResult: Expression<R>
 ) :
   BaseExpression<R>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("CASE ")
-      if (caseWhen.value != null) append(caseWhen.value)
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("CASE ")
+    if (caseWhen.value != null) append(caseWhen.value)
 
-      for ((first, second) in caseWhen.cases) {
-        append(" WHEN ")
-        append(first)
-        append(" THEN ")
-        append(second)
-      }
-
-      append(" ELSE ")
-      append(elseResult)
-      append(" END")
+    for ((first, second) in caseWhen.cases) {
+      append(" WHEN ")
+      append(first)
+      append(" THEN ")
+      append(second)
     }
+
+    append(" ELSE ")
+    append(elseResult)
+    append(" END")
+  }
 }
 
 // class Coalesce<out T, S : T?, R : T>(
@@ -265,12 +249,11 @@ class Cast<T>(
   private val expr: Expression<*>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("CAST(")
-      append(expr)
-      append(" AS ")
-      append(persistentType.sqlType)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("CAST(")
+    append(expr)
+    append(" AS ")
+    append(persistentType.sqlType)
+    append(")")
+  }
 }

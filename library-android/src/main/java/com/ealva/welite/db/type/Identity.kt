@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.table
+package com.ealva.welite.db.type
 
-import com.ealva.welite.db.expr.SqlBuilder
-import com.ealva.welite.db.table.Identity.Companion.quoteAll
-import com.ealva.welite.db.table.Identity.Companion.quoteChar
+import com.ealva.welite.db.type.Identity.Companion.quoteAll
+import com.ealva.welite.db.type.Identity.Companion.quoteChar
 
 /**
  * Identity is used as an identifier. If needed as a literal use [unquoted] and add
@@ -58,26 +57,21 @@ inline class Identity(val value: String) {
     var quoteAll: Boolean =
       DEFAULT_QUOTE_ALL
 
-    fun make(identity: String, forceQuote: Boolean = false): Identity {
-      return if (quoteAll || forceQuote) {
-        Identity(
-          buildString {
-            append(quoteChar)
-            append(identity)
-            append(quoteChar)
-          }
-        )
-      } else {
-        Identity(identity)
-      }
+    fun make(identity: String, forceQuote: Boolean = false) = if (quoteAll || forceQuote) {
+      Identity(
+        buildStr {
+          append(quoteChar)
+          append(identity)
+          append(quoteChar)
+        }
+      )
+    } else {
+      Identity(identity)
     }
   }
 }
 
-fun StringBuilder.appendIdentity(identity: Identity) = append(identity.value)
+fun SqlBuilder.appendIdentity(identity: Identity) = append(identity.value)
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun String.asIdentity(forceQuote: Boolean = false) =
-  Identity.make(this, forceQuote)
-
-fun SqlBuilder.append(identity: Identity): SqlBuilder = append(identity.value)
+inline fun String.asIdentity(forceQuote: Boolean = false) = Identity.make(this, forceQuote)

@@ -46,7 +46,6 @@ fun String.asMasterType(): MasterType = when (this) {
  * The sqlite_master table contains entries for internal schema objects in addition to application-
  * and programmer-defined objects.
  */
-@Suppress("ClassName")
 object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
   /**
    * The sqlite_master.type column will be one of the following text strings: 'table', 'index',
@@ -108,8 +107,7 @@ object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
 
   override fun preCreate() {
     error(
-      "Cannot create system table sqlite_master. " +
-        "sqlite_master is available after database creation"
+      "Cannot create system table sqlite_master. sqlite_master is available after database creation"
     )
   }
 }

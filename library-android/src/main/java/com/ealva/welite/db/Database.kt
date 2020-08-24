@@ -400,14 +400,12 @@ private class WeLiteDatabase(
    * Provides the interface to an ongoing transaction. Client is not concerned with commit/rollback
    * which is handled at another level
    */
-  override fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R {
-    try {
-      assertNotUiThread()
-      check(!closed) { "Database has been closed" }
-      return TransactionInProgress(this).work()
-    } catch (e: Exception) {
-      throw WeLiteException("Exception during ongoingTransaction", e)
-    }
+  override fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R = try {
+    assertNotUiThread()
+    check(!closed) { "Database has been closed" }
+    TransactionInProgress(this).work()
+  } catch (e: Exception) {
+    throw WeLiteException("Exception during ongoingTransaction", e)
   }
 
   /**
@@ -420,9 +418,7 @@ private class WeLiteDatabase(
     exclusive: Boolean,
     unitOfWork: String,
     throwIfNoChoice: Boolean
-  ): Transaction {
-    return Transaction(this, exclusive, unitOfWork, throwIfNoChoice)
-  }
+  ): Transaction = Transaction(this, exclusive, unitOfWork, throwIfNoChoice)
 
   override val db: SQLiteDatabase
     get() = openHelper.writableDatabase
@@ -485,11 +481,9 @@ private class OpenHelper private constructor(
     }
 
   val tablesInCreateOrder: List<Table>
-    get() {
-      return TableDependencies(tables).also { deps ->
-        if (deps.tablesAreCyclic()) LOG.w { it("Tables dependencies are cyclic") }
-      }.sortedTableList
-    }
+    get() = TableDependencies(tables).also { deps ->
+      if (deps.tablesAreCyclic()) LOG.w { it("Tables dependencies are cyclic") }
+    }.sortedTableList
 
   override fun onConfigure(block: (DatabaseConfiguration) -> Unit) {
     onConfigure = block
@@ -515,10 +509,8 @@ private class OpenHelper private constructor(
     } else {
       db.disableWriteAheadLogging()
       config.journalMode = openParams.journalMode
-      LOG.i { it("journal_mode=%s", config.journalMode) }
     }
     config.synchronousMode = openParams.synchronousMode
-    LOG.i { it("sync=%s", config.synchronousMode) }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
       openParams.lookasideSlot?.let { lookaside ->
         setLookasideConfig(lookaside.size, lookaside.count)
@@ -656,10 +648,12 @@ private class ConfigurationImpl(private val db: SQLiteDatabase) : DatabaseConfig
   }
 
   override fun queryPragmaString(statement: String): String {
+    checkNotClosed()
     return db.stringForQuery("PRAGMA $statement;")
   }
 
   override fun queryPragmaLong(statement: String): Long {
+    checkNotClosed()
     return db.longForQuery("PRAGMA $statement;")
   }
 }

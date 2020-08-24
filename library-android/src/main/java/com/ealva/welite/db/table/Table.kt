@@ -23,9 +23,6 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
-import com.ealva.welite.db.expr.invoke
-import com.ealva.welite.db.type.ScaledBigDecimalAsLongType
 import com.ealva.welite.db.type.Blob
 import com.ealva.welite.db.type.BlobPersistentType
 import com.ealva.welite.db.type.BooleanPersistentType
@@ -34,15 +31,20 @@ import com.ealva.welite.db.type.DoublePersistentType
 import com.ealva.welite.db.type.EnumerationNamePersistentType
 import com.ealva.welite.db.type.EnumerationPersistentType
 import com.ealva.welite.db.type.FloatPersistentType
+import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.IntegerPersistentType
 import com.ealva.welite.db.type.LongPersistentType
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.ScaledBigDecimalAsLongType
 import com.ealva.welite.db.type.ShortPersistentType
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 import com.ealva.welite.db.type.UBytePersistentType
 import com.ealva.welite.db.type.ULongPersistentType
 import com.ealva.welite.db.type.UShortPersistentType
 import com.ealva.welite.db.type.UUIDPersistentType
+import com.ealva.welite.db.type.asIdentity
+import com.ealva.welite.db.type.buildStr
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.UUID
@@ -86,7 +88,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   private val indicesDDL: List<String>
     get() = indices.flatMap { it.createStatement() }
 
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder { append(identity) }
+  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.apply { append(identity) }
 
   @ExperimentalUnsignedTypes
   override fun join(
@@ -116,10 +118,8 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
       sortWith(compareBy { !it.isAutoInc })
     }
 
-    private fun checkMultipleDeclaration() {
-      this@Table.columnDefiningPrimaryKey?.let { column ->
-        error("Column ${column.name} already defines the primary key")
-      }
+    private fun checkMultipleDeclaration() = columnDefiningPrimaryKey?.let { column ->
+      error("Column ${column.name} already defines the primary key")
     }
   }
 
@@ -540,7 +540,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 
   private var _withoutRowId: Boolean = false
 
-  private fun StringBuilder.maybeAppendWithoutRowId() = apply {
+  private fun SqlBuilder.maybeAppendWithoutRowId() = apply {
     if (_withoutRowId) {
       validateWithoutRowId(true)
       append(" WITHOUT ROWID")
@@ -559,14 +559,14 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   }
 
   private fun createStatement(): List<String> {
-    val createTable = buildString {
+    val createTable = buildStr {
       append("CREATE TABLE IF NOT EXISTS ")
-      appendIdentity(identity)
+      append(identity)
       if (columns.isNotEmpty()) {
         columns.joinTo(this, prefix = " (") { it.descriptionDdl() }
 
         if (isCustomPKNameDefined() || columns.none { it.definesPrimaryKey }) {
-          primaryKeyConstraint()?.let { append(", $it") }
+          primaryKeyConstraint()?.let { append(", ").append(it) }
         }
 
         val foreignKeyConstraints = columns.mapNotNull { it.foreignKey }
@@ -589,14 +589,13 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
         maybeAppendWithoutRowId()
       }
     }
-
     return listOf(createTable)
   }
 
   private fun dropStatement(): List<String> {
-    val dropTable = buildString {
+    val dropTable = buildStr {
       append("DROP TABLE IF EXISTS ")
-      appendIdentity(identity)
+      append(identity)
     }
 
     return listOf(dropTable)

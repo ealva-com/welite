@@ -20,13 +20,12 @@ import android.content.Context
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.BaseSqlTypeExpression
-import com.ealva.welite.db.expr.SqlBuilder
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
-import com.ealva.welite.db.expr.invoke
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.IntegerPersistentType
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.test.common.TestTable
 import com.nhaarman.expect.expect
 import org.junit.Before
@@ -84,7 +83,7 @@ class ColumnTests {
     val col3 = "col3"
     fun abs(value: Int) = object : BaseSqlTypeExpression<Int>() {
       override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-        sqlBuilder { append("ABS($value)") }
+        sqlBuilder.apply { append("ABS($value)") }
 
       override val persistentType = IntegerPersistentType<Int>()
     }

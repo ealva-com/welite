@@ -17,7 +17,7 @@
 package com.ealva.welite.db.statements
 
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.SqlBuilder
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.type.DefaultValueMarker
 
@@ -106,17 +106,6 @@ class ColumnValueWithExpression<S>(
   }
 }
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun SqlBuilder.append(columnValue: ColumnValue<*>) {
-  columnValue.appendColumnEqValueTo(this)
-}
-
-@Suppress("NOTHING_TO_INLINE")
-inline fun SqlBuilder.appendName(columnValue: ColumnValue<*>) {
-  columnValue.appendColumnTo(this)
-}
-
-@Suppress("NOTHING_TO_INLINE")
-inline fun SqlBuilder.appendValue(columnValue: ColumnValue<*>) {
-  columnValue.appendValueTo(this)
-}
+fun SqlBuilder.append(columnValue: ColumnValue<*>) = columnValue.appendColumnEqValueTo(this)
+fun SqlBuilder.appendName(columnValue: ColumnValue<*>) = columnValue.appendColumnTo(this)
+fun SqlBuilder.appendValue(columnValue: ColumnValue<*>) = columnValue.appendValueTo(this)

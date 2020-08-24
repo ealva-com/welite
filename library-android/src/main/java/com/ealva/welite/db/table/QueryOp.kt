@@ -18,45 +18,44 @@ package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlBuilder
-import com.ealva.welite.db.expr.invoke
+import com.ealva.welite.db.type.SqlBuilder
 
 class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("EXISTS (")
-      this@Exists.queryBuilder.appendTo(this)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("EXISTS (")
+    this@Exists.queryBuilder.appendTo(this)
+    append(")")
+  }
 }
 
 class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append("NOT EXISTS (")
-      this@NotExists.queryBuilder.appendTo(this)
-      append(")")
-    }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("NOT EXISTS (")
+    this@NotExists.queryBuilder.appendTo(this)
+    append(")")
+  }
 }
 
-class InSubQueryOp<T>(private val expr: Expression<T>, private val queryBuilder: QueryBuilder) :
-  Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append(expr)
-      append(" IN (")
-      this@InSubQueryOp.queryBuilder.appendTo(this)
-      append(")")
-    }
+class InSubQueryOp<T>(
+  private val expr: Expression<T>,
+  private val queryBuilder: QueryBuilder
+) : Op<Boolean>() {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(expr)
+    append(" IN (")
+    this@InSubQueryOp.queryBuilder.appendTo(this)
+    append(")")
+  }
 }
 
-class NotInSubQueryOp<T>(private val expr: Expression<T>, private val queryBuilder: QueryBuilder) :
-  Op<Boolean>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder {
-      append(expr)
-      append(" NOT IN (")
-      this@NotInSubQueryOp.queryBuilder.appendTo(this)
-      append(")")
-    }
+class NotInSubQueryOp<T>(
+  private val expr: Expression<T>,
+  private val queryBuilder: QueryBuilder
+) : Op<Boolean>() {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(expr)
+    append(" NOT IN (")
+    this@NotInSubQueryOp.queryBuilder.appendTo(this)
+    append(")")
+  }
 }

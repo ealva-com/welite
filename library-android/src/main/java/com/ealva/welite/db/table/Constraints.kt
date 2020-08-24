@@ -17,10 +17,14 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Op
+import com.ealva.welite.db.type.Identity
+import com.ealva.welite.db.type.asIdentity
+import com.ealva.welite.db.type.buildStr
 
 /**
  * See [SQLite Foreign Key Support](https://sqlite.org/foreignkeys.html)
  */
+@Suppress("unused")
 enum class ForeignKeyAction(val value: String) {
   /**
    * If the configured action is "SET NULL", then when a parent key is deleted (for ON DELETE SET
@@ -102,20 +106,34 @@ data class ForeignKeyConstraint(
 
   private val fkName: Identity
     get() = Identity.make(
-      name ?: "fk_${parentTable.unquoted}_${parentColumn.unquoted}_${childColumn.unquoted}"
+      name ?: buildStr {
+        append("fk_")
+        append(parentTable.unquoted)
+        append("_")
+        append(parentColumn.unquoted)
+        append("_")
+        append(childColumn.unquoted)
+      }
     )
 
   internal val foreignKeyPart: String
-    get() = buildString {
-      append("CONSTRAINT ${fkName.value} ")
-      append(
-        "FOREIGN KEY (${parentColumn.value}) REFERENCES ${childTable.value}(${childColumn.value})"
-      )
+    get() = buildStr {
+      append("CONSTRAINT ")
+      append(fkName.value)
+      append(" FOREIGN KEY (")
+      append(parentColumn.value)
+      append(") REFERENCES ")
+      append(childTable.value)
+      append('(')
+      append(childColumn.value)
+      append(')')
       if (onDelete != ForeignKeyAction.NO_ACTION) {
-        append(" ON DELETE $onDelete")
+        append(" ON DELETE ")
+        append(onDelete.toString())
       }
       if (onUpdate != ForeignKeyAction.NO_ACTION) {
-        append(" ON UPDATE $onUpdate")
+        append(" ON UPDATE ")
+        append(onUpdate.toString())
       }
     }
 }
@@ -161,11 +179,7 @@ class CheckConstraint(
       require(name.value.isNotBlank()) { "Check constraint name cannot be blank" }
       val tableIdentity = table.identity
       val checkOpSQL = op.toString().replace("${tableIdentity.value}.", "")
-      return CheckConstraint(
-        tableIdentity,
-        name,
-        checkOpSQL
-      )
+      return CheckConstraint(tableIdentity, name, checkOpSQL)
     }
   }
 }
@@ -184,7 +198,7 @@ class Index(
     get() = indexName.asIdentity()
 
   private val indexName: String
-    get() = customName ?: buildString {
+    get() = customName ?: buildStr {
       append(tableIdentity.unquoted)
       append('_')
       append(columns.joinToString("_") { it.name })
@@ -199,7 +213,14 @@ class Index(
     val columnsList = columns.joinToString(prefix = "(", postfix = ")") { it.identity().value }
     val prefix = if (unique) "CREATE UNIQUE INDEX IF NOT EXISTS" else "CREATE INDEX IF NOT EXISTS"
 
-    val sql = "$prefix ${indexIdentity.value} ON ${tableIdentity.value}$columnsList"
+    val sql = buildStr {
+      append(prefix)
+      append(' ')
+      append(indexIdentity.value)
+      append(" ON ")
+      append(tableIdentity.value)
+      append(columnsList)
+    }
     return listOf(sql)
   }
 
