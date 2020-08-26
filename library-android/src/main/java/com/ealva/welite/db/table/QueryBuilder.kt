@@ -90,28 +90,28 @@ class QueryBuilder private constructor(
    * [Cursor.position] which is the current index into the the rows.
    *
    */
-  override fun forEach(bindArgs: (ParamBindings) -> Unit, action: (Cursor) -> Unit) =
+  override fun forEach(bindArgs: (ArgBindings) -> Unit, action: (Cursor) -> Unit) =
     build().forEach(bindArgs, action)
 
   /**
    * Bind any necessary arguments and then create a flow of [T] created by [factory]
    */
-  override fun <T> flow(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
+  override fun <T> flow(bindArgs: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
     build().flow(bindArgs, factory)
 
   /**
    * Bind args and then generate a sequence of [T] create by [factory]
    */
   override fun <T> sequence(
-    bindArgs: (ParamBindings) -> Unit,
+    bindArgs: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Sequence<T> = build().sequence(bindArgs, factory)
 
-  override fun longForQuery(bindArgs: (ParamBindings) -> Unit): Long {
+  override fun longForQuery(bindArgs: (ArgBindings) -> Unit): Long {
     return build().longForQuery(bindArgs)
   }
 
-  override fun stringForQuery(bindArgs: (ParamBindings) -> Unit): String {
+  override fun stringForQuery(bindArgs: (ArgBindings) -> Unit): String {
     return build().stringForQuery(bindArgs)
   }
 
@@ -184,7 +184,7 @@ class QueryBuilder private constructor(
     limitOffset = LimitOffset(limit, offset)
   }
 
-  override fun count(bindArgs: (ParamBindings) -> Unit): Long {
+  override fun count(bindArgs: (ArgBindings) -> Unit): Long {
     return if (distinct || groupBy.isNotEmpty() || limitOffset != null) {
       check(!count) { "Cannot use count with DISTINCT, GROUP BY, or LIMIT" }
       val query = build()

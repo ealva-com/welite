@@ -80,10 +80,10 @@ class OffsetDateTimeColumnTest {
 
       transaction {
         val actInsert = OffsetDt.insertValues {
-          it[offsetDate].bindParam()
-          it[optOffsetDate].bindParam()
-          it[name].bindParam()
-          it[other].bindParam()
+          it[offsetDate].bindArg()
+          it[optOffsetDate].bindArg()
+          it[name].bindArg()
+          it[other].bindArg()
         }
         actInsert.insert {
           it[0] = OffsetDateTime.now()
@@ -127,8 +127,8 @@ class OffsetDateTimeColumnTest {
     withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
-          it[offsetDate].bindParam()
-          it[optOffsetDate].bindParam()
+          it[offsetDate].bindArg()
+          it[optOffsetDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }
@@ -150,8 +150,8 @@ class OffsetDateTimeColumnTest {
     withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
-          it[offsetDate].bindParam()
-          it[optOffsetDate].bindParam()
+          it[offsetDate].bindArg()
+          it[optOffsetDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }
@@ -171,8 +171,8 @@ class OffsetDateTimeColumnTest {
     withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
-          it[offsetDate].bindParam()
-          it[optOffsetDate].bindParam()
+          it[offsetDate].bindArg()
+          it[optOffsetDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }
@@ -192,8 +192,8 @@ class OffsetDateTimeColumnTest {
     withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
-          it[offsetDate].bindParam()
-          it[optOffsetDate].bindParam()
+          it[offsetDate].bindArg()
+          it[optOffsetDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }

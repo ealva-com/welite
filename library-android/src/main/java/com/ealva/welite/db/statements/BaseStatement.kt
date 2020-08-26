@@ -17,18 +17,18 @@
 package com.ealva.welite.db.statements
 
 import android.database.sqlite.SQLiteStatement
-import com.ealva.welite.db.table.ParamBindings
+import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
 
-abstract class BaseStatement : Bindable, ParamBindings {
+abstract class BaseStatement : Bindable, ArgBindings {
 
   protected abstract val statement: SQLiteStatement
   protected abstract val types: List<PersistentType<*>>
 
-  override val paramCount: Int
+  override val argCount: Int
     get() = types.size
-  private val paramRange: IntRange
+  private val argRange: IntRange
     get() = types.indices
 
   override fun bindNull(index: Int) {
@@ -61,6 +61,6 @@ abstract class BaseStatement : Bindable, ParamBindings {
   override fun <T> set(index: Int, value: T?) = types[index].bind(this, index, value)
 
   private fun ensureIndexInBounds(index: Int) {
-    require(index in paramRange) { "Out of bounds index=$index indices=$paramRange" }
+    require(index in argRange) { "Out of bounds index=$index indices=$argRange" }
   }
 }

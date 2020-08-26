@@ -19,15 +19,15 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.table.NO_BIND
-import com.ealva.welite.db.table.ParamBindings
+import com.ealva.welite.db.table.NO_ARGS
+import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.buildSql
 
 interface DeleteStatement {
 
-  fun delete(binding: (ParamBindings) -> Unit = NO_BIND): Int
+  fun delete(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Int
 
   companion object {
     operator fun invoke(db: SQLiteDatabase, table: Table, where: Op<Boolean>?): DeleteStatement {
@@ -40,7 +40,7 @@ private class DeleteStatementImpl(
   db: SQLiteDatabase,
   private val table: Table,
   private val where: Op<Boolean>?
-) : BaseStatement(), DeleteStatement, ParamBindings {
+) : BaseStatement(), DeleteStatement, ArgBindings {
 
   val sql: String
   override val types: List<PersistentType<*>>
@@ -60,9 +60,9 @@ private class DeleteStatementImpl(
 
   override val statement: SQLiteStatement = db.compileStatement(sql)
 
-  override fun delete(binding: (ParamBindings) -> Unit): Int {
+  override fun delete(bindArgs: (ArgBindings) -> Unit): Int {
     statement.clearBindings()
-    binding(this)
+    bindArgs(this)
     return statement.executeUpdateDelete()
   }
 }

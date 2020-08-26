@@ -177,7 +177,7 @@ class QueryTests {
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { albumName eq albumName.bindParam() and (AlbumTable.artistName eq artist) }
+      .where { albumName eq albumName.bindArg() and (AlbumTable.artistName eq artist) }
       .sequence({ it[0] = album }) { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album

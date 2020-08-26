@@ -49,38 +49,38 @@ interface PerformQuery {
    * Do any necessary [bindArgs], execute the query, and invoke [action] for each row in the
    * results.
    */
-  fun forEach(bindArgs: (ParamBindings) -> Unit = NO_BIND, action: (Cursor) -> Unit)
+  fun forEach(bindArgs: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
 
   /**
    * Creates a flow, first doing any necessary [bindArgs], execute the query, and emit a [T]
    * created using [factory] for each row in the query results
    */
-  fun <T> flow(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Flow<T>
+  fun <T> flow(bindArgs: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
 
   /**
    * After any necessary [bindArgs] generate a [Sequence] of [T] using [factory] for each Cursor
    * row and yields a [T] into the [Sequence]
    */
-  fun <T> sequence(bindArgs: (ParamBindings) -> Unit = NO_BIND, factory: (Cursor) -> T): Sequence<T>
+  fun <T> sequence(bindArgs: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Sequence<T>
 
   /**
    * Do any necessary [bindArgs], execute the query, and return the value in the first column of the
    * first row. Especially useful for ```COUNT``` queries
    */
-  fun longForQuery(bindArgs: (ParamBindings) -> Unit = NO_BIND): Long
+  fun longForQuery(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * Do any necessary [bindArgs], execute the query, and return the value in the first column of the
    * first row.
    */
-  fun stringForQuery(bindArgs: (ParamBindings) -> Unit = NO_BIND): String
+  fun stringForQuery(bindArgs: (ArgBindings) -> Unit = NO_ARGS): String
 
   /**
    * Do any necessary [bindArgs], execute the query for count similar to
    * ```COUNT(*) FROM ( $thisQuery )```, and return the value in the first column of the
    * first row
    */
-  fun count(bindArgs: (ParamBindings) -> Unit = NO_BIND): Long
+  fun count(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 }
 
 interface Query : PerformQuery {
@@ -122,7 +122,7 @@ private typealias ACursor = android.database.Cursor
 private val LOG by lazyLogger(Query::class)
 private const val UNBOUND = "Unbound"
 
-private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ParamBindings {
+private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
   private val args = Array(argTypes.size) { UNBOUND }
 
   override operator fun <T> set(index: Int, value: T?) {
@@ -131,7 +131,7 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ParamBi
     args[index] = argTypes[index].valueToString(value)
   }
 
-  override val paramCount: Int
+  override val argCount: Int
     get() = argTypes.size
 
   val arguments: Array<String>
@@ -147,14 +147,14 @@ private class QueryImpl(
   private val db = dbConfig.db
   private val queryArgs = QueryArgs(types)
 
-  override fun forEach(bindArgs: (ParamBindings) -> Unit, action: (Cursor) -> Unit) {
+  override fun forEach(bindArgs: (ArgBindings) -> Unit, action: (Cursor) -> Unit) {
     bindArgs(queryArgs)
     DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
       while (cursor.moveToNext()) action(cursor)
     }
   }
 
-  override fun <T> flow(bindArgs: (ParamBindings) -> Unit, factory: (Cursor) -> T) = kflow {
+  override fun <T> flow(bindArgs: (ArgBindings) -> Unit, factory: (Cursor) -> T) = kflow {
     bindArgs(queryArgs)
     DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
       while (cursor.moveToNext()) emit(factory(cursor))
@@ -162,7 +162,7 @@ private class QueryImpl(
   }.flowOn(dbConfig.dispatcher)
 
   override fun <T> sequence(
-    bindArgs: (ParamBindings) -> Unit,
+    bindArgs: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Sequence<T> = ksequence {
     bindArgs(queryArgs)
@@ -171,28 +171,28 @@ private class QueryImpl(
     }
   }
 
-  override fun longForQuery(bindArgs: (ParamBindings) -> Unit): Long = doLongForQuery(sql, bindArgs)
+  override fun longForQuery(bindArgs: (ArgBindings) -> Unit): Long = doLongForQuery(sql, bindArgs)
 
-  private fun doLongForQuery(sql: String, binding: (ParamBindings) -> Unit): Long {
-    binding(queryArgs)
+  private fun doLongForQuery(sql: String, bindArgs: (ArgBindings) -> Unit): Long {
+    bindArgs(queryArgs)
     return db.longForQuery(sql, queryArgs.arguments)
   }
 
-  override fun stringForQuery(bindArgs: (ParamBindings) -> Unit): String =
+  override fun stringForQuery(bindArgs: (ArgBindings) -> Unit): String =
     doStringForQuery(sql, bindArgs)
 
-  private fun doStringForQuery(sql: String, binding: (ParamBindings) -> Unit): String {
-    binding(queryArgs)
+  private fun doStringForQuery(sql: String, bindArgs: (ArgBindings) -> Unit): String {
+    bindArgs(queryArgs)
     return db.stringForQuery(sql, queryArgs.arguments)
   }
 
-  override fun count(bindArgs: (ParamBindings) -> Unit): Long {
+  override fun count(bindArgs: (ArgBindings) -> Unit): Long {
     val alreadyCountQuery = sql.trim().startsWith("SELECT COUNT(*)", ignoreCase = true)
     return doLongForQuery(if (alreadyCountQuery) sql else "SELECT COUNT(*) FROM ( $sql )", bindArgs)
   }
 
   override val expectedArgCount: Int
-    get() = queryArgs.paramCount
+    get() = queryArgs.argCount
 }
 
 typealias ExpressionToIndexMap = Object2IntMap<SqlTypeExpression<*>>

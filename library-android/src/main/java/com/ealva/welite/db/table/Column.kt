@@ -17,7 +17,7 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.BaseSqlTypeExpression
-import com.ealva.welite.db.expr.BindableParameter
+import com.ealva.welite.db.expr.BindExpression
 import com.ealva.welite.db.expr.Count
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
@@ -95,10 +95,10 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
   fun markPrimaryKey()
 
   /**
-   * Create a Bindable parameter for this column to represent that the actual value will be bound
+   * Create a Bindable argument for this column to represent that the actual value will be bound
    * into the statement/query when executed.
    */
-  fun bindParam() = BindableParameter(persistentType)
+  fun bindArg() = BindExpression(persistentType)
 
   companion object {
     /**

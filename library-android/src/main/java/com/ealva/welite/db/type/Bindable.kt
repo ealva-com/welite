@@ -17,11 +17,6 @@
 package com.ealva.welite.db.type
 
 interface Bindable {
-  /**
-   * Total number of bindable parameters
-   */
-  val paramCount: Int
-
   fun bindNull(index: Int)
   fun bind(index: Int, value: Long)
   fun bind(index: Int, value: Double)

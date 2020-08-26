@@ -134,7 +134,7 @@ fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (value) {
   is UShort -> ushortParam(value)
   is UByte -> ubyteParam(value)
   is BigDecimal -> longParam(value.unscaledValue().toLong())
-  is BindableParameter<*> -> value
+  is BindExpression<*> -> value
   else -> QueryParameter(value, persistentType)
 } as Expression<T>
 

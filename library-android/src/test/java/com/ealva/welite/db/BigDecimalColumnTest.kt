@@ -74,9 +74,9 @@ class BigDecimalColumnTest {
     ) {
       transaction {
         val insertBig = BigTable.insertValues {
-          it[name].bindParam()
-          it[bigD].bindParam()
-          it[optBig].bindParam()
+          it[name].bindArg()
+          it[bigD].bindArg()
+          it[optBig].bindArg()
         }
         insertBig.insert {
           it[0] = "Bob"
@@ -117,8 +117,8 @@ class BigDecimalColumnTest {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
-          it[bigD].bindParam()
-          it[optBig].bindParam()
+          it[bigD].bindArg()
+          it[optBig].bindArg()
         }
         bigTableInsert.insert {
           it[0] = BigInteger("2") // during bind converted to string, then BigDecimal
@@ -143,8 +143,8 @@ class BigDecimalColumnTest {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
-          it[bigD].bindParam()
-          it[optBig].bindParam()
+          it[bigD].bindArg()
+          it[optBig].bindArg()
         }
         bigTableInsert.insert {
           it[0] = null
@@ -163,8 +163,8 @@ class BigDecimalColumnTest {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
-          it[bigD].bindParam()
-          it[optBig].bindParam()
+          it[bigD].bindArg()
+          it[optBig].bindArg()
         }
         bigTableInsert.insert {
           it[0] = BigDecimal.ONE
@@ -183,8 +183,8 @@ class BigDecimalColumnTest {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
-          it[bigD].bindParam()
-          it[optBig].bindParam()
+          it[bigD].bindArg()
+          it[optBig].bindArg()
         }
         bigTableInsert.insert {
           it[0] = BigDecimal.ONE

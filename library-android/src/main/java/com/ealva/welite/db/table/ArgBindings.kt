@@ -17,20 +17,19 @@
 package com.ealva.welite.db.table
 
 /**
- * ParamBindings is the interface presented to the client to bind parameters to the
- * sql statement.
+ * The interface presented to the client to bind arguments to the sql statement.
  */
-interface ParamBindings {
+interface ArgBindings {
   /**
-   * Set the bind parameter at [index] to [value]. The underlying persistent type object handles any
+   * Set the argument at [index] to [value]. The underlying persistent type object handles any
    * necessary conversions of value or throws on error
    */
   operator fun <T> set(index: Int, value: T?)
 
   /**
-   * Total number of bindable parameters
+   * Total number of bindable arguments
    */
-  val paramCount: Int
+  val argCount: Int
 }
 
-val NO_BIND: (ParamBindings) -> Unit = {}
+val NO_ARGS: (ArgBindings) -> Unit = {}

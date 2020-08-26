@@ -64,9 +64,9 @@ class MainActivity : AppCompatActivity() {
 
         // ignore conflict because we're calling this during onCreate
         val insertStatement = MediaFileTable.insertValues(OnConflict.Ignore) {
-          it[mediaUri].bindParam()
-          it[fileName].bindParam()
-          it[mediaTitle].bindParam()
+          it[mediaUri].bindArg()
+          it[fileName].bindArg()
+          it[mediaTitle].bindArg()
           it[localDate] = LocalDate.now()
         }
 
@@ -89,7 +89,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         MediaFileTable.insert(OnConflict.Ignore, { it[0] = "/dir/Music/fourth.mp3" }) {
-          it[mediaUri].bindParam()
+          it[mediaUri].bindArg()
           it[fileName] = "fourth"
           it[mediaTitle] = "Fourth Title"
         }

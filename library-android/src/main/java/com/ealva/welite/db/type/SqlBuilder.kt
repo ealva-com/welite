@@ -132,14 +132,6 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
   override fun toString(): String = strBuilder.toString()
 }
 
-private const val DEFAULT_MAX_CACHE_ENTRIES = 4
-private const val MIN_BUILDER_CAPACITY = 1024
-private const val DEFAULT_BUILDER_CAPACITY = 2048
-private var queue: Queue<SqlBuilderImpl> = LinkedBlockingQueue(DEFAULT_MAX_CACHE_ENTRIES)
-private var exceededCapacity = 0
-private var gets = 0
-private var puts = 0
-
 /** test only */
 interface SqlBuilderCacheStats {
   /** Current maximum number of items in the cache */
@@ -161,9 +153,26 @@ interface SqlBuilderCacheStats {
   val puts: Int
 }
 
+private const val DEFAULT_MAX_CACHE_ENTRIES = 4
+private const val MIN_BUILDER_CAPACITY = 1024
+private const val DEFAULT_BUILDER_CAPACITY = 2048
+private var queueCapacity = DEFAULT_MAX_CACHE_ENTRIES
+@Volatile private var queue: Queue<SqlBuilderImpl> = LinkedBlockingQueue(queueCapacity)
+private var exceededCapacity = 0
+private var gets = 0
+private var puts = 0
+
 private object SqlBuilderCache {
-  var defaultCapacity = DEFAULT_BUILDER_CAPACITY
-  var maxEntries = DEFAULT_MAX_CACHE_ENTRIES
+  var builderCapacity = DEFAULT_BUILDER_CAPACITY
+
+  var maxEntries: Int
+    get() = queueCapacity
+    set(value) {
+      if (queueCapacity != value) {
+        queueCapacity = value
+        queue = LinkedBlockingQueue(value)
+      }
+    }
 
   fun getStats(): SqlBuilderCacheStats {
     data class CacheStatsImpl(
@@ -175,7 +184,7 @@ private object SqlBuilderCache {
     ) : SqlBuilderCacheStats
     return CacheStatsImpl(
       maxEntries,
-      defaultCapacity,
+      builderCapacity,
       exceededCapacity,
       gets,
       puts
@@ -189,7 +198,7 @@ private object SqlBuilderCache {
     puts = 0
   }
 
-  private fun newBuilder() = SqlBuilderImpl(defaultCapacity)
+  private fun newBuilder() = SqlBuilderImpl(builderCapacity)
 
   fun get(): SqlBuilderImpl {
     return (queue.poll()?.apply { length = 0 } ?: newBuilder()).also { gets++ }
@@ -205,11 +214,11 @@ private object SqlBuilderCache {
 }
 
 /**
- * Set the maximum number of entries allowed in the cache. The current cache will be abandoned
+ * Set the maximum number of entries allowed in the cache. The current cache will be abandoned if
+ * maxEntries is modified
  */
-fun setSqlBuilderCacheMaxEntries(maxEntries: Int) {
+fun setSqlBuilderCacheCapacity(maxEntries: Int) {
   SqlBuilderCache.maxEntries = maxEntries
-  queue = LinkedBlockingQueue(maxEntries)
 }
 
 /**
@@ -220,8 +229,8 @@ fun setSqlBuilderCacheMaxEntries(maxEntries: Int) {
  * Capacity defaults to [DEFAULT_BUILDER_CAPACITY] which is currently 2048. Capacity cannot be set
  * smaller than [MIN_BUILDER_CAPACITY] which is currently 1024
  */
-fun setSqlBuilderDefaultCapacity(defaultCapacity: Int) {
-  SqlBuilderCache.defaultCapacity = maxOf(MIN_BUILDER_CAPACITY, defaultCapacity)
+fun setSqlBuilderCapacity(defaultCapacity: Int) {
+  SqlBuilderCache.builderCapacity = maxOf(MIN_BUILDER_CAPACITY, defaultCapacity)
 }
 
 fun buildSql(builderAction: SqlBuilder.() -> Unit): Pair<String, List<PersistentType<*>>> {

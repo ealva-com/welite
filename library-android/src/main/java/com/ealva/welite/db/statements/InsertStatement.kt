@@ -19,47 +19,13 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.appendTo
-import com.ealva.welite.db.table.NO_BIND
+import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.OnConflict
-import com.ealva.welite.db.table.ParamBindings
+import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.buildSql
-
-/**
- * InsertSeed contains the components that make up an InsertStatement, less the values the user
- * will bind into statement parameters. This abstraction was initially for possible statement
- * caching or so a values() method on the insert statement could ensure consistency
- */
-private class InsertSeed<T : Table>(
-  table: T,
-  onConflict: OnConflict,
-  bind: T.(ColumnValues) -> Unit
-) {
-  val columnValues = ColumnValues().apply { table.bind(this) }
-  val sql: String
-  val types: List<PersistentType<*>>
-
-  init {
-    val (_sql, _types) = buildSql {
-      append(onConflict.insertOr)
-      append(" INTO ")
-      append(table.identity.value)
-      columnValues.columnValueList.let { list ->
-        list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
-          appendName(columnValue)
-        }
-        append(" VALUES ")
-        list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
-          appendValue(columnValue)
-        }
-      }
-    }
-    sql = _sql
-    types = _types
-  }
-}
 
 /**
  * Represents a compiled SQLiteStatement with bind parameters that can be used to repeatedly insert
@@ -69,13 +35,13 @@ private class InsertSeed<T : Table>(
 interface InsertStatement {
 
   /**
-   * Insert a row binding any parameters with [bind]
+   * Insert a row binding any parameters with [bindArgs]
    *
    * An InsertStatement contains a compiled SQLiteStatement and this method clears the bindings,
-   * provides for new bound parameters via [bind], and executes the insert
+   * provides for new bound parameters via [bindArgs], and executes the insert
    * @return the row ID of the last row inserted if successful else -1
    */
-  fun insert(bind: (ParamBindings) -> Unit = NO_BIND): Long
+  fun insert(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
   companion object {
     /**
@@ -86,24 +52,39 @@ interface InsertStatement {
       db: SQLiteDatabase,
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
-      bind: T.(ColumnValues) -> Unit
+      assignColumns: T.(ColumnValues) -> Unit
     ): InsertStatement {
-      return InsertStatementImpl(db, InsertSeed(table, onConflict, bind))
+      val columnValues = ColumnValues().apply { table.assignColumns(this) }
+      val (sql, types) = buildSql {
+        append(onConflict.insertOr)
+        append(" INTO ")
+        append(table.identity.value)
+        columnValues.columnValueList.let { list ->
+          list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
+            appendName(columnValue)
+          }
+          append(" VALUES ")
+          list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
+            appendValue(columnValue)
+          }
+        }
+      }
+      return InsertStatementImpl(db, sql, types)
     }
   }
 }
 
-private class InsertStatementImpl<T : Table>(
+private class InsertStatementImpl(
   db: SQLiteDatabase,
-  insertSeed: InsertSeed<T>
+  sql: String,
+  override val types: List<PersistentType<*>>
 ) : BaseStatement(), InsertStatement {
 
-  override val types: List<PersistentType<*>> = insertSeed.types
-  override val statement: SQLiteStatement = db.compileStatement(insertSeed.sql)
+  override val statement: SQLiteStatement = db.compileStatement(sql)
 
-  override fun insert(bind: (ParamBindings) -> Unit): Long {
+  override fun insert(bindArgs: (ArgBindings) -> Unit): Long {
     statement.clearBindings() // bind arguments are all set to null
-    bind(this)
+    bindArgs(this)
     return statement.executeInsert()
   }
 }

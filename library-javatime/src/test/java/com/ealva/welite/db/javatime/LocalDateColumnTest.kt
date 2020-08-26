@@ -79,10 +79,10 @@ class LocalDateColumnTest {
           it[other] = "Pool"
         }
         val visitInsert = Visit.insertValues {
-          it[localDate].bindParam()
-          it[optLocalDate].bindParam()
-          it[name].bindParam()
-          it[other].bindParam()
+          it[localDate].bindArg()
+          it[optLocalDate].bindArg()
+          it[name].bindArg()
+          it[other].bindArg()
         }
         visitInsert.insert {
           it[0] = LocalDate.now()
@@ -135,8 +135,8 @@ class LocalDateColumnTest {
     withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = Visit.insertValues {
-          it[localDate].bindParam()
-          it[optLocalDate].bindParam()
+          it[localDate].bindArg()
+          it[optLocalDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }
@@ -158,8 +158,8 @@ class LocalDateColumnTest {
     withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = Visit.insertValues {
-          it[localDate].bindParam()
-          it[optLocalDate].bindParam()
+          it[localDate].bindArg()
+          it[optLocalDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }
@@ -179,8 +179,8 @@ class LocalDateColumnTest {
     withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = Visit.insertValues {
-          it[localDate].bindParam()
-          it[optLocalDate].bindParam()
+          it[localDate].bindArg()
+          it[optLocalDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }
@@ -200,8 +200,8 @@ class LocalDateColumnTest {
     withTestDatabase(appCtx, listOf(Visit), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = Visit.insertValues {
-          it[localDate].bindParam()
-          it[optLocalDate].bindParam()
+          it[localDate].bindArg()
+          it[optLocalDate].bindArg()
           it[name] = "name"
           it[other] = "other"
         }

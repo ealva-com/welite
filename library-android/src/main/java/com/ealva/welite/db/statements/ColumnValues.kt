@@ -21,12 +21,17 @@ import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.type.DefaultValueMarker
 
-interface BindParam {
-  fun bindParam()
+/**
+ * Denotes a column whose value will be bound as the statement/query is executed. This is used
+ * so that statements/queries may be reused (no need to form and compile the SQL again).
+ */
+interface BindArgument {
+  fun bindArg()
 }
 
 /**
- * Represents a group of columns to which values are bound, such as during an insert or update. eg.
+ * Represents a group of columns to which values are assigned, such as during an insert or update.
+ * For example:
  * ```
  * insertValues {
  *   it[MyTable.columnA] = "Important"
@@ -42,7 +47,7 @@ interface ColumnValues {
 
   operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E)
 
-  operator fun <T> get(column: Column<T>): BindParam
+  operator fun <T> get(column: Column<T>): BindArgument
 
   companion object {
     operator fun invoke(): ColumnValues = ColumnValuesImpl()
@@ -60,10 +65,10 @@ private class ColumnValuesImpl : ColumnValues {
     columnValueList.add(ColumnValueWithExpression(column, expression))
   }
 
-  override fun <T> get(column: Column<T>): BindParam {
-    return object : BindParam {
-      override fun bindParam() {
-        columnValueList.add(ColumnValueWithExpression(column, column.bindParam()))
+  override fun <T> get(column: Column<T>): BindArgument {
+    return object : BindArgument {
+      override fun bindArg() {
+        columnValueList.add(ColumnValueWithExpression(column, column.bindArg()))
       }
     }
   }

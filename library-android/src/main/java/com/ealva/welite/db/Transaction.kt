@@ -42,10 +42,10 @@ import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.table.ForeignKeyAction
-import com.ealva.welite.db.table.NO_BIND
+import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.OnConflict.Unspecified
-import com.ealva.welite.db.table.ParamBindings
+import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.SelectFrom
@@ -172,7 +172,7 @@ interface TransactionInProgress : Queryable {
    */
   fun <T : Table> T.insertValues(
     onConflict: OnConflict = Unspecified,
-    bind: T.(ColumnValues) -> Unit
+    assignColumns: T.(ColumnValues) -> Unit
   ): InsertStatement
 
   /**
@@ -180,18 +180,18 @@ interface TransactionInProgress : Queryable {
    */
   fun <T : Table> T.insert(
     onConflict: OnConflict = Unspecified,
-    paramBindings: (ParamBindings) -> Unit = NO_BIND,
-    bind: T.(ColumnValues) -> Unit
-  ): Long = insertValues(onConflict, bind).insert(paramBindings)
+    bindArgs: (ArgBindings) -> Unit = NO_ARGS,
+    assignColumns: T.(ColumnValues) -> Unit
+  ): Long = insertValues(onConflict, assignColumns).insert(bindArgs)
 
   fun <T : Table> T.update(
     onConflict: OnConflict = Unspecified,
-    bind: T.(ColumnValues) -> Unit
+    assignColumns: T.(ColumnValues) -> Unit
   ): UpdateBuilder<T>
 
   fun <T : Table> T.updateAll(
     onConflict: OnConflict,
-    bind: T.(ColumnValues) -> Unit
+    assignColumns: T.(ColumnValues) -> Unit
   ): UpdateStatement
 
   fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement
@@ -233,21 +233,21 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
 
   override fun <T : Table> T.insertValues(
     onConflict: OnConflict,
-    bind: T.(ColumnValues) -> Unit
-  ): InsertStatement = InsertStatement(db, this, onConflict, bind)
+    assignColumns: T.(ColumnValues) -> Unit
+  ): InsertStatement = InsertStatement(db, this, onConflict, assignColumns)
 
   override fun <T : Table> T.update(
     onConflict: OnConflict,
-    bind: T.(ColumnValues) -> Unit
+    assignColumns: T.(ColumnValues) -> Unit
   ): UpdateBuilder<T> {
-    return UpdateBuilder(db, this, onConflict, bind)
+    return UpdateBuilder(db, this, onConflict, assignColumns)
   }
 
   override fun <T : Table> T.updateAll(
     onConflict: OnConflict,
-    bind: T.(ColumnValues) -> Unit
+    assignColumns: T.(ColumnValues) -> Unit
   ): UpdateStatement {
-    return UpdateStatement(db, this, onConflict, bind)
+    return UpdateStatement(db, this, onConflict, assignColumns)
   }
 
   override fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {

@@ -170,7 +170,7 @@ fun uintParam(value: UInt): Expression<UInt> =
 fun ulongParam(value: ULong): Expression<ULong> =
   QueryParameter(value, ULongPersistentType())
 
-class BindableParameter<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
+class BindExpression<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder.apply { registerBindable(sqlType) }
 }

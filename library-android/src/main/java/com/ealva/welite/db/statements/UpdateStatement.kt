@@ -20,9 +20,9 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.appendTo
-import com.ealva.welite.db.table.NO_BIND
+import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.OnConflict
-import com.ealva.welite.db.table.ParamBindings
+import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.buildSql
@@ -31,25 +31,25 @@ class UpdateBuilder<T : Table>(
   private val db: SQLiteDatabase,
   private val table: T,
   private val onConflict: OnConflict,
-  private val bind: T.(ColumnValues) -> Unit
+  private val assignColumns: T.(ColumnValues) -> Unit
 ) {
   fun where(where: T.() -> Op<Boolean>): UpdateStatement {
-    return UpdateStatement(db, table, onConflict, table.where(), bind)
+    return UpdateStatement(db, table, onConflict, table.where(), assignColumns)
   }
 }
 
 interface UpdateStatement {
 
-  fun update(bindArgs: (ParamBindings) -> Unit = NO_BIND): Int
+  fun update(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Int
 
   companion object {
     operator fun <T : Table> invoke(
       db: SQLiteDatabase,
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
-      bind: T.(ColumnValues) -> Unit
+      assignColumns: T.(ColumnValues) -> Unit
     ): UpdateStatement {
-      return UpdateStatementImpl(db, table, onConflict, null, bind)
+      return UpdateStatementImpl(db, table, onConflict, null, assignColumns)
     }
 
     operator fun <T : Table> invoke(
@@ -57,9 +57,9 @@ interface UpdateStatement {
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       where: Op<Boolean>,
-      bind: T.(ColumnValues) -> Unit
+      assignColumns: T.(ColumnValues) -> Unit
     ): UpdateStatement {
-      return UpdateStatementImpl(db, table, onConflict, where, bind)
+      return UpdateStatementImpl(db, table, onConflict, where, assignColumns)
     }
   }
 }
@@ -69,8 +69,8 @@ private class UpdateStatementImpl<T : Table>(
   private val table: T,
   private val onConflict: OnConflict,
   private val where: Op<Boolean>?,
-  private val bind: T.(ColumnValues) -> Unit
-) : BaseStatement(), UpdateStatement, ParamBindings {
+  private val assignColumns: T.(ColumnValues) -> Unit
+) : BaseStatement(), UpdateStatement, ArgBindings {
 
   private val sql: String
   override val types: List<PersistentType<*>>
@@ -81,7 +81,7 @@ private class UpdateStatementImpl<T : Table>(
       append(table.identity.value)
 
       val columnValues = ColumnValues()
-      table.bind(columnValues)
+      table.assignColumns(columnValues)
 
       columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
         append(columnValue)
@@ -98,9 +98,9 @@ private class UpdateStatementImpl<T : Table>(
 
   override val statement: SQLiteStatement = db.compileStatement(sql)
 
-  override fun update(bindArgs: (ParamBindings) -> Unit): Int {
+  override fun update(bindArgs: (ArgBindings) -> Unit): Int {
     statement.clearBindings()
-    if (bindArgs !== NO_BIND) bindArgs(this)
+    if (bindArgs !== NO_ARGS) bindArgs(this)
     return statement.executeUpdateDelete()
   }
 }

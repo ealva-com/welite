@@ -173,9 +173,9 @@ class NaturalJoinTests {
   private suspend fun Database.insertData() {
     transaction {
       val doctorInsert = Doctors.insertValues {
-        it[doctorId].bindParam()
-        it[doctorName].bindParam()
-        it[degree].bindParam()
+        it[doctorId].bindArg()
+        it[doctorName].bindArg()
+        it[degree].bindArg()
       }
       doctorInsert.insert {
         it[0] = 210
@@ -199,9 +199,9 @@ class NaturalJoinTests {
       }
 
       val splInsert = Specialty.insertValues {
-        it[splId].bindParam()
-        it[description].bindParam()
-        it[doctorId].bindParam()
+        it[splId].bindArg()
+        it[description].bindArg()
+        it[doctorId].bindArg()
       }
       splInsert.insert {
         it[0] = 1
@@ -225,9 +225,9 @@ class NaturalJoinTests {
       }
 
       val visitInsert = Visits.insertValues {
-        it[doctorId].bindParam()
-        it[patientName].bindParam()
-        it[visitDate].bindParam()
+        it[doctorId].bindArg()
+        it[patientName].bindArg()
+        it[visitDate].bindArg()
       }
       visitInsert.insert {
         it[0] = 210

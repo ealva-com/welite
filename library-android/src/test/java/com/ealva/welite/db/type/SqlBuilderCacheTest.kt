@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
 class SqlBuilderCacheTest {
   @Before
   fun setup() {
-    setSqlBuilderCacheMaxEntries(4)  // in case the default changes
+    setSqlBuilderCacheCapacity(4)  // in case the default changes
     SqlBuilder.resetCache()
   }
 
@@ -45,7 +45,7 @@ class SqlBuilderCacheTest {
 
   @Test
   fun `test set capacity low`() {
-    setSqlBuilderDefaultCapacity(1)
+    setSqlBuilderCapacity(1)
     expect(SqlBuilder.getCacheStats().maxBuilderCapacity).toBe(SqlBuilder.minimumBuilderCapacity)
   }
 
