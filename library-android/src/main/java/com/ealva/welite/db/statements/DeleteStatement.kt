@@ -17,52 +17,45 @@
 package com.ealva.welite.db.statements
 
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.buildSql
 
-interface DeleteStatement {
-
-  fun delete(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Int
+interface DeleteStatement : BaseStatement {
 
   companion object {
-    operator fun invoke(db: SQLiteDatabase, table: Table, where: Op<Boolean>?): DeleteStatement {
-      return DeleteStatementImpl(db, table, where)
+    operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement {
+      val (_sql, _types) = buildSql {
+        append("DELETE FROM ")
+        append(table.identity.value)
+        if (where != null) {
+          append(" WHERE ")
+          append(where)
+        }
+      }
+      return DeleteStatementImpl(_sql, _types)
     }
   }
 }
 
+fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {
+  return DeleteStatement(this, where())
+}
+
+fun <T : Table> T.deleteAll(): DeleteStatement {
+  return DeleteStatement(this, null)
+}
+
 private class DeleteStatementImpl(
-  db: SQLiteDatabase,
-  private val table: Table,
-  private val where: Op<Boolean>?
-) : BaseStatement(), DeleteStatement, ArgBindings {
+  private val sql: String,
+  private val types: List<PersistentType<*>>
+) : DeleteStatement {
 
-  val sql: String
-  override val types: List<PersistentType<*>>
+  private var statementAndTypes: StatementAndTypes? = null
 
-  init {
-    val (_sql, _types) = buildSql {
-      append("DELETE FROM ")
-      append(table.identity.value)
-      if (where != null) {
-        append(" WHERE ")
-        append(where)
-      }
-    }
-    sql = _sql
-    types = _types
-  }
-
-  override val statement: SQLiteStatement = db.compileStatement(sql)
-
-  override fun delete(bindArgs: (ArgBindings) -> Unit): Int {
-    statement.clearBindings()
-    bindArgs(this)
-    return statement.executeUpdateDelete()
-  }
+  override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
+    (statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
+      .executeDelete(bindArgs)
 }

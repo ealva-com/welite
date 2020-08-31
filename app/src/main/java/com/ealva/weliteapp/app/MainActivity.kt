@@ -26,8 +26,11 @@ import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.javatime.localDate
+import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.where
 import com.ealva.weliteapp.app.MediaFileTable.fileName
 import com.ealva.weliteapp.app.MediaFileTable.localDate
 import com.ealva.weliteapp.app.MediaFileTable.mediaTitle

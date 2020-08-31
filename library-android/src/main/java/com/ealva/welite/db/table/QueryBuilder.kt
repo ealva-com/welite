@@ -16,16 +16,15 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SortOrder
-import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.or
+import com.ealva.welite.db.type.AppendsToSqlBuilder
+import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.buildSql
-import kotlinx.coroutines.flow.Flow
 
 typealias LimitOffset = Pair<Long, Long>
 
@@ -45,18 +44,17 @@ inline val OrderByPair.ascDesc
 
 @WeLiteMarker
 class QueryBuilder private constructor(
-  private val dbConfig: DbConfig,
   private var set: SelectFrom,
   private var where: Op<Boolean>?,
   private var count: Boolean = false
-) : PerformQuery, AppendsToSqlBuilder {
+) : AppendsToSqlBuilder {
   private var groupBy = mutableListOf<Expression<*>>()
   private var orderBy = mutableListOf<OrderByPair>()
   private var having: Op<Boolean>? = null
   private var distinct: Boolean = false
   private var limitOffset: LimitOffset? = null
 
-  fun copy(): QueryBuilder = QueryBuilder(dbConfig, set, where).also { copy ->
+  fun copy(): QueryBuilder = QueryBuilder(set, where).also { copy ->
     copy.groupBy = groupBy.toMutableList()
     copy.orderBy = orderBy.toMutableList()
     copy.having = having
@@ -75,44 +73,15 @@ class QueryBuilder private constructor(
   fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>) = apply { where = where.body() }
 
   /**
-   * Save this query to reuse and possibly bind parameters each time via [Query.forEach]
+   * Save this query to reuse and possibly bind parameters each time it is used
    */
-  fun build(): Query {
+  fun build(): Query = Query(makeQuerySeed())
+
+  fun makeQuerySeed(): QuerySeed {
     val (sql, types) = buildSql {
       append(this@QueryBuilder)
     }
-    return Query(dbConfig, set.resultColumns, sql, types)
-  }
-
-  /**
-   * Build, bind any necessary args, and execute the query calling [action] with each row. The
-   * [Cursor] passed to [action] has [Cursor.count] indicating the totals rows returned and
-   * [Cursor.position] which is the current index into the the rows.
-   *
-   */
-  override fun forEach(bindArgs: (ArgBindings) -> Unit, action: (Cursor) -> Unit) =
-    build().forEach(bindArgs, action)
-
-  /**
-   * Bind any necessary arguments and then create a flow of [T] created by [factory]
-   */
-  override fun <T> flow(bindArgs: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
-    build().flow(bindArgs, factory)
-
-  /**
-   * Bind args and then generate a sequence of [T] create by [factory]
-   */
-  override fun <T> sequence(
-    bindArgs: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
-  ): Sequence<T> = build().sequence(bindArgs, factory)
-
-  override fun longForQuery(bindArgs: (ArgBindings) -> Unit): Long {
-    return build().longForQuery(bindArgs)
-  }
-
-  override fun stringForQuery(bindArgs: (ArgBindings) -> Unit): String {
-    return build().stringForQuery(bindArgs)
+    return QuerySeed(set.resultColumns, sql, types)
   }
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
@@ -184,22 +153,6 @@ class QueryBuilder private constructor(
     limitOffset = LimitOffset(limit, offset)
   }
 
-  override fun count(bindArgs: (ArgBindings) -> Unit): Long {
-    return if (distinct || groupBy.isNotEmpty() || limitOffset != null) {
-      check(!count) { "Cannot use count with DISTINCT, GROUP BY, or LIMIT" }
-      val query = build()
-      query.count(bindArgs)
-    } else {
-      try {
-        count = true
-        val query = build()
-        query.count(bindArgs)
-      } finally {
-        count = false
-      }
-    }
-  }
-
   fun <T> findSourceSetOriginal(original: Column<T>): Column<*>? {
     return set.sourceSet.columns.find { it == original }
   }
@@ -213,11 +166,10 @@ class QueryBuilder private constructor(
 
   companion object {
     internal operator fun invoke(
-      dbConfig: DbConfig,
       set: SelectFrom,
       where: Op<Boolean>?,
       count: Boolean = false
-    ): QueryBuilder = QueryBuilder(dbConfig, set, where, count)
+    ): QueryBuilder = QueryBuilder(set, where, count)
   }
 }
 

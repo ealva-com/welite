@@ -18,6 +18,7 @@ package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
+import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.SqlBuilder
 
 /**
@@ -51,3 +52,60 @@ interface ColumnSet {
   fun crossJoin(joinTo: ColumnSet): Join
   fun naturalJoin(joinTo: ColumnSet): Join
 }
+
+fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom = select(columns.distinct())
+
+fun ColumnSet.select(columns: List<SqlTypeExpression<*>> = this.columns): SelectFrom =
+  SelectFrom(columns.distinct(), this)
+
+fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
+
+fun ColumnSet.selectAll(): QueryBuilder = QueryBuilder(SelectFrom(columns, this), null)
+
+/**
+ * Select all columns of this [ColumnSet] and call [build] to make the where expression
+ */
+fun ColumnSet.selectWhere(build: () -> Op<Boolean>): QueryBuilder = selectWhere(build())
+
+/**
+ * A SelectFrom is a subset of columns from a ColumnSet, [resultColumns]s, which are the
+ * fields to be read in a query. The columns know how to read themselves from the underlying DB
+ * layer. Also contains the [sourceSet] which is the ```FROM``` part of a query.
+ */
+interface SelectFrom {
+  /** Result columns as they appear in a Select */
+  val resultColumns: List<SqlTypeExpression<*>>
+
+  /** Represents the ```FROM``` clause of a query */
+  val sourceSet: ColumnSet
+
+  companion object {
+    operator fun invoke(
+      resultColumns: List<SqlTypeExpression<*>>,
+      sourceSet: ColumnSet
+    ): SelectFrom = SelectFromImpl(resultColumns, sourceSet)
+  }
+}
+
+private data class SelectFromImpl(
+  override val resultColumns: List<SqlTypeExpression<*>>,
+  override val sourceSet: ColumnSet
+) : SelectFrom
+
+fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder =  QueryBuilder(this, where)
+
+/**
+ * Calls [where] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
+ * and the where clause.
+ */
+fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
+
+/** All rows will be returned */
+fun SelectFrom.all() = where(null)
+
+/** Take a subset of the [SelectFrom.resultColumns]  */
+fun SelectFrom.subset(vararg columns: SqlTypeExpression<*>): SelectFrom = subset(columns.asList())
+
+/** Take a subset of the [SelectFrom.resultColumns]  */
+fun SelectFrom.subset(columns: List<SqlTypeExpression<*>>): SelectFrom =
+  SelectFrom(columns.distinct(), sourceSet)

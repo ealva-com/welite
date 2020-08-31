@@ -16,20 +16,42 @@
 
 package com.ealva.welite.db.statements
 
+import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
 
-abstract class BaseStatement : Bindable, ArgBindings {
+interface BaseStatement {
+  fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
+}
 
-  protected abstract val statement: SQLiteStatement
-  protected abstract val types: List<PersistentType<*>>
-
+internal class StatementAndTypes(
+  private val statement: SQLiteStatement,
+  private val types: List<PersistentType<*>>
+) : Bindable, ArgBindings {
   override val argCount: Int
     get() = types.size
   private val argRange: IntRange
     get() = types.indices
+
+  fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long {
+    statement.clearBindings()
+    bindArgs(this)
+    return statement.executeInsert()
+  }
+
+  fun executeDelete(bindArgs: (ArgBindings) -> Unit): Long {
+    statement.clearBindings()
+    bindArgs(this)
+    return statement.executeUpdateDelete().toLong()
+  }
+
+  fun executeUpdate(bindArgs: (ArgBindings) -> Unit): Long {
+    statement.clearBindings()
+    bindArgs(this)
+    return statement.executeUpdateDelete().toLong()
+  }
 
   override fun bindNull(index: Int) {
     ensureIndexInBounds(index)

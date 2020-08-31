@@ -27,6 +27,9 @@ import com.ealva.welite.db.dml.Visits.patientName
 import com.ealva.welite.db.dml.Visits.visitDate
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.statements.insertValues
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.TestTable
 import com.ealva.welite.test.common.runBlockingTest

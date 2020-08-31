@@ -17,90 +17,93 @@
 package com.ealva.welite.db.statements
 
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.appendTo
-import com.ealva.welite.db.table.NO_ARGS
-import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.buildSql
 
+fun <T : Table> T.update(
+  onConflict: OnConflict = OnConflict.Unspecified,
+  assignColumns: T.(ColumnValues) -> Unit
+): UpdateBuilder<T> {
+  return UpdateBuilder(this, onConflict, assignColumns)
+}
+
+fun <T : Table> T.updateAll(
+  onConflict: OnConflict = OnConflict.Unspecified,
+  assignColumns: T.(ColumnValues) -> Unit
+): UpdateStatement {
+  return UpdateStatement(this, onConflict, assignColumns)
+}
+
 class UpdateBuilder<T : Table>(
-  private val db: SQLiteDatabase,
   private val table: T,
   private val onConflict: OnConflict,
   private val assignColumns: T.(ColumnValues) -> Unit
 ) {
   fun where(where: T.() -> Op<Boolean>): UpdateStatement {
-    return UpdateStatement(db, table, onConflict, table.where(), assignColumns)
+    return UpdateStatement(table, onConflict, table.where(), assignColumns)
   }
 }
 
-interface UpdateStatement {
-
-  fun update(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Int
+interface UpdateStatement : BaseStatement {
 
   companion object {
     operator fun <T : Table> invoke(
-      db: SQLiteDatabase,
       table: T,
-      onConflict: OnConflict = OnConflict.Unspecified,
+      onConflict: OnConflict,
       assignColumns: T.(ColumnValues) -> Unit
     ): UpdateStatement {
-      return UpdateStatementImpl(db, table, onConflict, null, assignColumns)
+      return UpdateStatementImpl(buildStatement(onConflict, table, null, assignColumns))
     }
 
     operator fun <T : Table> invoke(
-      db: SQLiteDatabase,
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       where: Op<Boolean>,
       assignColumns: T.(ColumnValues) -> Unit
     ): UpdateStatement {
-      return UpdateStatementImpl(db, table, onConflict, where, assignColumns)
+      return UpdateStatementImpl(buildStatement(onConflict, table, where, assignColumns))
+    }
+
+    private fun <T : Table> buildStatement(
+      onConflict: OnConflict,
+      table: T,
+      where: Op<Boolean>?,
+      assignColumns: T.(ColumnValues) -> Unit
+    ): Pair<String, List<PersistentType<*>>> {
+      return buildSql {
+        append(onConflict.updateOr)
+        append(table.identity.value)
+
+        val columnValues = ColumnValues()
+        table.assignColumns(columnValues)
+
+        columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
+          append(columnValue)
+        }
+
+        where?.let { where ->
+          append(" WHERE ")
+          append(where)
+        }
+      }
     }
   }
 }
 
-private class UpdateStatementImpl<T : Table>(
-  db: SQLiteDatabase,
-  private val table: T,
-  private val onConflict: OnConflict,
-  private val where: Op<Boolean>?,
-  private val assignColumns: T.(ColumnValues) -> Unit
-) : BaseStatement(), UpdateStatement, ArgBindings {
+private class UpdateStatementImpl(
+  sqlAndTypes: Pair<String, List<PersistentType<*>>>
+) : UpdateStatement {
+  private val sql: String = sqlAndTypes.first
+  private val types: List<PersistentType<*>> = sqlAndTypes.second
 
-  private val sql: String
-  override val types: List<PersistentType<*>>
+  private var statementAndTypes: StatementAndTypes? = null
 
-  init {
-    val (_sql, _types) = buildSql {
-      append(onConflict.updateOr)
-      append(table.identity.value)
-
-      val columnValues = ColumnValues()
-      table.assignColumns(columnValues)
-
-      columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
-        append(columnValue)
-      }
-
-      where?.let { where ->
-        append(" WHERE ")
-        append(where)
-      }
-    }
-    sql = _sql
-    types = _types
-  }
-
-  override val statement: SQLiteStatement = db.compileStatement(sql)
-
-  override fun update(bindArgs: (ArgBindings) -> Unit): Int {
-    statement.clearBindings()
-    if (bindArgs !== NO_ARGS) bindArgs(this)
-    return statement.executeUpdateDelete()
-  }
+  override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
+    (statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
+      .executeUpdate(bindArgs)
 }

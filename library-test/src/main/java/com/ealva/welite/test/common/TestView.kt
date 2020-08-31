@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.table
+package com.ealva.welite.test.common
 
-import android.database.sqlite.SQLiteDatabase
-import kotlinx.coroutines.CoroutineDispatcher
+import com.ealva.welite.db.table.QueryBuilder
+import com.ealva.welite.db.view.View
 
-/**
- * Configuration items for the Database
- */
-internal interface DbConfig {
-  val dispatcher: CoroutineDispatcher
-  val db: SQLiteDatabase
+abstract class TestView(
+  name: String = "",
+  build: () -> QueryBuilder
+) : View(name, build) {
+  fun sqlForTest(): String = createSql
 }

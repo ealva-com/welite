@@ -26,8 +26,12 @@ import com.ealva.welite.db.javatime.VisitTime.localDate
 import com.ealva.welite.db.javatime.VisitTime.name
 import com.ealva.welite.db.javatime.VisitTime.optLocalDate
 import com.ealva.welite.db.javatime.VisitTime.other
+import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.TestTable
 import com.ealva.welite.test.common.runBlockingTest

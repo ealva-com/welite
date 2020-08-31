@@ -85,11 +85,6 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
   fun descriptionDdl(): String
 
   /**
-   * True if this column is in [table]
-   */
-  fun inTable(table: Table): Boolean
-
-  /**
    * Mark this column as part of the primary key
    */
   fun markPrimaryKey()
@@ -109,7 +104,7 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
       name: String,
       persistentType: PersistentType<T>,
       initialConstraints: List<ColumnConstraint> = emptyList(),
-      addTo: (Column<T>) -> Unit = {},
+      addTo: (Column<*>) -> Unit = {},
       block: ColumnConstraints<T>.() -> Unit = {}
     ): Column<T> = ColumnImpl(table, name, persistentType, initialConstraints).apply {
       addTo(this)
@@ -267,8 +262,6 @@ private class ColumnImpl<T>(
 
   override fun makeAlias(tableAlias: String?): Column<T> =
     Column(Alias(table, tableAlias ?: "${table.tableName}_$name"), name, persistentType)
-
-  override fun inTable(table: Table) = this.table == table
 
   override fun markPrimaryKey() {
     val columnDefiningPrimaryKey = table.columnDefiningPrimaryKey

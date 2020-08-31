@@ -16,81 +16,17 @@
 
 package com.ealva.welite.db.table
 
-import android.database.DatabaseUtils
-import android.database.sqlite.SQLiteDatabase
-import com.ealva.ealvalog.i
-import com.ealva.ealvalog.invoke
-import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.PersistentType
-import com.ealva.welite.db.type.Row
-import com.ealva.welite.db.type.buildStr
-import it.unimi.dsi.fastutil.objects.Object2IntMap
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
-import java.util.Arrays
-import kotlinx.coroutines.flow.flow as kflow
-import kotlin.sequences.sequence as ksequence
 
-/**
- * Interface with functions that perform a query. Query implements these functions as does
- * [QueryBuilder]. A Query can be built and reused whereas QueryBuilder is providing a fast
- * path call that builds the query and executes the call on the Query. Invoking these functions
- * on the QueryBuilder makes the Query single use and it's not exposed to clients.
- *
- * Query functions perform an internal iteration and don't expose the underlying cursor. Instead
- * implementations control the iteration and lifetime of the Cursor. Therefore, this does not
- * implement the [Iterable] interface. Instead of iterable prefer the [flow] or [sequence]
- * functions.
- */
-interface PerformQuery {
-  /**
-   * Do any necessary [bindArgs], execute the query, and invoke [action] for each row in the
-   * results.
-   */
-  fun forEach(bindArgs: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
+data class QuerySeed(
+  val fields: List<SqlTypeExpression<*>>,
+  val sql: String,
+  val types: List<PersistentType<*>>
+)
 
-  /**
-   * Creates a flow, first doing any necessary [bindArgs], execute the query, and emit a [T]
-   * created using [factory] for each row in the query results
-   */
-  fun <T> flow(bindArgs: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
-
-  /**
-   * After any necessary [bindArgs] generate a [Sequence] of [T] using [factory] for each Cursor
-   * row and yields a [T] into the [Sequence]
-   */
-  fun <T> sequence(bindArgs: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Sequence<T>
-
-  /**
-   * Do any necessary [bindArgs], execute the query, and return the value in the first column of the
-   * first row. Especially useful for ```COUNT``` queries
-   */
-  fun longForQuery(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
-
-  /**
-   * Do any necessary [bindArgs], execute the query, and return the value in the first column of the
-   * first row.
-   */
-  fun stringForQuery(bindArgs: (ArgBindings) -> Unit = NO_ARGS): String
-
-  /**
-   * Do any necessary [bindArgs], execute the query for count similar to
-   * ```COUNT(*) FROM ( $thisQuery )```, and return the value in the first column of the
-   * first row
-   */
-  fun count(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
-}
-
-interface Query : PerformQuery {
-
-  val sql: String
-
-  val requiresBindArguments: Boolean
-    get() = expectedArgCount > 0
-
-  val expectedArgCount: Int
+interface Query {
+  val seed: QuerySeed
 
   companion object {
     var logQueryPlans: Boolean = false
@@ -102,186 +38,9 @@ interface Query : PerformQuery {
      * ```
      */
     internal operator fun invoke(
-      dbConfig: DbConfig,
-      fields: List<SqlTypeExpression<*>>,
-      sql: String,
-      types: List<PersistentType<*>>
-    ): Query = QueryImpl(dbConfig, fields, sql, types)
+      querySeed: QuerySeed
+    ): Query = QueryImpl(querySeed)
   }
 }
 
-/** Take a subset of the [SelectFrom.resultColumns]  */
-fun SelectFrom.subset(vararg columns: SqlTypeExpression<*>): SelectFrom = subset(columns.asList())
-
-/** Take a subset of the [SelectFrom.resultColumns]  */
-fun SelectFrom.subset(columns: List<SqlTypeExpression<*>>): SelectFrom =
-  SelectFrom(columns.distinct(), sourceSet)
-
-private typealias ACursor = android.database.Cursor
-
-private val LOG by lazyLogger(Query::class)
-private const val UNBOUND = "Unbound"
-
-private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
-  private val args = Array(argTypes.size) { UNBOUND }
-
-  override operator fun <T> set(index: Int, value: T?) {
-    require(index in argTypes.indices) { "Arg types $index out of bounds ${argTypes.indices}" }
-    require(index in args.indices) { "Args $index out of bounds ${args.indices}" }
-    args[index] = argTypes[index].valueToString(value)
-  }
-
-  override val argCount: Int
-    get() = argTypes.size
-
-  val arguments: Array<String>
-    get() = args.copyOf()
-}
-
-private class QueryImpl(
-  private val dbConfig: DbConfig,
-  private val fields: List<SqlTypeExpression<*>>,
-  override val sql: String,
-  types: List<PersistentType<*>>
-) : Query {
-  private val db = dbConfig.db
-  private val queryArgs = QueryArgs(types)
-
-  override fun forEach(bindArgs: (ArgBindings) -> Unit, action: (Cursor) -> Unit) {
-    bindArgs(queryArgs)
-    DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
-      while (cursor.moveToNext()) action(cursor)
-    }
-  }
-
-  override fun <T> flow(bindArgs: (ArgBindings) -> Unit, factory: (Cursor) -> T) = kflow {
-    bindArgs(queryArgs)
-    DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
-      while (cursor.moveToNext()) emit(factory(cursor))
-    }
-  }.flowOn(dbConfig.dispatcher)
-
-  override fun <T> sequence(
-    bindArgs: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
-  ): Sequence<T> = ksequence {
-    bindArgs(queryArgs)
-    DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
-      while (cursor.moveToNext()) yield(factory(cursor))
-    }
-  }
-
-  override fun longForQuery(bindArgs: (ArgBindings) -> Unit): Long = doLongForQuery(sql, bindArgs)
-
-  private fun doLongForQuery(sql: String, bindArgs: (ArgBindings) -> Unit): Long {
-    bindArgs(queryArgs)
-    return db.longForQuery(sql, queryArgs.arguments)
-  }
-
-  override fun stringForQuery(bindArgs: (ArgBindings) -> Unit): String =
-    doStringForQuery(sql, bindArgs)
-
-  private fun doStringForQuery(sql: String, bindArgs: (ArgBindings) -> Unit): String {
-    bindArgs(queryArgs)
-    return db.stringForQuery(sql, queryArgs.arguments)
-  }
-
-  override fun count(bindArgs: (ArgBindings) -> Unit): Long {
-    val alreadyCountQuery = sql.trim().startsWith("SELECT COUNT(*)", ignoreCase = true)
-    return doLongForQuery(if (alreadyCountQuery) sql else "SELECT COUNT(*) FROM ( $sql )", bindArgs)
-  }
-
-  override val expectedArgCount: Int
-    get() = queryArgs.argCount
-}
-
-typealias ExpressionToIndexMap = Object2IntMap<SqlTypeExpression<*>>
-
-private fun List<SqlTypeExpression<*>>.mapExprToIndex(): ExpressionToIndexMap {
-  return Object2IntOpenHashMap<SqlTypeExpression<*>>(size).apply {
-    defaultReturnValue(-1)
-    this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
-  }
-}
-
-private class DbCursorWrapper(
-  private val cursor: ACursor,
-  private val exprMap: ExpressionToIndexMap
-) : Cursor, Row, AutoCloseable {
-  override val count: Int
-    get() = cursor.count
-
-  override val position: Int
-    get() = cursor.position
-
-  fun moveToNext(): Boolean = cursor.moveToNext()
-
-  private fun <T> SqlTypeExpression<T>.index() = exprMap.getInt(this)
-
-  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
-    expression.persistentType.columnValue(this, expression.index())
-
-  override fun <T> get(expression: SqlTypeExpression<T>): T {
-    return getOptional(expression) ?: throw IllegalStateException(unexpectedNullMessage(expression))
-  }
-
-  override fun getBlob(columnIndex: Int): ByteArray = cursor.getBlob(columnIndex)
-  override fun getString(columnIndex: Int): String = cursor.getString(columnIndex)
-  override fun getShort(columnIndex: Int) = cursor.getShort(columnIndex)
-  override fun getInt(columnIndex: Int) = cursor.getInt(columnIndex)
-  override fun getLong(columnIndex: Int) = cursor.getLong(columnIndex)
-  override fun getFloat(columnIndex: Int) = cursor.getFloat(columnIndex)
-  override fun getDouble(columnIndex: Int) = cursor.getDouble(columnIndex)
-  override fun isNull(columnIndex: Int) = cursor.isNull(columnIndex)
-  override fun columnName(columnIndex: Int): String = cursor.getColumnName(columnIndex)
-  override fun close() = cursor.close()
-
-  private fun <T> unexpectedNullMessage(expression: SqlTypeExpression<T>) =
-    "Unexpected NULL reading column=${expression.name()} of expected type ${expression.sqlType}"
-
-  private fun <T> SqlTypeExpression<T>.name() = cursor.getColumnName(index())
-}
-
-internal fun SQLiteDatabase.select(sql: String, args: Array<String>? = null): ACursor {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
-  return rawQuery(sql, args)
-}
-
-internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String>? = null): Long {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
-  return DatabaseUtils.longForQuery(this, sql, args)
-}
-
-internal fun SQLiteDatabase.stringForQuery(sql: String, args: Array<String>? = null): String {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
-  return DatabaseUtils.stringForQuery(this, sql, args)
-}
-
-fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>?) {
-  LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, Arrays.toString(selectionArgs)) }
-  explainQueryPlan(sql, selectionArgs).forEachIndexed { index, toLog ->
-    LOG.i { it("%d: %s", index, toLog) }
-  }
-}
-
-fun SQLiteDatabase.explainQueryPlan(
-  sql: String,
-  selectionArgs: Array<String>?
-): List<String> {
-  return mutableListOf<String>().apply {
-    rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { c ->
-      while (c.moveToNext()) {
-        add(
-          buildStr {
-            for (i in 0 until c.columnCount) {
-              append(c.getColumnName(i))
-              append(':')
-              append(c.getString(i))
-              append(", ")
-            }
-          }
-        )
-      }
-    }
-  }
-}
+private class QueryImpl(override val seed: QuerySeed) : Query

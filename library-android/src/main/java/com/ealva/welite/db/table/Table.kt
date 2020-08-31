@@ -429,7 +429,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     return builder(columnFactory)
   }
 
-  private fun MutableList<Column<*>>.addColumn(column: Column<*>) {
+  private fun MutableList<Column<*>>.addColumn(column: Column<*>) = column.apply {
     if (any { it.name == column.name }) {
       throw DuplicateColumnException(
         column.name,
@@ -644,7 +644,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 private fun Table.nameFromClass() = javaClass.simpleName.removeSuffix("Table")
 
 /**
- * Thrown when attempting to create multiple columns with the same name in the same table
+ * Thrown when attempting to create multiple columns with the same name in the same ColumnSet
  */
-class DuplicateColumnException(columnName: String, tableName: String) :
-  SQLiteException("Duplicate column name \"$columnName\" in table \"$tableName\"")
+class DuplicateColumnException(columnName: String, columnSet: String) :
+  SQLiteException("Duplicate column name \"$columnName\" in ColumnSet \"$columnSet\"")

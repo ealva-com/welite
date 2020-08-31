@@ -24,6 +24,8 @@ import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.AlbumTable.albumName
 import com.ealva.welite.test.common.ArtistAlbumTable
@@ -72,7 +74,7 @@ class QueryTests {
           .where { MediaFileTable.id greater 0L }
           .build()
 
-        expect(query.sql).toBe(
+        expect(query.seed.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
             """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
         )
@@ -112,7 +114,7 @@ class QueryTests {
           .where { MediaFileTable.id greater 0L }
           .build()
 
-        expect(query.sql).toBe(
+        expect(query.seed.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
             """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
         )

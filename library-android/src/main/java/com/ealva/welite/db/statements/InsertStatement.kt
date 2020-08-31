@@ -17,11 +17,9 @@
 package com.ealva.welite.db.statements
 
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteStatement
 import com.ealva.welite.db.expr.appendTo
-import com.ealva.welite.db.table.NO_ARGS
-import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.type.PersistentType
@@ -29,19 +27,10 @@ import com.ealva.welite.db.type.buildSql
 
 /**
  * Represents a compiled SQLiteStatement with bind parameters that can be used to repeatedly insert
- * a row via the [insert] method.
+ * a row binding any necessary arguments during execution.
  */
 @WeLiteMarker
-interface InsertStatement {
-
-  /**
-   * Insert a row binding any parameters with [bindArgs]
-   *
-   * An InsertStatement contains a compiled SQLiteStatement and this method clears the bindings,
-   * provides for new bound parameters via [bindArgs], and executes the insert
-   * @return the row ID of the last row inserted if successful else -1
-   */
-  fun insert(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
+interface InsertStatement : BaseStatement {
 
   companion object {
     /**
@@ -49,7 +38,6 @@ interface InsertStatement {
      * multiple inserts.
      */
     operator fun <T : Table> invoke(
-      db: SQLiteDatabase,
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       assignColumns: T.(ColumnValues) -> Unit
@@ -69,22 +57,48 @@ interface InsertStatement {
           }
         }
       }
-      return InsertStatementImpl(db, sql, types)
+      return InsertStatementImpl(sql, types)
     }
   }
 }
 
+/**
+ * Makes an InsertStatement into which arguments can be bound for insertion.
+ *
+ *```
+ * db.transaction {
+ *   with(MediaFileTable.insertValues()) {
+ *     insert {
+ *       it[mediaUri] = "/dir/Music/file.mpg"
+ *       it[fileName] = "filename"
+ *       it[mediaTitle] = "title"
+ *     }
+ *     insert {
+ *       it[mediaUri] = "/dir/Music/anotherFile.mpg"
+ *       it[fileName] = "2nd file"
+ *       it[mediaTitle] = "another title"
+ *     }
+ *   }
+ * }
+ * ```
+ * [SQLite INSERT](https://sqlite.org/lang_insert.html)
+ * @see InsertStatement
+ */
+fun <T : Table> T.insertValues(
+  onConflict: OnConflict = OnConflict.Unspecified,
+  assignColumns: T.(ColumnValues) -> Unit
+): InsertStatement {
+  return InsertStatement(this, onConflict, assignColumns)
+}
+
 private class InsertStatementImpl(
-  db: SQLiteDatabase,
-  sql: String,
-  override val types: List<PersistentType<*>>
-) : BaseStatement(), InsertStatement {
+  private val sql: String,
+  private val types: List<PersistentType<*>>
+) : InsertStatement, BaseStatement {
 
-  override val statement: SQLiteStatement = db.compileStatement(sql)
+  private var statementAndTypes: StatementAndTypes? = null
 
-  override fun insert(bindArgs: (ArgBindings) -> Unit): Long {
-    statement.clearBindings() // bind arguments are all set to null
-    bindArgs(this)
-    return statement.executeInsert()
-  }
+  override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
+    (statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
+      .executeInsert(bindArgs)
 }

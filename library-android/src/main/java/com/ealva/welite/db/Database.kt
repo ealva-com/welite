@@ -33,12 +33,11 @@ import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.schema.MasterType
 import com.ealva.welite.db.schema.SQLiteMaster
 import com.ealva.welite.db.schema.TableDependencies
+import com.ealva.welite.db.statements.deleteWhere
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
-import com.ealva.welite.db.table.longForQuery
-import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.toStatementString
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -222,8 +221,8 @@ interface Database {
       fileName: String,
       tables: List<Table>,
       version: Int,
-      requireMigration: Boolean = true,
       migrations: List<Migration> = emptyList(),
+      requireMigration: Boolean = true,
       openParams: OpenParams = OpenParams(),
       configure: DatabaseLifecycle.() -> Unit = {}
     ): Database {
@@ -305,27 +304,24 @@ private class WeLiteDatabase(
   openParams: OpenParams,
   configure: DatabaseLifecycle.() -> Unit
 ) : Database, DbConfig, AutoCloseable {
-  override val dispatcher: CoroutineDispatcher = openParams.dispatcher
-
   private var closed = false
-
-  private val openHelper: OpenHelper =
-    OpenHelper(
-      context = context,
-      database = this,
-      name = fileName,
-      version = version,
-      tables = tables,
-      migrations = migrations,
-      requireMigration = requireMigration,
-      openParams = openParams,
-      configure = configure
-    )
-
+  private val openHelper: OpenHelper = OpenHelper(
+    context = context,
+    database = this,
+    name = fileName,
+    version = version,
+    tables = tables,
+    migrations = migrations,
+    requireMigration = requireMigration,
+    openParams = openParams,
+    configure = configure
+  )
   override val tables: List<Table>
     get() = openHelper.tablesInCreateOrder
-
   override var allowWorkOnUiThread: Boolean = openParams.allowWorkOnUiThread
+  override val dispatcher: CoroutineDispatcher = openParams.dispatcher
+  override val db: SQLiteDatabase
+    get() = openHelper.writableDatabase
 
   override fun close() {
     if (!closed) {
@@ -419,9 +415,6 @@ private class WeLiteDatabase(
     unitOfWork: String,
     throwIfNoChoice: Boolean
   ): Transaction = Transaction(this, exclusive, unitOfWork, throwIfNoChoice)
-
-  override val db: SQLiteDatabase
-    get() = openHelper.writableDatabase
 
   private fun assertNotUiThread() {
     if (!allowWorkOnUiThread && isUiThread)

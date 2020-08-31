@@ -21,7 +21,11 @@ import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.statements.update
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.ArtistAlbumTable
 import com.ealva.welite.test.common.ArtistTable

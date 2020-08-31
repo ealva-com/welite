@@ -16,12 +16,12 @@
 
 package com.ealva.welite.db
 
-import android.database.Cursor
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.ealva.ealvalog.e
+import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
@@ -35,70 +35,118 @@ import com.ealva.welite.db.schema.asMasterType
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
 import com.ealva.welite.db.statements.InsertStatement
-import com.ealva.welite.db.statements.UpdateBuilder
 import com.ealva.welite.db.statements.UpdateStatement
+import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.ColumnMetadata
-import com.ealva.welite.db.table.ColumnSet
+import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.OnConflict.Unspecified
-import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QueryBuilder
+import com.ealva.welite.db.table.QuerySeed
 import com.ealva.welite.db.table.SelectFrom
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.where
+import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
+import it.unimi.dsi.fastutil.objects.Object2IntMap
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import java.util.Arrays
 
 /**
- * This interface is the entry point of a query DSL and other types of queries. These
- * functions are scoped to a Queryable interface in an attempt to only initiate queries while
+ * These functions are scoped to a Queryable interface in an attempt to only initiate queries while
  * a transaction is in progress. See [Database.query] for starting a query only under an explicit
  * transaction (with no commit/rollback concerns).
  */
 @WeLiteMarker
 interface Queryable {
-  /** Select a subset of [columns] of this [ColumnSet], returning a [SelectFrom] */
-  fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom
+  /**
+   * Do any necessary [bind], execute the query, and invoke [action] for each row in the
+   * results.
+   */
+  fun Query.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
 
   /**
-   * Select a subset of [columns] of this [ColumnSet] (default is all [columns]), and return a
-   * SelectFrom to start building the query.
+   * Same as [Query.forEach] except the resulting Query is not reusable as it's not
+   * visible to the client
    */
-  fun ColumnSet.select(columns: List<SqlTypeExpression<*>> = this.columns): SelectFrom
+  fun QueryBuilder.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
 
   /**
-   * Select all columns of this [ColumnSet] matching the [where] part of the query
-   * Convenience function for: ```select().where(where)```
+   * Creates a flow, first doing any necessary [bind], execute the query, and emit a [T]
+   * created using [factory] for each row in the query results
    */
-  fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder
+  fun <T> Query.flow(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
 
   /**
-   * Select all columns of this [ColumnSet] and call [build] to make the where expression
+   * Same as [Query.flow] except the resulting Query is not reusable as it's not
+   * visible to the client
    */
-  fun ColumnSet.selectWhere(build: () -> Op<Boolean>): QueryBuilder = selectWhere(build())
+  fun <T> QueryBuilder.flow(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
 
   /**
-   * Select all columns from all rows
+   * After any necessary [bind] generate a [Sequence] of [T] using [factory] for each Cursor
+   * row and yields a [T] into the [Sequence]
    */
-  fun ColumnSet.selectAll(): QueryBuilder
-
-  /** Makes a [QueryBuilder] from this [SelectFrom] and associated [where] clause */
-  fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder
+  fun <T> Query.sequence(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Sequence<T>
 
   /**
-   * Calls [where] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
-   * and the where clause.
+   * Same as [Query.sequence] except the resulting Query is not reusable as it's not
+   * visible to the client
    */
-  fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
+  fun <T> QueryBuilder.sequence(
+    bind: (ArgBindings) -> Unit = NO_ARGS,
+    factory: (Cursor) -> T
+  ): Sequence<T>
 
-  /** All rows will be returned */
-  fun SelectFrom.all() = where(null)
+  /**
+   * Do any necessary [bind], execute the query, and return the value in the first column of the
+   * first row. Especially useful for ```COUNT``` queries
+   */
+  fun Query.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+
+  /**
+   * Same as [Query.longForQuery] except the resulting Query is not reusable as it's not
+   * visible to the client
+   */
+  fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+
+  /**
+   * Do any necessary [bind], execute the query, and return the value in the first column of the
+   * first row.
+   */
+  fun Query.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
+
+  /**
+   * Same as [Query.stringForQuery] except the resulting Query is not reusable as it's not
+   * visible to the client
+   */
+  fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
+
+  /**
+   * Do any necessary [bind], execute the query for count similar to
+   * ```COUNT(*) FROM ( $thisQuery )```, and return the value in the first column of the
+   * first row
+   */
+  fun Query.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+
+  /**
+   * Same as [Query.count] except the resulting Query is not reusable as it's not
+   * visible to the client
+   */
+  fun QueryBuilder.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * True if the table, as known via [Table.identity], exists in the database, else false
@@ -126,7 +174,7 @@ interface Queryable {
    * most [maxErrors] errors (default 100) before the analysis quits. If integrity check
    * finds no errors, a single string with the value 'ok' is returned.
    *
-   * Does not find FOREIGN KEY errors. Use [foreignKeyCheck] command for to find errors in FOREIGN
+   * Does not find FOREIGN KEY errors. Use [foreignKeyCheck] to find errors in FOREIGN
    * KEY constraints.
    */
   fun tegridyCheck(maxErrors: Int = 100): List<String>
@@ -141,62 +189,46 @@ interface Queryable {
 }
 
 /**
- * This interface is the entry point of a SQLite CRUD DSL including [Queryable] functions. These
- * functions are scoped to a Transaction interface in an attempt to only read and write to the DB
- * under an explicit transaction. Functions in this interface require the enclosing transaction to
- * be marked successful or rolled back, but leave the commit/rollback to a different level.
+ * These functions are scoped to a Transaction interface in an attempt to only read and write to
+ * the DB under an explicit transaction. Functions in this interface require the enclosing
+ * transaction to be marked successful or rolled back, but leave the commit/rollback to a different
+ * level.
  */
 @WeLiteMarker
 interface TransactionInProgress : Queryable {
   /**
-   * Makes an InsertStatement into which arguments can be bound for insertion.
+   * Insert a row binding any parameters with [bindArgs]
    *
-   *```
-   * db.transaction {
-   *   with(MediaFileTable.insertValues()) {
-   *     insert {
-   *       it[mediaUri] = "/dir/Music/file.mpg"
-   *       it[fileName] = "filename"
-   *       it[mediaTitle] = "title"
-   *     }
-   *     insert {
-   *       it[mediaUri] = "/dir/Music/anotherFile.mpg"
-   *       it[fileName] = "2nd file"
-   *       it[mediaTitle] = "another title"
-   *     }
-   *   }
-   * }
-   * ```
-   * [SQLite INSERT](https://sqlite.org/lang_insert.html)
-   * @see InsertStatement
+   * An InsertStatement contains a compiled SQLiteStatement and this method clears the bindings,
+   * provides for new bound parameters via [bindArgs], and executes the insert
+   * @return the row ID of the last row inserted if successful else -1
    */
-  fun <T : Table> T.insertValues(
-    onConflict: OnConflict = Unspecified,
-    assignColumns: T.(ColumnValues) -> Unit
-  ): InsertStatement
+  fun InsertStatement.insert(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
-   * Does a single insert into the table.
+   * Does a single insert into the table. Builds an [InsertStatement] and invokes
+   * [InsertStatement.insert]. The InsertStatement is single use and not exposed to the client
+   * for reuse.
    */
   fun <T : Table> T.insert(
     onConflict: OnConflict = Unspecified,
     bindArgs: (ArgBindings) -> Unit = NO_ARGS,
     assignColumns: T.(ColumnValues) -> Unit
-  ): Long = insertValues(onConflict, assignColumns).insert(bindArgs)
+  ): Long = InsertStatement(this, onConflict, assignColumns).insert(bindArgs)
 
-  fun <T : Table> T.update(
-    onConflict: OnConflict = Unspecified,
-    assignColumns: T.(ColumnValues) -> Unit
-  ): UpdateBuilder<T>
+  fun DeleteStatement.delete(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
-  fun <T : Table> T.updateAll(
-    onConflict: OnConflict,
-    assignColumns: T.(ColumnValues) -> Unit
-  ): UpdateStatement
+  /**
+   * Does a single delete on the table. Builds a [DeleteStatement] and invokes
+   * [DeleteStatement.execute]. The DeleteStatement is single use and not exposed to the client
+   * for reuse.
+   */
+  fun <T : Table> T.delete(
+    bindArgs: (ArgBindings) -> Unit = NO_ARGS,
+    where: () -> Op<Boolean>
+  ): Long = DeleteStatement(this, where()).delete(bindArgs)
 
-  fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement
-
-  fun <T : Table> T.deleteAll(): DeleteStatement
+  fun UpdateStatement.update(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * The [VACUUM](https://www.sqlite.org/lang_vacuum.html) command rebuilds the database file,
@@ -205,57 +237,167 @@ interface TransactionInProgress : Queryable {
   fun vacuum()
 
   companion object {
-    internal operator fun invoke(db: DbConfig): TransactionInProgress =
-      TransactionInProgressImpl(db)
+    internal operator fun invoke(dbConfig: DbConfig): TransactionInProgress =
+      TransactionInProgressImpl(dbConfig)
   }
 }
 
-private class TransactionInProgressImpl(private val config: DbConfig) : TransactionInProgress {
-  private val db = config.db
+private const val UNBOUND = "Unbound"
+
+private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
+  private val args = Array(argTypes.size) { UNBOUND }
+
+  override operator fun <T> set(index: Int, value: T?) {
+    require(index in argTypes.indices) { "Arg types $index out of bounds ${argTypes.indices}" }
+    require(index in args.indices) { "Args $index out of bounds ${args.indices}" }
+    args[index] = argTypes[index].valueToString(value)
+  }
+
+  override val argCount: Int
+    get() = argTypes.size
+
+  val arguments: Array<String>
+    get() = args.copyOf()
+}
+
+private class TransactionInProgressImpl(
+  private val dbConfig: DbConfig
+) : TransactionInProgress {
+  private val db: SQLiteDatabase = dbConfig.db
 
   init {
     require(db.inTransaction()) { "Transaction must be in progress" }
   }
 
-  override fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom =
-    select(columns.distinct())
-
-  override fun ColumnSet.select(columns: List<SqlTypeExpression<*>>): SelectFrom =
-    SelectFrom(columns.distinct(), this)
-
-  override fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
-
-  override fun ColumnSet.selectAll(): QueryBuilder =
-    QueryBuilder(config, SelectFrom(columns, this), null)
-
-  override fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder =
-    QueryBuilder(config, this, where)
-
-  override fun <T : Table> T.insertValues(
-    onConflict: OnConflict,
-    assignColumns: T.(ColumnValues) -> Unit
-  ): InsertStatement = InsertStatement(db, this, onConflict, assignColumns)
-
-  override fun <T : Table> T.update(
-    onConflict: OnConflict,
-    assignColumns: T.(ColumnValues) -> Unit
-  ): UpdateBuilder<T> {
-    return UpdateBuilder(db, this, onConflict, assignColumns)
+  override fun Query.forEach(bind: (ArgBindings) -> Unit, action: (Cursor) -> Unit) {
+    doForEach(seed, bind, action)
   }
 
-  override fun <T : Table> T.updateAll(
-    onConflict: OnConflict,
-    assignColumns: T.(ColumnValues) -> Unit
-  ): UpdateStatement {
-    return UpdateStatement(db, this, onConflict, assignColumns)
+  override fun QueryBuilder.forEach(bind: (ArgBindings) -> Unit, action: (Cursor) -> Unit) {
+    this@TransactionInProgressImpl.doForEach(build().seed, bind, action)
   }
 
-  override fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {
-    return DeleteStatement(db, this, where())
+  private fun doForEach(
+    seed: QuerySeed,
+    bindArgs: (ArgBindings) -> Unit,
+    action: (Cursor) -> Unit
+  ) = with(seed) {
+    val queryArgs = QueryArgs(types)
+    bindArgs(queryArgs)
+    DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use { cursor ->
+      while (cursor.moveToNext()) action(cursor)
+    }
   }
 
-  override fun <T : Table> T.deleteAll(): DeleteStatement {
-    return DeleteStatement(db, this, null)
+  override fun <T> Query.flow(
+    bind: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Flow<T> = doFlow(seed, bind, factory)
+
+  override fun <T> QueryBuilder.flow(
+    bind: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Flow<T> = this@TransactionInProgressImpl.doFlow(build().seed, bind, factory)
+
+  private fun <T> doFlow(
+    seed: QuerySeed,
+    bindArgs: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Flow<T> = flow {
+    with(seed) {
+      val queryArgs = QueryArgs(types)
+      bindArgs(queryArgs)
+      DbCursorWrapper(
+        db.select(sql, queryArgs.arguments),
+        fields.mapExprToIndex()
+      ).use { cursor ->
+        while (cursor.moveToNext()) emit(factory(cursor))
+      }
+    }
+  }.flowOn(dbConfig.dispatcher)
+
+  override fun <T> Query.sequence(
+    bind: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Sequence<T> = doSequence(seed, bind, factory)
+
+  override fun <T> QueryBuilder.sequence(
+    bind: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Sequence<T> = this@TransactionInProgressImpl.doSequence(build().seed, bind, factory)
+
+  private fun <T> doSequence(
+    seed: QuerySeed,
+    bindArgs: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Sequence<T> = sequence {
+    with(seed) {
+      val queryArgs = QueryArgs(types)
+      bindArgs(queryArgs)
+      DbCursorWrapper(db.select(sql, queryArgs.arguments), fields.mapExprToIndex()).use {
+        while (it.moveToNext()) yield(factory(it))
+      }
+    }
+  }
+
+  override fun Query.longForQuery(bind: (ArgBindings) -> Unit): Long =
+    doLongForQuery(seed, bind)
+
+  override fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit): Long =
+    this@TransactionInProgressImpl.doLongForQuery(build().seed, bind)
+
+  private fun doLongForQuery(seed: QuerySeed, bindArgs: (ArgBindings) -> Unit): Long = with(seed) {
+    val queryArgs = QueryArgs(seed.types)
+    bindArgs(queryArgs)
+    db.longForQuery(sql, queryArgs.arguments)
+  }
+
+  override fun Query.stringForQuery(bind: (ArgBindings) -> Unit): String =
+    doStringForQuery(seed, bind)
+
+  override fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit): String =
+    this@TransactionInProgressImpl.doStringForQuery(build().seed, bind)
+
+  private fun doStringForQuery(
+    seed: QuerySeed,
+    bindArgs: (ArgBindings) -> Unit
+  ): String = with(seed) {
+    val queryArgs = QueryArgs(types)
+    bindArgs(queryArgs)
+    db.stringForQuery(sql, queryArgs.arguments)
+  }
+
+  override fun Query.count(bind: (ArgBindings) -> Unit): Long = doCount(seed, bind)
+
+  override fun QueryBuilder.count(bind: (ArgBindings) -> Unit): Long =
+    this@TransactionInProgressImpl.doCount(build().seed, bind)
+
+  private fun doCount(seed: QuerySeed, bindArgs: (ArgBindings) -> Unit): Long {
+    return doLongForQuery(maybeModifyCountSeed(seed), bindArgs)
+  }
+
+  private fun maybeModifyCountSeed(seed: QuerySeed): QuerySeed =
+    if (isCountSelect(seed)) seed else seed.copy(sql = wrapSqlWithSelectCount(seed))
+
+  private fun isCountSelect(seed: QuerySeed) =
+    seed.sql.trim().startsWith("SELECT COUNT(*)", ignoreCase = true)
+
+  private fun wrapSqlWithSelectCount(seed: QuerySeed): String = buildStr {
+    append("SELECT COUNT(*) FROM ( ")
+    append(seed.sql)
+    append(" )")
+  }
+
+  override fun InsertStatement.insert(bindArgs: (ArgBindings) -> Unit): Long {
+    return execute(this@TransactionInProgressImpl.db, bindArgs)
+  }
+
+  override fun DeleteStatement.delete(bindArgs: (ArgBindings) -> Unit): Long {
+    return execute(this@TransactionInProgressImpl.db, bindArgs)
+  }
+
+  override fun UpdateStatement.update(bindArgs: (ArgBindings) -> Unit): Long {
+    return execute(db, bindArgs)
   }
 
   /**
@@ -268,7 +410,7 @@ private class TransactionInProgressImpl(private val config: DbConfig) : Transact
    * count of all rows in the table.
    */
   fun SelectFrom.count(where: Op<Boolean>?): Query =
-    QueryBuilder(config, this, where, true).build()
+    QueryBuilder(this, where, true).build()
 
   override val Table.exists
     get() = try {
@@ -466,19 +608,19 @@ interface Transaction : TransactionInProgress, AutoCloseable {
 
   companion object {
     internal operator fun invoke(
-      database: DbConfig,
+      dbConfig: DbConfig,
       exclusiveLock: Boolean,
       unitOfWork: String,
       throwIfNoChoice: Boolean
     ): Transaction {
-      val db = database.db
+      val db = dbConfig.db
       if (exclusiveLock) db.beginTransaction() else db.beginTransactionNonExclusive()
       return TransactionImpl(
         db,
         exclusiveLock,
         unitOfWork,
         throwIfNoChoice,
-        TransactionInProgress(database)
+        TransactionInProgress(dbConfig)
       )
     }
   }
@@ -541,6 +683,99 @@ private class TransactionImpl(
   }
 }
 
+private typealias ExpressionToIndexMap = Object2IntMap<SqlTypeExpression<*>>
+
+private fun List<SqlTypeExpression<*>>.mapExprToIndex(): ExpressionToIndexMap {
+  return Object2IntOpenHashMap<SqlTypeExpression<*>>(size).apply {
+    defaultReturnValue(-1)
+    this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
+  }
+}
+
+private typealias ACursor = android.database.Cursor
+
+private class DbCursorWrapper(
+  private val cursor: ACursor,
+  private val exprMap: ExpressionToIndexMap
+) : Cursor, Row, AutoCloseable {
+  override val count: Int
+    get() = cursor.count
+
+  override val position: Int
+    get() = cursor.position
+
+  fun moveToNext(): Boolean = cursor.moveToNext()
+
+  private fun <T> SqlTypeExpression<T>.index() = exprMap.getInt(this)
+
+  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
+    expression.persistentType.columnValue(this, expression.index())
+
+  override fun <T> get(expression: SqlTypeExpression<T>): T {
+    return getOptional(expression) ?: throw IllegalStateException(unexpectedNullMessage(expression))
+  }
+
+  override fun getBlob(columnIndex: Int): ByteArray = cursor.getBlob(columnIndex)
+  override fun getString(columnIndex: Int): String = cursor.getString(columnIndex)
+  override fun getShort(columnIndex: Int) = cursor.getShort(columnIndex)
+  override fun getInt(columnIndex: Int) = cursor.getInt(columnIndex)
+  override fun getLong(columnIndex: Int) = cursor.getLong(columnIndex)
+  override fun getFloat(columnIndex: Int) = cursor.getFloat(columnIndex)
+  override fun getDouble(columnIndex: Int) = cursor.getDouble(columnIndex)
+  override fun isNull(columnIndex: Int) = cursor.isNull(columnIndex)
+  override fun columnName(columnIndex: Int): String = cursor.getColumnName(columnIndex)
+  override fun close() = cursor.close()
+
+  private fun <T> unexpectedNullMessage(expression: SqlTypeExpression<T>) =
+    "Unexpected NULL reading column=${expression.name()} of expected type ${expression.sqlType}"
+
+  private fun <T> SqlTypeExpression<T>.name() = cursor.getColumnName(index())
+}
+
+internal fun SQLiteDatabase.select(sql: String, args: Array<String>? = null): ACursor {
+  if (Query.logQueryPlans) logQueryPlan(sql, args)
+  return rawQuery(sql, args)
+}
+
+internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String>? = null): Long {
+  if (Query.logQueryPlans) logQueryPlan(sql, args)
+  return DatabaseUtils.longForQuery(this, sql, args)
+}
+
+internal fun SQLiteDatabase.stringForQuery(sql: String, args: Array<String>? = null): String {
+  if (Query.logQueryPlans) logQueryPlan(sql, args)
+  return DatabaseUtils.stringForQuery(this, sql, args)
+}
+
+private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>?) {
+  LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, Arrays.toString(selectionArgs)) }
+  explainQueryPlan(sql, selectionArgs).forEachIndexed { index, toLog ->
+    LOG.i { it("%d: %s", index, toLog) }
+  }
+}
+
+private fun SQLiteDatabase.explainQueryPlan(
+  sql: String,
+  selectionArgs: Array<String>?
+): List<String> {
+  return mutableListOf<String>().apply {
+    rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { c ->
+      while (c.moveToNext()) {
+        add(
+          buildStr {
+            for (i in 0 until c.columnCount) {
+              append(c.getColumnName(i))
+              append(':')
+              append(c.getString(i))
+              append(", ")
+            }
+          }
+        )
+      }
+    }
+  }
+}
+
 private const val ID_COLUMN = 0
 private const val NAME_COLUMN = 1
 private const val TYPE_COLUMN = 2
@@ -548,7 +783,7 @@ private const val NULLABLE_COLUMN = 3
 private const val DEF_VAL_COLUMN = 4
 private const val PK_COLUMN = 5
 private const val NOT_NULLABLE = 1
-private val Cursor.columnMetadata: ColumnMetadata
+private val ACursor.columnMetadata: ColumnMetadata
   get() = ColumnMetadata(
     getInt(ID_COLUMN),
     getString(NAME_COLUMN),
