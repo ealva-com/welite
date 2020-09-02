@@ -48,7 +48,7 @@ class ForeignKeySchemaTests {
 
   @Before
   fun setup() {
-    appCtx = ApplicationProvider.getApplicationContext<Context>()
+    appCtx = ApplicationProvider.getApplicationContext()
   }
 
   @Test
@@ -126,6 +126,7 @@ class ForeignKeySchemaTests {
       expect(ArtistAlbumTable.exists).toBe(true)
 
       MediaFileTable.insert {
+        it[mediaTitle] = "A Title"
         it[mediaUri] = File("/dir/Music/File.mpg").toUri().toString()
         it[artistId] = 100
         it[albumId] = 100

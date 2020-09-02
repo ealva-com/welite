@@ -29,11 +29,11 @@ import com.ealva.welite.db.javatime.VisitTime.other
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.TestTable
 import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
@@ -52,6 +52,17 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeParseException
 import java.util.Date
+
+private object VisitTime : Table() {
+  val localDate = localDateTimeText("date")
+  val optLocalDate = optLocalDateTimeText("opt_date")
+  val name = text("name")
+  val other = optText("other")
+}
+
+object HasVisitTimeRef : Table() {
+  val ref: Column<LocalDateTime?> = optReference("ref", localDate, ForeignKeyAction.CASCADE)
+}
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -251,15 +262,4 @@ class LocalDateTimeColumnTest {
       }
     }
   }
-}
-
-private object VisitTime : TestTable() {
-  val localDate = localDateTimeText("date")
-  val optLocalDate = optLocalDateTimeText("opt_date")
-  val name = text("name")
-  val other = optText("other")
-}
-
-object HasVisitTimeRef : TestTable() {
-  val ref: Column<LocalDateTime?> = optReference("ref", localDate, ForeignKeyAction.CASCADE)
 }

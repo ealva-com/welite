@@ -66,7 +66,9 @@ class DeleteTests {
     ) {
       val (_, _, mediaId) = transaction {
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
-        insertData("Led Zeppelin", "Houses of the Holy", uri).also { setSuccessful() }
+        insertData("Dy'er Mak'er", "Led Zeppelin", "Houses of the Holy", uri).also {
+          setSuccessful()
+        }
       }
 
       transaction {
@@ -80,6 +82,7 @@ class DeleteTests {
   }
 
   private fun Transaction.insertData(
+    title: String,
     artist: String,
     album: String,
     uri: Uri
@@ -103,6 +106,7 @@ class DeleteTests {
     }
 
     val mediaId = MediaFileTable.insert {
+      it[mediaTitle] = title
       it[mediaUri] = uri.toString()
       it[artistId] = idArtist
       it[albumId] = idAlbum

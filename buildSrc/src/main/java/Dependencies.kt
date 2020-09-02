@@ -27,10 +27,8 @@ object Versions {
   const val LIFECYCLE = "2.2.0"
   const val CONSTRAINT_LAYOUT = "1.1.3"
   const val CORE_KTX = "1.3.0"
-  const val ACTIVITY_KTX = "1.1.0"
   const val ESPRESSO_CORE = "3.2.0"
   const val JUNIT = "4.13"
-  const val KTLINT = "0.36.0"
   const val EALVALOG = "0.5.1-SNAPSHOT"
   const val ROBOLECTRIC = "4.3.1"
   const val EXPECT = "1.0.1"
@@ -45,7 +43,6 @@ object BuildPluginsVersion {
   const val AGP = "4.0.1"
   const val DETEKT = "1.8.0"
   const val KOTLIN = "1.4.0"
-  const val KTLINT = "9.2.1"
   const val VERSIONS_PLUGIN = "0.28.0"
 }
 
@@ -76,7 +73,7 @@ object TestingLib {
   const val EXPECT = "com.nhaarman:expect.kt:${Versions.EXPECT}"
   const val COROUTINE_TEST =
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.COROUTINES_TEST}"
-  const val KOIN_TEST = "org.koin:koin-test:${Versions.KOIN}"
+//  const val KOIN_TEST = "org.koin:koin-test:${Versions.KOIN}"
 }
 
 object AndroidTestingLib {

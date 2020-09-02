@@ -122,11 +122,12 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
     append("?")
   }
 
-  override fun <T> registerArgument(sqlType: PersistentType<T>, argument: T): Unit =
-    registerArguments(sqlType, listOf(argument))
+  override fun <T> registerArgument(sqlType: PersistentType<T>, argument: T) {
+    append(sqlType.valueToString(argument))
+  }
 
   override fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>) {
-    arguments.forEach { append(sqlType.valueToString(it)) }
+    arguments.forEach { arg -> registerArgument(sqlType, arg) }
   }
 
   override fun toString(): String = strBuilder.toString()

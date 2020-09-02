@@ -16,6 +16,7 @@
 
 package com.ealva.welite.db.view
 
+import android.os.Build
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
@@ -24,11 +25,14 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.table.Alias
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ColumnSet
+import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.DuplicateColumnException
 import com.ealva.welite.db.table.ForeignKeyConstraint
 import com.ealva.welite.db.table.Join
 import com.ealva.welite.db.table.JoinType
+import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QueryBuilder
+import com.ealva.welite.db.table.QuerySeed
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.Bindable
@@ -39,70 +43,104 @@ import com.ealva.welite.db.type.asIdentity
 import com.ealva.welite.db.type.buildStr
 import java.util.Comparator
 
-interface ViewColumn<T> : Column<T>
+interface ViewColumn<T> : Column<T> {
 
-private class ViewColumnImpl<T>(
-  val view: View,
-  override val name: String,
-  private val column: Column<T>
-) : ViewColumn<T> {
-  override val persistentType: PersistentType<T>
-    get() = column.persistentType
-  override val sqlType: String
-    get() = persistentType.sqlType
-
-  override fun bind(bindable: Bindable, index: Int, value: T?) {
-    column.bind(bindable, index, value)
-  }
-
-  override fun asDefaultValue(): String {
-    return column.asDefaultValue()
-  }
-
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.append(name.asIdentity())
-
-  override val table: Table
-    get() = column.table
-
-  override val tableIdentity: Identity
-    get() = view.identity
-
-  override val isAutoInc: Boolean
-    get() = column.isAutoInc
-
-  override var dbDefaultValue: Expression<T>?
-    get() = column.dbDefaultValue
-    set(value) {
-      column.dbDefaultValue = value
+  companion object {
+    operator fun <T> invoke(
+      view: View,
+      name: String,
+      column: Column<T>
+    ): ViewColumn<T> {
+      val actualName =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          makeName(name, view.identity, column.tableIdentity, column.identity())
+        } else {
+          column.identity().unquoted
+        }
+      return ViewColumnImpl(view, actualName, column)
     }
 
-  override val refersTo: Column<*>?
-    get() = column
+    private fun makeName(
+      name: String,
+      viewIdentity: Identity,
+      tableIdentity: Identity,
+      columnIdentity: Identity
+    ): String {
+      return if (name.isNotBlank()) {
+        name
+      } else buildStr {
+        append(viewIdentity.unquoted)
+        append("_")
+        append(tableIdentity.unquoted)
+        append("_")
+        append(columnIdentity.unquoted)
+      }
+    }
+  }
+}
 
-  override var indexInPK: Int?
-    get() = column.indexInPK
-    set(@Suppress("UNUSED_PARAMETER") value) {}
-
-  override var foreignKey: ForeignKeyConstraint?
-    get() = column.foreignKey
-    set(@Suppress("UNUSED_PARAMETER") value) {}
+private class ViewColumnImpl<T>(
+  private val view: View,
+  override val name: String,
+  private val originalColumn: Column<T>
+) : ViewColumn<T> {
+  override val persistentType: PersistentType<T>
+    get() = originalColumn.persistentType
+  override val sqlType: String
+    get() = persistentType.sqlType
 
   override fun identity(): Identity {
     return name.asIdentity()
   }
 
+  override fun bind(bindable: Bindable, index: Int, value: T?) {
+    originalColumn.bind(bindable, index, value)
+  }
+
+  override fun asDefaultValue(): String {
+    return originalColumn.asDefaultValue()
+  }
+
+  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.append(identity())
+
+  override val table: Table
+    get() = originalColumn.table
+
+  override val tableIdentity: Identity
+    get() = view.identity
+
+  override val isAutoInc: Boolean
+    get() = originalColumn.isAutoInc
+
+  override var dbDefaultValue: Expression<T>?
+    get() = originalColumn.dbDefaultValue
+    set(value) {
+      originalColumn.dbDefaultValue = value
+    }
+
+  override val refersTo: Column<*>?
+    get() = originalColumn
+
+  override var indexInPK: Int?
+    get() = null
+    set(@Suppress("UNUSED_PARAMETER") value) {}
+
+  override var foreignKey: ForeignKeyConstraint?
+    get() = null
+    set(@Suppress("UNUSED_PARAMETER") value) {}
+
   override fun makeAlias(tableAlias: String?): Column<T> =
     Column(Alias(table, tableAlias ?: "${view.viewName}_$name"), name, persistentType)
 
   override val nullable: Boolean
-    get() = column.nullable
+    get() = originalColumn.nullable
 
   override val definesPrimaryKey: Boolean
-    get() = column.definesPrimaryKey
+    get() = false
 
-  override fun isOneColumnPK(): Boolean = column.isOneColumnPK()
+  override fun isOneColumnPK(): Boolean = false
 
-  override fun descriptionDdl(): String = column.descriptionDdl()
+  override fun descriptionDdl(): String = ""
 
   override fun markPrimaryKey() {}
 
@@ -117,11 +155,30 @@ private class ViewColumnImpl<T>(
 
 private val LOG by lazyLogger(View::class)
 
+/**
+ * Represents a View in the database.
+ *
+ * The number
+ *
+ * The CREATE VIEW command assigns a name to a pre-packaged SELECT statement. Once the view is
+ * created, it can be used in the FROM clause of another SELECT in place of a table name.
+ * [SQLite CREATE VIEW](https://sqlite.org/lang_createview.html)
+ *
+ * A note about the underlying generated SQL: The column-name list syntax was added in SQLite
+ * version 3.9.0, which is Android API 24, Build.VERSION_CODES.N. Less than this version of
+ * Android will use the canonical column names (table.column) and will ignore the client's
+ * requested column name. Versions >= Build.VERSION_CODES.N use the column-name list syntax of the
+ * CREATE VIEW statement and will use the column name parameter if it's not blank.
+ */
 abstract class View(
   name: String = "",
-  makeBuilder: () -> QueryBuilder
-) : ColumnSet, Comparable<View> {
-  private val querySeed = makeBuilder().makeQuerySeed()
+  private val querySeed: QuerySeed
+) : ColumnSet, Creatable, Comparable<View> {
+
+  constructor(name: String = "", query: Query) : this(name, query.seed)
+
+  @Suppress("unused")
+  constructor(name: String = "", builder: QueryBuilder) : this(name, builder.build().seed)
 
   val viewName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
     require(!startsWith(Table.RESERVED_PREFIX)) {
@@ -131,8 +188,16 @@ abstract class View(
 
   val identity = viewName.asIdentity()
 
-  fun <T> column(name: String, column: Column<T>): ViewColumn<T> {
-    return _columns.addColumn(ViewColumnImpl(this, name, column))
+  /**
+   * Create a ViewColumn from a Column that will appear in a query. If
+   * Build.VERSION.SDK_INT >= Build.VERSION_CODES.N [name] will be used as the column name unless
+   * it is blank, then a name will be created ViewName_OriginalTableName_OriginalColumnName.
+   * If the build version is less than Build.VERSION_CODES.N the resulting name will be
+   * the original full name of [column] as the CREATE VIEW statement doesn't support
+   * the column-name list that follows the view-name until SQLite 3.9.
+   */
+  fun <T> column(name: String = "", column: Column<T>): ViewColumn<T> {
+    return _columns.addColumn(ViewColumn(this, name, column))
   }
 
   private fun <T> MutableList<ViewColumn<*>>.addColumn(column: ViewColumn<T>) = column.apply {
@@ -159,23 +224,32 @@ abstract class View(
   override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
   override infix fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
 
-  /**
-   * Public for test
-   */
-  fun create(executor: SqlExecutor) {
-    LOG.i { it("Create View $viewName") }
-    executor.exec(createSql)
+  override fun create(executor: SqlExecutor) {
+    LOG.i { it("Creating View %s", viewName) }
+    executor.exec(createStatement())
   }
 
-  protected val createSql by lazy {
-    buildStr {
-      append("CREATE VIEW IF NOT EXISTS ")
-      append(identity)
+  override fun drop(executor: SqlExecutor) {
+    LOG.i { it("Dropping view %s", viewName) }
+    executor.exec(dropStatement())
+  }
+
+  private fun dropStatement() = buildStr {
+    append("DROP VIEW IF EXISTS ")
+    append(identity)
+  }
+
+  private fun createStatement() = buildStr {
+    append("CREATE VIEW IF NOT EXISTS ")
+    append(identity)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       if (columns.isNotEmpty()) {
-        columns.joinTo(this, prefix = " (", postfix = ") AS ") { it.name }
+        columns.joinTo(this, prefix = " (", postfix = ") AS ") { it.identity().value }
       }
-      append(querySeed.sql)
+    } else {
+      append(" AS ")
     }
+    append(querySeed.sql)
   }
 
   override fun equals(other: Any?): Boolean {

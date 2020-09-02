@@ -17,6 +17,7 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Op
+import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.asIdentity
 import com.ealva.welite.db.type.buildStr
@@ -184,18 +185,18 @@ class CheckConstraint(
   }
 }
 
+private const val CREATE_UNIQUE_INDEX = "CREATE UNIQUE INDEX IF NOT EXISTS "
+private const val CREATE_INDEX = "CREATE INDEX IF NOT EXISTS "
+
 class Index(
   private val tableIdentity: Identity,
   private val columns: List<Column<*>>,
   private val unique: Boolean,
   private val customName: String? = null
-) {
+) : Creatable {
   init {
     require(columns.isNotEmpty()) { "At least one column is required to create an index" }
   }
-
-  val identity: Identity
-    get() = indexName.asIdentity()
 
   private val indexName: String
     get() = customName ?: buildStr {
@@ -207,28 +208,34 @@ class Index(
       }
     }
 
-  fun createStatement(): List<String> {
-    val indexIdentity = indexName.asIdentity()
-
-    val columnsList = columns.joinToString(prefix = "(", postfix = ")") { it.identity().value }
-    val prefix = if (unique) "CREATE UNIQUE INDEX IF NOT EXISTS" else "CREATE INDEX IF NOT EXISTS"
-
-    val sql = buildStr {
-      append(prefix)
-      append(' ')
-      append(indexIdentity.value)
-      append(" ON ")
-      append(tableIdentity.value)
-      append(columnsList)
-    }
-    return listOf(sql)
-  }
+  val identity: Identity
+    get() = indexName.asIdentity()
 
   fun onlyDiffersInName(other: Index): Boolean =
     indexName != other.indexName && columns == other.columns && unique == other.unique
 
-  override fun toString(): String =
-    createStatement().first()
+  override fun toString(): String = makeCreateSql()
+
+  override fun create(executor: SqlExecutor) {
+    executor.exec(makeCreateSql())
+  }
+
+  override fun drop(executor: SqlExecutor) {
+    executor.exec(makeDropSql())
+  }
+
+  private fun makeCreateSql(): String = buildStr {
+    if (unique) append(CREATE_UNIQUE_INDEX) else append(CREATE_INDEX)
+    append(identity.value)
+    append(" ON ")
+    append(tableIdentity.value)
+    columns.appendTo(this, prefix = "(", postfix = ")") { append(it.identity().value) }
+  }
+
+  private fun makeDropSql(): String = buildStr {
+    append("DROP INDEX IF EXISTS ")
+    append(identity.value)
+  }
 
   @Suppress("DuplicatedCode")
   override fun equals(other: Any?): Boolean {

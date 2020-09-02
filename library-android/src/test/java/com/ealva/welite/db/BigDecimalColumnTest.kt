@@ -26,11 +26,11 @@ import com.ealva.welite.db.dml.withPlaceTestDatabase
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.TestTable
 import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
@@ -222,12 +222,12 @@ class BigDecimalColumnTest {
   }
 }
 
-private object BigTable : TestTable() {
+private object BigTable : Table() {
   val name = text("name")
   val bigD = bigDecimal("bigd", scale)
   val optBig = optBigDecimal("opt_big", scale)
 }
 
-private object HasBigTableRef : TestTable() {
+private object HasBigTableRef : Table() {
   val ref = optReference("ref", bigD, ForeignKeyAction.CASCADE)
 }

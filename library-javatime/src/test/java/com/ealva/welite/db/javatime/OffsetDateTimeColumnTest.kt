@@ -29,11 +29,11 @@ import com.ealva.welite.db.javatime.OffsetDt.other
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.TestTable
 import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
@@ -52,6 +52,18 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
 import java.util.Date
+
+private object OffsetDt : Table() {
+  val offsetDate = offsetDateTimeText("date")
+  val optOffsetDate = optOffsetDateTimeText("opt_date")
+  val name = text("name")
+  val other = optText("other")
+}
+
+object HasOffsetDtRef : Table() {
+  val ref: Column<OffsetDateTime?> =
+    optReference("ref", offsetDate, ForeignKeyAction.CASCADE)
+}
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -233,16 +245,4 @@ class OffsetDateTimeColumnTest {
       }
     }
   }
-}
-
-private object OffsetDt : TestTable() {
-  val offsetDate = offsetDateTimeText("date")
-  val optOffsetDate = optOffsetDateTimeText("opt_date")
-  val name = text("name")
-  val other = optText("other")
-}
-
-object HasOffsetDtRef : TestTable() {
-  val ref: Column<OffsetDateTime?> =
-    optReference("ref", offsetDate, ForeignKeyAction.CASCADE)
 }

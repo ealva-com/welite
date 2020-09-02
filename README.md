@@ -6,15 +6,9 @@ WeLite is a Kotlin DSL, and Statement/Cursor Wrapper, for Android SQLite
 ### The goals of this library are:
   * Provide a DSL for Android SQLite that fully (eventually) encapsulates the underlying SQL
   * Clients write Kotlin - no SQL, no annotation processing
-  * Support Kotlin coroutines via suspend methods and an injected coroutine dispatcher
+  * Support Kotlin coroutines via suspend methods, flow, and an injected coroutine dispatcher
   * Encapsulate SQLite statements, eg. insert/update/delete, for reuse and simplified binding   
-  * Encapsulate Select results and provide for easy row->POJO conversion. Note: we use POJO and data class interchangeably
-
-### Contributions
-Contributions welcome. Please fill out the template for the situation and include it in the Issue you open.
-  * [Defect Report][bug_report]
-  * [Feature Request][feature_request]
-  * [Pull Request][pull_request]
+  * Encapsulate Select results and provide for easy row->object conversion
 
 ## Usage
 
@@ -45,25 +39,25 @@ on when the Android SQLite documentation or code says various functions should b
 ### Define Tables
 Tables extend the Table class and define the columns/column attributes.
 ```kotlin
-object MediaFileTable : TestTable() {
+object MediaFileTable : Table() {
   val id = long("_id") { primaryKey() }
   val mediaUri = text("MediaUri") { unique() }
   val artistId = long("ArtistId") { references(ArtistTable.id) }
   val albumId = long("AlbumId") { references(AlbumTable.id) }
 }
 
-object ArtistTable : TestTable() {
+object ArtistTable : Table() {
   val id = long("_id") { primaryKey() }
   val comment = optText("comment")
   val artistName = text("ArtistName") { collateNoCase().uniqueIndex() }
 }
 
-object AlbumTable : TestTable() {
+object AlbumTable : Table() {
   val id = long("_id") { primaryKey() }
   val albumName = text("AlbumName") { collateNoCase().uniqueIndex() }
 }
 
-object ArtistAlbumTable : TestTable() {
+object ArtistAlbumTable : Table() {
   val id = long("_id") { primaryKey() }
   val artistId = long("ArtistId") { index().references(ArtistTable.id, ForeignKeyAction.CASCADE) }
   val albumId = long("AlbumId") { index().references(AlbumTable.id, ForeignKeyAction.CASCADE) }
@@ -185,9 +179,9 @@ In the above example the Person table is joined to a query alias of itself, and 
   * library-android - contains the core classes of WeLite
   * library-javatime - contains column types for LocalDate and LocalDateTime. Requires dependency on "com.android.tools:desugar_jdk_libs:${Versions.DESUGAR}" and coreLibraryDesugaringEnabled = true in compile options
   * library-test - contains shared test classes, won't be published
-  * app - skeleton application demos configuration, Koin injection, simple database creation, table population, query, etc.   
-### Why this library?
+  * app - skeleton application demos configuration, Koin injection, simple database creation, table population, query, etc.
 
+### Why this library?
 For WeLite the desire is to push all SQL down into the library and treat it as an implementation detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe tables and relationships, and then use the resulting objects for CRUD work, keeping SQL and SQLite API hidden (objects versus SQL string handling). 
 
 The goal of this library to not to be a full-blown ORM. Instead, this library simplifies reading rows and converting them to POJOs efficiently using RDBMS features, primarily supporting simple types, and putting few lines of the Relational-OO mapping in the client code (specifying which columns are needed to construct a POJO).   
@@ -196,7 +190,6 @@ Both the [Squash] and [Exposed] libraries influence this library, primarily the 
 
 
 ### The name?
-
 Lite=SQLite and We="without entities". After attempting to port an in-house solution to Room and searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a Kotlin DSL to build the underlying SQL. The goal is to store and retrieve data with as little friction as possible, while providing benefits of a Kotlin interface. That said, the client controls what objects are created from rows in a query. While we envision flows of data classes or simple types, the user is free to construct any type of object(s).
 
 Why "without entities"? We often find a one-to-many relationship between a row in a table to a Kotlin object. So we don't try to enforce a row to entity mapping or load data unnecessarily. A higher level layer providing more ORM type functionality could be built over WeLite.  
@@ -206,6 +199,11 @@ Why "without entities"? We often find a one-to-many relationship between a row i
   * Expose more SQLite functionality (need DSL for View and Trigger)
   * Rethink binding parameters. Currently, not enforcing type at compile-time and instead doing conversions at run-time
   
+### Contributions
+Contributions welcome. Please fill out the template for the situation and include it in the Issue you open.
+  * [Defect Report][bug_report]
+  * [Feature Request][feature_request]
+  * [Pull Request][pull_request]
 
 [squash]: https://github.com/orangy/squash
 [exposed]: https://github.com/JetBrains/Exposed

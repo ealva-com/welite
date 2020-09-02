@@ -125,6 +125,7 @@ class ForeignKeySchemaTests {
       expect(ArtistAlbumTable.exists).toBe(true)
 
       MediaFileTable.insert {
+        it[mediaTitle] = "Some Title"
         it[mediaUri] = File("/dir/Music/File.mpg").toUri().toString()
         it[artistId] = 100
         it[albumId] = 100

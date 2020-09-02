@@ -28,10 +28,10 @@ import com.ealva.welite.db.dml.Visits.visitDate
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.statements.insertValues
+import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.TestTable
 import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -42,6 +42,33 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+
+object Doctors : Table("doctors") {
+  val doctorId = integer("doctor_id") { primaryKey() }
+  val doctorName = text("doctor_name")
+  val degree = text("degree")
+}
+
+object Specialty : Table("specialty") {
+  val splId = integer("spl_id") { primaryKey() }
+  val description = text("spl_descrip") { unique() }
+  val doctorId = integer("doctor_id")
+}
+
+object Visits : Table("visits") {
+  val doctorId = integer("doctor_id")
+  val patientName = text("patient_name")
+  val visitDate = text("vdate")
+}
+
+data class DoctorsVisit(
+  val doctorId: Int,
+  val doctorName: String,
+  val degree: String,
+  val patient: String,
+  val date: String,
+  val specialty: String? = null
+)
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -262,37 +289,3 @@ class NaturalJoinTests {
     }
   }
 }
-
-object Doctors : TestTable("doctors") {
-  val doctorId = integer("doctor_id") { primaryKey() }
-  val doctorName = text("doctor_name")
-  val degree = text("degree")
-}
-
-object Specialty : TestTable("specialty") {
-  val splId = integer("spl_id") { primaryKey() }
-  val description = text("spl_descrip") { unique() }
-  val doctorId = integer("doctor_id")
-}
-
-object Visits : TestTable("visits") {
-  val doctorId = integer("doctor_id")
-  val patientName = text("patient_name")
-  val visitDate = text("vdate")
-}
-
-data class DoctorsVisit(
-  val doctorId: Int,
-  val doctorName: String,
-  val degree: String,
-  val patient: String,
-  val date: String,
-  val specialty: String? = null
-)
-/*
-doctor_id   doctor_name     degree      patient_name  vdate
-----------  --------------  ----------  ------------  ----------
-210         Dr. John Linga  MD          Julia Nayer   2013-10-15
-212         Dr. Ke Gee      MD          James Marlow  2013-10-16
-212         Dr. Ke Gee      MD          Jason Mallin  2013-10-12
- */

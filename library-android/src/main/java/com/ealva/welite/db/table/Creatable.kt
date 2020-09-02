@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
-import com.ealva.welite.db.table.SqlExecutor
+/**
+ * Denotes implementations can be created and dropped. Creates are always IF NOT EXISTS
+ */
+interface Creatable {
+  /**
+   * Ask this object to create itself in the database. This may result in multiple statements
+   * being executed.
+   */
+  fun create(executor: SqlExecutor)
 
-class FakeExecutor : SqlExecutor {
-  val statements = mutableListOf<String>()
-
-  override fun exec(sql: String, vararg bindArgs: Any) {
-    statements += sql
-  }
-
-  override fun exec(sql: List<String>) {
-    statements += sql
-  }
+  /**
+   * Ask this object to drop itself from the database. This may result in multiple statements
+   * being executed (typically a single DROP)
+   */
+  fun drop(executor: SqlExecutor)
 }

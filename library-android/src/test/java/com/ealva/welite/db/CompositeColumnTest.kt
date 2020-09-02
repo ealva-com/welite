@@ -27,7 +27,6 @@ import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.CompositeColumn
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.SqlBuilder
-import com.ealva.welite.test.common.TestTable
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import org.junit.Before
@@ -49,7 +48,7 @@ class CompositeColumnTest {
 
   @Test
   fun `test composite column`() {
-    val account = object : TestTable() {
+    val account = object : Table() {
       val instant = instant("created_instant")
     }
     val descriptions = account.instant.descriptionDdl()

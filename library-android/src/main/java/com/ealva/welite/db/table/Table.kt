@@ -69,7 +69,7 @@ typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
  *
  * @param name optional table name, defaulting to the class name with any "Table" suffix removed.
  */
-abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSet {
+abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSet, Creatable {
   open val tableName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
     require(systemTable || !startsWith(RESERVED_PREFIX)) {
       "Invalid Table name '$this', must not start with $RESERVED_PREFIX"
@@ -84,9 +84,6 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 
   private val indices = mutableListOf<Index>()
   private val checkConstraints = mutableListOf<Pair<String, Op<Boolean>>>()
-
-  private val indicesDDL: List<String>
-    get() = indices.flatMap { it.createStatement() }
 
   override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.apply { append(identity) }
 
@@ -262,16 +259,15 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     fkName: String? = null
-  ): Column<T> =
-    Column(
-      table = this,
-      name = name,
-      persistentType = refColumn.persistentType,
-      initialConstraints = listOf(NotNullConstraint),
-      addTo = ::addColumn
-    ) {
-      references(refColumn, onDelete, onUpdate, fkName)
-    }
+  ): Column<T> = Column(
+    table = this,
+    name = name,
+    persistentType = refColumn.persistentType,
+    initialConstraints = listOf(NotNullConstraint),
+    addTo = ::addColumn
+  ) {
+    references(refColumn, onDelete, onUpdate, fkName)
+  }
 
   /**
    * Creates a FOREIGN KEY constraint on a table that is nullable
@@ -493,9 +489,6 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     }
   }
 
-  protected val ddl: List<String>
-    get() = createStatement() + indicesDDL
-
   /**
    * By default, every row in SQLite has a special column, usually called the "rowid", that
    * uniquely identifies that row within the table. However if the phrase "WITHOUT ROWID" is added
@@ -558,56 +551,56 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     }
   }
 
-  private fun createStatement(): List<String> {
-    val createTable = buildStr {
-      append("CREATE TABLE IF NOT EXISTS ")
-      append(identity)
-      if (columns.isNotEmpty()) {
-        columns.joinTo(this, prefix = " (") { it.descriptionDdl() }
+  private fun createStatement(): String = buildStr {
+    append("CREATE TABLE IF NOT EXISTS ")
+    append(identity)
+    if (columns.isNotEmpty()) {
+      columns.joinTo(this, prefix = " (") { it.descriptionDdl() }
 
-        if (isCustomPKNameDefined() || columns.none { it.definesPrimaryKey }) {
-          primaryKeyConstraint()?.let { append(", ").append(it) }
-        }
-
-        val foreignKeyConstraints = columns.mapNotNull { it.foreignKey }
-
-        if (foreignKeyConstraints.isNotEmpty()) {
-          foreignKeyConstraints.joinTo(this, prefix = ", ", separator = ", ") { it.foreignKeyPart }
-        }
-
-        if (checkConstraints.isNotEmpty()) {
-          checkConstraints.mapIndexed { index, (name, op) ->
-            CheckConstraint(
-              this@Table,
-              name.ifBlank { "check_${tableName}_$index" }.asIdentity(),
-              op
-            ).checkPart
-          }.joinTo(this, prefix = ", ")
-        }
-
-        append(")")
-        maybeAppendWithoutRowId()
+      if (isCustomPKNameDefined() || columns.none { it.definesPrimaryKey }) {
+        primaryKeyConstraint()?.let { append(", ").append(it) }
       }
+
+      val foreignKeyConstraints = columns.mapNotNull { it.foreignKey }
+
+      if (foreignKeyConstraints.isNotEmpty()) {
+        foreignKeyConstraints.joinTo(
+          this,
+          prefix = ", ",
+          separator = ", "
+        ) { it.foreignKeyPart }
+      }
+
+      if (checkConstraints.isNotEmpty()) {
+        checkConstraints.mapIndexed { index, (name, op) ->
+          CheckConstraint(
+            this@Table,
+            name.ifBlank { "check_${tableName}_$index" }.asIdentity(),
+            op
+          ).checkPart
+        }.joinTo(this, prefix = ", ")
+      }
+
+      append(")")
+      maybeAppendWithoutRowId()
     }
-    return listOf(createTable)
   }
 
-  private fun dropStatement(): List<String> {
-    val dropTable = buildStr {
-      append("DROP TABLE IF EXISTS ")
-      append(identity)
-    }
-
-    return listOf(dropTable)
+  private fun dropStatement(): String = buildStr {
+    append("DROP TABLE IF EXISTS ")
+    append(identity)
   }
 
-  /**
-   * Public for test
-   */
-  fun create(executor: SqlExecutor) {
+  override fun create(executor: SqlExecutor) {
     preCreate()
-    LOG.i { it("Create $tableName") }
-    executor.exec(ddl)
+    LOG.i { it("Creating %s", tableName) }
+    executor.exec(createStatement())
+    indices.forEach { index -> index.create(executor) }
+  }
+
+  override fun drop(executor: SqlExecutor) {
+    LOG.i { it("Dropping %s", tableName) }
+    executor.exec(dropStatement())
   }
 
   protected open fun preCreate() {}

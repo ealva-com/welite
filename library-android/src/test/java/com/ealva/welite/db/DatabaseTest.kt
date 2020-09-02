@@ -24,12 +24,13 @@ import com.ealva.welite.db.table.FieldType.BlobField
 import com.ealva.welite.db.table.FieldType.IntegerField
 import com.ealva.welite.db.table.FieldType.RealField
 import com.ealva.welite.db.table.FieldType.TextField
+import com.ealva.welite.db.table.Table
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.ArtistAlbumTable
 import com.ealva.welite.test.common.ArtistTable
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.MediaFileTable
-import com.ealva.welite.test.common.TestTable
+import com.ealva.welite.test.common.SqlExecutorSpy
 import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.StringMatcher
@@ -49,7 +50,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.concurrent.Semaphore
 
-object SomeMediaTable : TestTable() {
+object SomeMediaTable : Table() {
   val id = integer("_id") { primaryKey() }
   val mediaUri = text("MediaUri") { unique() }
   val fileName = text("MediaFileName") { collateNoCase() }
@@ -210,19 +211,19 @@ class DatabaseTest {
 
         val tableIdentity = SomeMediaTable.identity.value
 
-        val fakeExecutor = FakeExecutor()
-        SomeMediaTable.create(fakeExecutor)
-        val statements = fakeExecutor.statements
-        expect(statements).toHaveSize(2)
-        expect(statements[0]).toBe(
-          "CREATE TABLE IF NOT EXISTS " + tableIdentity + " (" +
-            SomeMediaTable.columns.joinToString { it.descriptionDdl() } + ")"
-        )
-        expect(statements[1]).toBe(
-          "CREATE INDEX IF NOT EXISTS \"SomeMedia_MediaFileName_Real\" ON " +
-            "\"SomeMedia\"(\"MediaFileName\", \"Real\")"
-        )
-
+        SqlExecutorSpy().let { spy ->
+          SomeMediaTable.create(spy)
+          val statements = spy.execSqlList
+          expect(statements).toHaveSize(2)
+          expect(statements[0]).toBe(
+            "CREATE TABLE IF NOT EXISTS " + tableIdentity + " (" +
+              SomeMediaTable.columns.joinToString { it.descriptionDdl() } + ")"
+          )
+          expect(statements[1]).toBe(
+            "CREATE INDEX IF NOT EXISTS \"SomeMedia_MediaFileName_Real\" ON " +
+              "\"SomeMedia\"(\"MediaFileName\", \"Real\")"
+          )
+        }
         val tableSql = SomeMediaTable.sql
         expect(tableSql.tableName).toBe("SomeMedia")
         expect(tableSql.table.first()).toBe(
@@ -349,7 +350,8 @@ class DatabaseTest {
         MediaFileTable.sql.let { mediaSql ->
           expect(mediaSql.table).toHaveSize(1)
           expect(mediaSql.table[0]).toBe(
-            """CREATE TABLE "MediaFile" ("_id" INTEGER NOT NULL PRIMARY KEY, "MediaUri"""" +
+            """CREATE TABLE "MediaFile" ("_id" INTEGER NOT NULL PRIMARY KEY,""" +
+              """ "MediaTitle" TEXT NOT NULL, "MediaUri"""" +
               """ TEXT NOT NULL UNIQUE, "ArtistId" INTEGER NOT NULL, "AlbumId"""" +
               """ INTEGER NOT NULL, CONSTRAINT "fk_MediaFile_ArtistId__id" FOREIGN KEY""" +
               """ ("ArtistId") REFERENCES "Artist"("_id"), CONSTRAINT""" +

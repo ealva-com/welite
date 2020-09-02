@@ -26,7 +26,7 @@ import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.IntegerPersistentType
 import com.ealva.welite.db.type.SqlBuilder
-import com.ealva.welite.test.common.TestTable
+import com.ealva.welite.test.common.SqlExecutorSpy
 import com.nhaarman.expect.expect
 import org.junit.Before
 import org.junit.Test
@@ -74,6 +74,11 @@ class ColumnTests {
     expect(account.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL""")
     expect(account.col2.descriptionDdl()).toBe(""""$col2" INTEGER NOT NULL PRIMARY KEY""")
     expect(account.col3.descriptionDdl()).toBe(""""$col3" INTEGER NOT NULL UNIQUE""")
+    SqlExecutorSpy().let { spy ->
+      account.drop(spy)
+      expect(spy.execSqlList).toHaveSize(1)
+      expect(spy.execSqlList[0]).toBe("DROP TABLE IF EXISTS ${account.identity.value}")
+    }
   }
 
   @Test
@@ -97,6 +102,13 @@ class ColumnTests {
     expect(account2.id.descriptionDdl()).toBe("\"$id1\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT")
     expect(account2.col2.descriptionDdl()).toBe(""""$col2" INTEGER NOT NULL DEFAULT 4""")
     expect(account2.col3.descriptionDdl()).toBe(""""$col3" INTEGER NOT NULL DEFAULT (ABS(-100))""")
+    SqlExecutorSpy().let { spy ->
+      account2.drop(spy)
+      spy.execSqlList.let { sqlList ->
+        expect(sqlList).toHaveSize(1)
+        expect(sqlList[0]).toBe("DROP TABLE IF EXISTS ${account2.identity.value}")
+      }
+    }
   }
 
   @Test
@@ -107,6 +119,12 @@ class ColumnTests {
       val id = integer(id1) { primaryKey().desc() }
     }
     expect(account3.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL PRIMARY KEY DESC""")
+    SqlExecutorSpy().let { spy ->
+      account3.drop(spy)
+      val ddl = spy.execSqlList
+      expect(ddl).toHaveSize(1)
+      expect(ddl[0]).toBe("DROP TABLE IF EXISTS ${account3.identity.value}")
+    }
   }
 
   @Test
@@ -117,7 +135,7 @@ class ColumnTests {
     val col4 = "col4"
     val col5 = "col5"
     val tableName = "Account"
-    val account = object : TestTable(tableName) {
+    val account = object : Table(tableName) {
       val id = text(id1)
       val col2: Column<String> = text(col2) { primaryKey() }
       val col3 = text(col3) { unique().collateNoCase() }
@@ -131,13 +149,22 @@ class ColumnTests {
     expect(account.col4.descriptionDdl()).toBe(""""$col4" TEXT NOT NULL COLLATE RTRIM""")
     expect(account.col5.descriptionDdl()).toBe(""""$col5" TEXT NOT NULL DEFAULT 'blah'""")
 
-    val ddl = account.ddlForTest()
-    expect(ddl).toHaveSize(1)
-    expect(ddl[0]).toBe(
-      """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
-        account.columns.joinToString { it.descriptionDdl() } +
-        """, CONSTRAINT "check_Account_0" CHECK ("col5" = 'blah'))"""
-    )
+    SqlExecutorSpy().let { spy ->
+      account.create(spy)
+      val ddl = spy.execSqlList
+      expect(ddl).toHaveSize(1)
+      expect(ddl[0]).toBe(
+        """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+          account.columns.joinToString { it.descriptionDdl() } +
+          """, CONSTRAINT "check_Account_0" CHECK ("col5" = 'blah'))"""
+      )
+    }
+    SqlExecutorSpy().let { spy ->
+      account.drop(spy)
+      val ddl = spy.execSqlList
+      expect(ddl).toHaveSize(1)
+      expect(ddl[0]).toBe("DROP TABLE IF EXISTS ${account.identity.value}")
+    }
   }
 
   @Test
@@ -145,7 +172,7 @@ class ColumnTests {
     val id1Name = "id1"
     val id2Name = "id2"
     val tableName = "Account"
-    val account = object : TestTable(tableName) {
+    val account = object : Table(tableName) {
       val id1: Column<Int> = integer(id1Name)
       val id2: Column<Int> = integer(id2Name) { check { it greater 10 } }
 
@@ -154,16 +181,25 @@ class ColumnTests {
       }
     }
 
-    val ddl = account.ddlForTest()
-    expect(ddl).toHaveSize(2)
-    expect(ddl[0]).toBe(
-      """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
-        account.columns.joinToString { it.descriptionDdl() } +
-        """, CONSTRAINT "check_Account_0" CHECK ("""" + id2Name + """" > 10))"""
-    )
-    expect(ddl[1]).toBe(
-      "CREATE UNIQUE INDEX IF NOT EXISTS \"Account_id1_id2_unique\" " +
-        "ON \"Account\"(\"id1\", \"id2\")"
-    )
+    SqlExecutorSpy().let { spy ->
+      account.create(spy)
+      val ddl = spy.execSqlList
+      expect(ddl).toHaveSize(2)
+      expect(ddl[0]).toBe(
+        """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+          account.columns.joinToString { it.descriptionDdl() } +
+          """, CONSTRAINT "check_Account_0" CHECK ("""" + id2Name + """" > 10))"""
+      )
+      expect(ddl[1]).toBe(
+        "CREATE UNIQUE INDEX IF NOT EXISTS \"Account_id1_id2_unique\" " +
+          "ON \"Account\"(\"id1\", \"id2\")"
+      )
+    }
+    SqlExecutorSpy().let { spy ->
+      account.drop(spy)
+      val ddl = spy.execSqlList
+      expect(ddl).toHaveSize(1)
+      expect(ddl[0]).toBe("DROP TABLE IF EXISTS ${account.identity.value}")
+    }
   }
 }

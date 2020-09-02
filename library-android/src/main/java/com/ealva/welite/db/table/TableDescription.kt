@@ -38,12 +38,6 @@ enum class FieldType(val type: Int, val display: String) {
   }
 }
 
-/*
- fun Cursor.columnType(index: Int): FieldType {
-  return FieldType.fromInt(getType(index))
-  }
-*/
-
 data class ColumnMetadata(
   val id: Int,
   val name: String,

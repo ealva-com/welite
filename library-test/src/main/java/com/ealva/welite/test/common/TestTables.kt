@@ -19,26 +19,20 @@ package com.ealva.welite.test.common
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table
 
-/**
- * Expose some non-public items for easier testing
- */
-abstract class TestTable(name: String = "") : Table(name) {
-  fun ddlForTest() = ddl
-}
-
-object MediaFileTable : TestTable() {
+object MediaFileTable : Table() {
   val id = long("_id") { primaryKey() }
+  val mediaTitle = text("MediaTitle")
   val mediaUri = text("MediaUri") { unique() }
   val artistId = reference("ArtistId", ArtistTable.id)
   val albumId = reference("AlbumId", AlbumTable.id)
 }
 
-object ArtistTable : TestTable() {
+object ArtistTable : Table() {
   val id = long("_id") { primaryKey() }
   val artistName = text("ArtistName") { collateNoCase().uniqueIndex() }
 }
 
-object AlbumTable : TestTable() {
+object AlbumTable : Table() {
   val id = long("_id") { primaryKey() }
   val albumName = text("AlbumName") { collateNoCase() }
   val artistName = text("ArtistName") { collateNoCase() }
@@ -47,7 +41,7 @@ object AlbumTable : TestTable() {
   }
 }
 
-object ArtistAlbumTable : TestTable() {
+object ArtistAlbumTable : Table() {
   val id = long("_id") { primaryKey() }
   val artistId = long("ArtistId") { index().references(ArtistTable.id, ForeignKeyAction.CASCADE) }
   val albumId = long("AlbumId") { index().references(AlbumTable.id, ForeignKeyAction.CASCADE) }

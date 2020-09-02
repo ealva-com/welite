@@ -16,12 +16,10 @@
 
 package com.ealva.welite.test.common
 
-import com.ealva.welite.db.table.QueryBuilder
-import com.ealva.welite.db.view.View
+import com.ealva.welite.db.table.SqlExecutor
 
-abstract class TestView(
-  name: String = "",
-  build: () -> QueryBuilder
-) : View(name, build) {
-  fun sqlForTest(): String = createSql
+class SqlExecutorSpy : SqlExecutor {
+  val execSqlList = mutableListOf<String>()
+  override fun exec(sql: String, vararg bindArgs: Any) { execSqlList += sql }
+  override fun exec(sql: List<String>) { execSqlList += sql }
 }

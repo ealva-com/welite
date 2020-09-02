@@ -513,16 +513,20 @@ private class OpenHelper private constructor(
     config.closed = true
   }
 
-  override fun onCreate(db: SQLiteDatabase) {
-    val executor = object : SqlExecutor {
+  fun SQLiteDatabase.toSqlExecutor(): SqlExecutor {
+    return object : SqlExecutor {
       override fun exec(sql: String, vararg bindArgs: Any) {
-        db.execSQL(sql, bindArgs)
+        execSQL(sql, bindArgs)
       }
 
       override fun exec(sql: List<String>) {
         sql.forEach { exec(it) }
       }
     }
+  }
+
+  override fun onCreate(db: SQLiteDatabase) {
+    val executor = db.toSqlExecutor()
     val orderedTables = tablesInCreateOrder
     orderedTables.forEach { table ->
       table.create(executor)

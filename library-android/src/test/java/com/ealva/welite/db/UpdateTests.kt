@@ -116,6 +116,7 @@ class UpdateTests {
     }
 
     val mediaId = MediaFileTable.insert {
+      it[mediaTitle] = "Some Title"
       it[mediaUri] = uri.toString()
       it[artistId] = idArtist
       it[albumId] = idAlbum

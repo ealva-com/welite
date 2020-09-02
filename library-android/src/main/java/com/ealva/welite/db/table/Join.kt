@@ -37,7 +37,7 @@ fun <C1 : ColumnSet, C2 : ColumnSet> C1.innerJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
-): Join = join(otherTable, JoinType.INNER, onColumn(), otherColumn(otherTable))
+): Join = join(otherTable, JoinType.INNER, onColumn(), otherTable.otherColumn())
 
 fun <C1 : ColumnSet, C2 : ColumnSet> C1.leftJoin(
   otherTable: C2,
