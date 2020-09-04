@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.toList
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -55,6 +56,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class JoinTests {
   @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 
@@ -215,8 +217,9 @@ class JoinTests {
     }
   }
 
-  @Test(expected = SQLiteException::class)
+  @Test
   fun `test join multiple references fk violation`() = coroutineRule.runBlockingTest {
+    thrown.expect(SQLiteException::class.java)
     val fooTable = object : Table("foo") {
       val baz = long("baz") { uniqueIndex() }
     }

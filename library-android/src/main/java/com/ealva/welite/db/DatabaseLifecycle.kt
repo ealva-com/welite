@@ -40,10 +40,11 @@ interface DatabaseLifecycle {
   fun onOpen(block: (Database) -> Unit)
 
   /**
-   * Call [block] when database corruption is detected. If this is not set the default
-   * behavior is to close the Database if open and delete the database file
+   * Call [block] when database corruption is detected. [useDefaultHandler] indicates if default
+   * error handling should occur before calling [block]. The default
+   * behavior is to close the Database, if open, and delete the database file
    */
-  fun onCorruption(block: (Database) -> Unit)
+  fun onCorruption(useDefaultHandler: Boolean, block: (Database) -> Unit = {})
 }
 
 interface PragmaExec {

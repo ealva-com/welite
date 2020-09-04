@@ -40,7 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.hamcrest.CoreMatchers
+import org.hamcrest.CoreMatchers.isA
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -68,9 +68,9 @@ object SomeMediaTable : Table() {
 @Config(sdk = [LOLLIPOP])
 class DatabaseTest {
   @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
   private var config: DatabaseConfiguration? = null
 
   @Before
@@ -363,8 +363,8 @@ class DatabaseTest {
     }
   }
 
-  @Test(expected = IllegalStateException::class)
   fun `test execPragma called in wrong scope`() = coroutineRule.runBlockingTest {
+    thrown.expect(IllegalStateException::class.java)
     getDatabase().let { db ->
       db.transaction { rollback() }
       checkNotNull(config).execPragma("do my pragma")
@@ -390,7 +390,7 @@ class DatabaseTest {
 
   @Test
   fun `test transaction on UI thread throws`() = coroutineRule.runBlockingTest {
-    thrown.expectCause(CoreMatchers.isA(IllegalStateException::class.java))
+    thrown.expectCause(isA(IllegalStateException::class.java))
     val db = Database(
       context = appCtx,
       version = 1,
@@ -407,7 +407,7 @@ class DatabaseTest {
 
   @Test
   fun `test query on UI thread throws`() = coroutineRule.runBlockingTest {
-    thrown.expectCause(CoreMatchers.isA(IllegalStateException::class.java))
+    thrown.expectCause(isA(IllegalStateException::class.java))
     val db = Database(
       context = appCtx,
       version = 1,

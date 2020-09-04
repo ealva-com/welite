@@ -52,6 +52,9 @@ import kotlin.reflect.KClass
 
 private val LOG by lazyLogger(Table::class)
 
+private const val CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "
+private const val CREATE_TEMP_TABLE = "CREATE TEMP TABLE IF NOT EXISTS "
+
 typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
 
 /**
@@ -551,8 +554,8 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     }
   }
 
-  private fun createStatement(): String = buildStr {
-    append("CREATE TABLE IF NOT EXISTS ")
+  private fun createStatement(temp: Boolean): String = buildStr {
+    if (temp) append(CREATE_TEMP_TABLE) else append(CREATE_TABLE)
     append(identity)
     if (columns.isNotEmpty()) {
       columns.joinTo(this, prefix = " (") { it.descriptionDdl() }
@@ -591,10 +594,10 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     append(identity)
   }
 
-  override fun create(executor: SqlExecutor) {
+  override fun create(executor: SqlExecutor, temporary: Boolean) {
     preCreate()
     LOG.i { it("Creating %s", tableName) }
-    executor.exec(createStatement())
+    executor.exec(createStatement(temporary))
     indices.forEach { index -> index.create(executor) }
   }
 

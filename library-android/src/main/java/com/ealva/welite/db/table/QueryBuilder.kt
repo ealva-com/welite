@@ -28,23 +28,23 @@ import com.ealva.welite.db.type.buildSql
 
 typealias LimitOffset = Pair<Long, Long>
 
-inline val LimitOffset.limit
+inline val LimitOffset.limit: Long
   get() = first
 
-inline val LimitOffset.offset
+inline val LimitOffset.offset: Long
   get() = second
 
 typealias OrderByPair = Pair<Expression<*>, SortOrder>
 
-inline val OrderByPair.expression
+inline val OrderByPair.expression: Expression<*>
   get() = first
 
-inline val OrderByPair.ascDesc
+inline val OrderByPair.ascDesc: SortOrder
   get() = second
 
 @WeLiteMarker
 class QueryBuilder private constructor(
-  private var set: SelectFrom,
+  private var selectFrom: SelectFrom,
   private var where: Op<Boolean>?,
   private var count: Boolean = false
 ) : AppendsToSqlBuilder {
@@ -54,7 +54,7 @@ class QueryBuilder private constructor(
   private var distinct: Boolean = false
   private var limitOffset: LimitOffset? = null
 
-  fun copy(): QueryBuilder = QueryBuilder(set, where).also { copy ->
+  fun copy(): QueryBuilder = QueryBuilder(selectFrom, where).also { copy ->
     copy.groupBy = groupBy.toMutableList()
     copy.orderBy = orderBy.toMutableList()
     copy.having = having
@@ -63,9 +63,6 @@ class QueryBuilder private constructor(
     copy.count = count
   }
 
-  fun sourceSetColumnsInResult(): List<Column<*>> =
-    set.sourceSet.columns.filter { it in set.resultColumns }
-
   /**
    * Changes [where] field of a Query.
    * @param body new WHERE condition builder, previous value used as a receiver
@@ -73,15 +70,15 @@ class QueryBuilder private constructor(
   fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>) = apply { where = where.body() }
 
   /**
-   * Save this query to reuse and possibly bind parameters each time it is used
+   * Build the QuerySeed as a basis for a Query instance or executing a query
    */
-  fun build(): Query = Query(makeQuerySeed())
+  internal fun build(): QuerySeed = makeQuerySeed()
 
-  fun makeQuerySeed(): QuerySeed {
+  private fun makeQuerySeed(): QuerySeed {
     val (sql, types) = buildSql {
       append(this@QueryBuilder)
     }
-    return QuerySeed(set.resultColumns, sql, types)
+    return QuerySeed(selectFrom.resultColumns, sql, types)
   }
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
@@ -91,14 +88,15 @@ class QueryBuilder private constructor(
       append("COUNT(*)")
     } else {
       if (distinct) append("DISTINCT ")
-      set.resultColumns.appendEach { append(it) }
+      selectFrom.resultColumns.appendEach { append(it) }
     }
 
     append(" FROM ")
-    set.sourceSet.appendTo(this)
+    selectFrom.sourceSet.appendTo(this)
 
     where?.let { where ->
-      append(" WHERE ").append(where)
+      append(" WHERE ")
+      append(where)
     }
 
     if (!count) {
@@ -124,7 +122,7 @@ class QueryBuilder private constructor(
 
       limitOffset?.let { limitOffset ->
         append(" LIMIT ").append(limitOffset.limit)
-        if (limitOffset.second > 0) {
+        if (limitOffset.offset > 0) {
           append(" OFFSET ").append(limitOffset.offset)
         }
       }
@@ -135,11 +133,12 @@ class QueryBuilder private constructor(
 
   fun groupBy(vararg columns: Expression<*>) = apply { groupBy.addAll(columns) }
 
+  @Suppress("unused")
   fun having(op: () -> Op<Boolean>) = apply {
     if (having != null) {
       error(
-        """HAVING clause is specified twice. Old value = '""" + having +
-          """', new value = '""" + Op.build { op() } + """'"""
+        """HAVING clause is specified twice. Old value = '$having',""" +
+          """ new value = '${Op.build { op() }}'"""
       )
     }
     having = Op.build { op() }
@@ -153,18 +152,34 @@ class QueryBuilder private constructor(
     limitOffset = LimitOffset(limit, offset)
   }
 
-  fun <T> findSourceSetOriginal(original: Column<T>): Column<*>? {
-    return set.sourceSet.columns.find { it == original }
+  /**
+   * Used in QueryBuilderAlias
+   */
+  internal fun sourceSetColumnsInResult(): List<Column<*>> =
+    selectFrom.sourceSet.columns.filter { it in selectFrom.resultColumns }
+
+  /**
+   * Used in QueryBuilderAlias
+   */
+  internal fun <T> findSourceSetOriginal(original: Column<T>): Column<*>? {
+    return selectFrom.sourceSet.columns.find { it == original }
   }
 
-  fun <T> findResultColumnExpressionAlias(
+  /**
+   * Used in QueryBuilderAlias
+   */
+  internal fun <T> findResultColumnExpressionAlias(
     original: SqlTypeExpression<T>
   ): SqlTypeExpressionAlias<T>? {
     @Suppress("UNCHECKED_CAST")
-    return set.resultColumns.find { it == original } as? SqlTypeExpressionAlias<T>
+    return selectFrom.resultColumns.find { it == original } as? SqlTypeExpressionAlias<T>
   }
 
   companion object {
+    /**
+     * Make a QueryBuilder from the initial SelectFrom, a where clause, and indicate if this will
+     * be a "count" query.
+     */
     internal operator fun invoke(
       set: SelectFrom,
       where: Op<Boolean>?,
@@ -174,8 +189,8 @@ class QueryBuilder private constructor(
 }
 
 /**
- * Add `andPart` to where condition with `and` operator.
- * @return same Query instance which was provided as a receiver.
+ * In this QueryBuilder add `andPart` to where condition with `and` operator, and return the same
+ * QueryBuilder.
  */
 fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>) = adjustWhere {
   val expr = Op.build { andPart() }
@@ -183,9 +198,10 @@ fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>) = adjustWhere {
 }
 
 /**
- * Add `orPart` to where condition with `or` operator.
- * @return same Query instance which was provided as a receiver.
+ * In this QueryBuilder add `orPart` to where condition with `or` operator, and return the same
+ * QueryBuilder.
  */
+@Suppress("unused")
 fun QueryBuilder.orWhere(orPart: () -> Op<Boolean>) = adjustWhere {
   val expr = Op.build { orPart() }
   if (this == null) expr else this or expr

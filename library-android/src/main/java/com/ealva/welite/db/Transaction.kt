@@ -61,6 +61,12 @@ interface Transaction : TransactionInProgress, AutoCloseable {
   override fun close()
 
   companion object {
+    /**
+     * Start a transaction and return the Transaction object which is [AutoCloseable] and
+     * expected to be used within a [use] block to control the Transaction lifetime. Client's use
+     * [Database.transaction], [Database.query], and [Database.query], so this is not expected
+     * to be exposed to a client.
+     */
     internal operator fun invoke(
       dbConfig: DbConfig,
       exclusiveLock: Boolean,
@@ -120,9 +126,9 @@ private class TransactionImpl(
       try {
         isClosed = true
         if (!successful && !rolledBack) {
-          LOG.e(RuntimeException("Txn $unitOfWork unsuccessful")) { it(TXN_NOT_MARKED, unitOfWork) }
-          if (throwIfNoChoice) throw NeitherSuccessNorRollbackException(unitOfWork)
-          // Transaction has not been marked successful and will rollback automatically
+          val ex = NeitherSuccessNorRollbackException(unitOfWork)
+          LOG.e(ex) { it(TXN_NOT_MARKED, unitOfWork) }
+          if (throwIfNoChoice) throw ex
         }
       } finally {
         db.endTransaction()

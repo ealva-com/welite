@@ -21,10 +21,12 @@ import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.and
+import com.ealva.welite.db.expr.bindLong
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.toQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.AlbumTable.albumName
@@ -36,9 +38,11 @@ import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.hamcrest.CoreMatchers.isA
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -49,6 +53,7 @@ import java.io.File
 @Config(sdk = [LOLLIPOP])
 class QueryTests {
   @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 
@@ -72,11 +77,81 @@ class QueryTests {
       query {
         val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
           .where { MediaFileTable.id greater 0L }
-          .build()
+          .toQuery()
 
         expect(query.seed.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
             """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
+        )
+
+        var count = 0
+        query.forEach { cursor ->
+          count++
+          val id = cursor[MediaFileTable.id]
+          expect(id).toBe(mediaId)
+          expect(cursor[MediaFileTable.mediaUri]).toBe(uri)
+        }
+        expect(count).toBe(1)
+      }
+    }
+  }
+
+  @Test
+  fun `test simple query with bindable`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      val uri = "/Music/Song.mp3"
+      val (_, _, mediaId) = transaction {
+        insertData("Led Zeppelin", "Houses of the Holy", uri).also { setSuccessful() }
+      }
+      query {
+        val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
+          .where { MediaFileTable.id greater bindLong() }
+          .toQuery()
+
+        expect(query.seed.sql).toBe(
+          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
+            """ "MediaFile" WHERE "MediaFile"."_id" > ?"""
+        )
+
+        var count = 0
+        query.forEach({ it[0] = 0 }) { cursor ->
+          count++
+          val id = cursor[MediaFileTable.id]
+          expect(id).toBe(mediaId)
+          expect(cursor[MediaFileTable.mediaUri]).toBe(uri)
+        }
+        expect(count).toBe(1)
+      }
+    }
+  }
+
+  @Test
+  fun `test simple query with unbound bindable`() = coroutineRule.runBlockingTest {
+    thrown.expect(WeLiteException::class.java)
+    thrown.expectCause(isA(IllegalStateException::class.java))
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      val uri = "/Music/Song.mp3"
+      val (_, _, mediaId) = transaction {
+        insertData("Led Zeppelin", "Houses of the Holy", uri).also { setSuccessful() }
+      }
+      query {
+        val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
+          .where { MediaFileTable.id greater bindLong() }
+          .toQuery()
+
+        expect(query.seed.sql).toBe(
+          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
+            """ "MediaFile" WHERE "MediaFile"."_id" > ?"""
         )
 
         var count = 0
@@ -112,7 +187,7 @@ class QueryTests {
 
         val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
           .where { MediaFileTable.id greater 0L }
-          .build()
+          .toQuery()
 
         expect(query.seed.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +

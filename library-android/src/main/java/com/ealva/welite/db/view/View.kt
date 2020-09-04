@@ -44,7 +44,6 @@ import com.ealva.welite.db.type.buildStr
 import java.util.Comparator
 
 interface ViewColumn<T> : Column<T> {
-
   companion object {
     operator fun <T> invoke(
       view: View,
@@ -78,6 +77,9 @@ interface ViewColumn<T> : Column<T> {
     }
   }
 }
+
+private const val CREATE_VIEW = "CREATE VIEW IF NOT EXISTS "
+private const val CREATE_TEMP_VIEW = "CREATE TEMP VIEW IF NOT EXISTS "
 
 private class ViewColumnImpl<T>(
   private val view: View,
@@ -175,10 +177,10 @@ abstract class View(
   private val querySeed: QuerySeed
 ) : ColumnSet, Creatable, Comparable<View> {
 
+  @Suppress("unused")
   constructor(name: String = "", query: Query) : this(name, query.seed)
 
-  @Suppress("unused")
-  constructor(name: String = "", builder: QueryBuilder) : this(name, builder.build().seed)
+  constructor(name: String = "", builder: QueryBuilder) : this(name, builder.build())
 
   val viewName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
     require(!startsWith(Table.RESERVED_PREFIX)) {
@@ -224,9 +226,9 @@ abstract class View(
   override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
   override infix fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
 
-  override fun create(executor: SqlExecutor) {
+  override fun create(executor: SqlExecutor, temporary: Boolean) {
     LOG.i { it("Creating View %s", viewName) }
-    executor.exec(createStatement())
+    executor.exec(createStatement(temporary))
   }
 
   override fun drop(executor: SqlExecutor) {
@@ -239,8 +241,8 @@ abstract class View(
     append(identity)
   }
 
-  private fun createStatement() = buildStr {
-    append("CREATE VIEW IF NOT EXISTS ")
+  private fun createStatement(temporary: Boolean) = buildStr {
+    if (temporary) append(CREATE_TEMP_VIEW) else append(CREATE_VIEW)
     append(identity)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       if (columns.isNotEmpty()) {

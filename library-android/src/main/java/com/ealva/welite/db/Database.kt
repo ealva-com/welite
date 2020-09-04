@@ -423,13 +423,14 @@ private class WeLiteDatabase(
 }
 
 private class ErrorHandler(private val database: Database) : DatabaseErrorHandler {
+  var useDefault = true
+  var onError: ((Database) -> Unit) = {}
+
   private val defaultDatabaseErrorHandler = DefaultDatabaseErrorHandler()
   override fun onCorruption(dbObj: SQLiteDatabase?) {
-    defaultDatabaseErrorHandler.onCorruption(dbObj)
+    if (useDefault) defaultDatabaseErrorHandler.onCorruption(dbObj)
     onError(database)
   }
-
-  var onError: ((Database) -> Unit) = {}
 }
 
 /**
@@ -490,7 +491,8 @@ private class OpenHelper private constructor(
     onOpen = block
   }
 
-  override fun onCorruption(block: (Database) -> Unit) {
+  override fun onCorruption(useDefaultHandler: Boolean, block: (Database) -> Unit) {
+    errorHandler.useDefault = useDefaultHandler
     errorHandler.onError = block
   }
 
@@ -602,7 +604,6 @@ private class OpenHelper private constructor(
       openParams: OpenParams,
       configure: (DatabaseLifecycle) -> Unit
     ): OpenHelper {
-      val errorHandler = ErrorHandler(database)
       return OpenHelper(
         context,
         database,
@@ -612,7 +613,7 @@ private class OpenHelper private constructor(
         migrations,
         requireMigration,
         openParams,
-        errorHandler
+        ErrorHandler(database)
       ).apply {
         configure(this)
       }

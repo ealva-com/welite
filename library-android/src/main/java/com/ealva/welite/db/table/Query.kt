@@ -19,11 +19,27 @@ package com.ealva.welite.db.table
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.PersistentType
 
+/**
+ * QuerySeed contains all the info to build a Query
+ */
 data class QuerySeed(
-  val fields: List<SqlTypeExpression<*>>,
+  /**
+   * The list of columns selected in the query. Used when reading the query results.
+   */
+  val columns: List<SqlTypeExpression<*>>,
+  /**
+   * The full sql of the query
+   */
   val sql: String,
+  /**
+   * The list of the types of arguments which need to be bound for each query execution. This is
+   * each place a "?" appears in the [sql]. The [PersistentType] is responsible for accepting
+   * an argument from the client, converting if necessary, and binding it into query args.
+   */
   val types: List<PersistentType<*>>
 )
+
+fun QueryBuilder.toQuery(): Query = Query(build())
 
 interface Query {
   val seed: QuerySeed
@@ -31,10 +47,12 @@ interface Query {
   companion object {
     var logQueryPlans: Boolean = false
 
+    operator fun invoke(queryBuilder: QueryBuilder): Query = Query(queryBuilder.build())
+
     /**
      * Make a Query instance. eg.
      * ```
-     * val query = Query(db, fields, sql, bindables)
+     * val query = Query(querySeed)
      * ```
      */
     internal operator fun invoke(

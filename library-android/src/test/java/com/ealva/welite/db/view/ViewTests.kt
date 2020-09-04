@@ -28,6 +28,7 @@ import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.toQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.ArtistAlbumTable
@@ -233,7 +234,7 @@ private val ViewTestsQuery = MediaFileTable
     ArtistTable.artistName
   )
   .all()
-  .build()
+  .toQuery()
 
 @ExperimentalUnsignedTypes
 object FullMediaView : View(

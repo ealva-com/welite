@@ -22,9 +22,9 @@ package com.ealva.welite.db.table
 interface Creatable {
   /**
    * Ask this object to create itself in the database. This may result in multiple statements
-   * being executed.
+   * being executed. If [temporary] is not supported, such as with Index, it is ignored.
    */
-  fun create(executor: SqlExecutor)
+  fun create(executor: SqlExecutor, temporary: Boolean = false)
 
   /**
    * Ask this object to drop itself from the database. This may result in multiple statements

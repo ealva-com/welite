@@ -196,7 +196,7 @@ Why "without entities"? We often find a one-to-many relationship between a row i
 
 ### TODO
   * Much more testing
-  * Expose more SQLite functionality (need DSL for View and Trigger)
+  * Expose more SQLite functionality (need DSL for Trigger)
   * Rethink binding parameters. Currently, not enforcing type at compile-time and instead doing conversions at run-time
   
 ### Contributions

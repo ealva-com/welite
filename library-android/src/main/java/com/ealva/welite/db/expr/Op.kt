@@ -170,6 +170,23 @@ fun uintParam(value: UInt): Expression<UInt> =
 fun ulongParam(value: ULong): Expression<ULong> =
   QueryParameter(value, ULongPersistentType())
 
+fun bindByte() = BindExpression(BytePersistentType<Byte>())
+fun bindShort()  = BindExpression(ShortPersistentType<Short>())
+fun bindInt() = BindExpression(IntegerPersistentType<Int>())
+fun bindLong() = BindExpression(LongPersistentType<Long>())
+fun bindFloat() = BindExpression(FloatPersistentType<Float>())
+fun bindDouble() = BindExpression(DoublePersistentType<Double>())
+fun bindString() = BindExpression(StringPersistentType<String>())
+fun bindBoolean() = BindExpression(BooleanPersistentType<Boolean>())
+@ExperimentalUnsignedTypes
+fun bindUbyte() = BindExpression(UBytePersistentType<UByte>())
+@ExperimentalUnsignedTypes
+fun bindUshort() = BindExpression(UShortPersistentType<UShort>())
+@ExperimentalUnsignedTypes
+fun bindUint() = BindExpression(UIntegerPersistentType<UInt>())
+@ExperimentalUnsignedTypes
+fun bindUlong() = BindExpression(ULongPersistentType<ULong>())
+
 class BindExpression<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder.apply { registerBindable(sqlType) }
