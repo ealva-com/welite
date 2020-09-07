@@ -30,7 +30,7 @@ import com.ealva.welite.db.type.buildSql
  * a row binding any necessary arguments during execution.
  */
 @WeLiteMarker
-interface InsertStatement : BaseStatement {
+interface InsertStatement : Statement {
 
   companion object {
     /**
@@ -92,13 +92,10 @@ fun <T : Table> T.insertValues(
 }
 
 private class InsertStatementImpl(
-  private val sql: String,
-  private val types: List<PersistentType<*>>
-) : InsertStatement, BaseStatement {
-
-  private var statementAndTypes: StatementAndTypes? = null
+  override val sql: String,
+  override val types: List<PersistentType<*>>
+) : BaseStatement(), InsertStatement {
 
   override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
-    (statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
-      .executeInsert(bindArgs)
+    getStatementAndTypes(db).executeInsert(bindArgs)
 }

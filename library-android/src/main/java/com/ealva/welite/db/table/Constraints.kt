@@ -213,7 +213,8 @@ class Index(
       }
     }
 
-  val identity: Identity
+  override val masterType: MasterType = MasterType.Index
+  override val identity: Identity
     get() = indexName.asIdentity()
 
   fun onlyDiffersInName(other: Index): Boolean =

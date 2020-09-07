@@ -330,11 +330,12 @@ class DatabaseTest {
         ArtistAlbumTable.sql.let { artistAlbum ->
           expect(artistAlbum.table).toHaveSize(1)
           expect(artistAlbum.table[0]).toBe(
+//            """CREATE TABLE "ArtistAlbum" ("_id" INTEGER NOT NULL PRIMARY KEY, "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id"), CONSTRAINT "fk_ArtistAlbum_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id"))"""
             """CREATE TABLE "ArtistAlbum" ("_id" INTEGER NOT NULL PRIMARY KEY,""" +
               """ "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT""" +
               """ "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES""" +
-              """ "Artist"("_id") ON DELETE CASCADE, CONSTRAINT "fk_ArtistAlbum_AlbumId__id"""" +
-              """ FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id") ON DELETE CASCADE)"""
+              """ "Artist"("_id"), CONSTRAINT "fk_ArtistAlbum_AlbumId__id"""" +
+              """ FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id"))"""
           )
           expect(artistAlbum.indices).toHaveSize(3)
           expect(artistAlbum.indices[0])

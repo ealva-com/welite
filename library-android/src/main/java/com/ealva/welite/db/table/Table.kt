@@ -79,7 +79,9 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     }
   }
 
-  open val identity: Identity by lazy { tableName.asIdentity() }
+  override val identity: Identity by lazy { tableName.asIdentity() }
+
+  override val masterType: MasterType = MasterType.Table
 
   private val _columns = mutableListOf<Column<*>>()
   override val columns: List<Column<*>>
@@ -226,6 +228,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   protected fun uuid(name: String, block: SetConstraints<UUID> = {}): Column<UUID> =
     registerColumn(name, UUIDPersistentType(), block)
 
+  @Suppress("unused")
   protected fun optUuid(name: String, block: SetConstraints<UUID?> = {}): Column<UUID?> =
     registerOptColumn(name, UUIDPersistentType(), block)
 

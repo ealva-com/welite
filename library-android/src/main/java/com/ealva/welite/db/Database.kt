@@ -30,9 +30,9 @@ import com.ealva.ealvalog.w
 import com.ealva.welite.db.WeResult.Success
 import com.ealva.welite.db.WeResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
-import com.ealva.welite.db.schema.MasterType
-import com.ealva.welite.db.schema.SQLiteMaster
-import com.ealva.welite.db.schema.TableDependencies
+import com.ealva.welite.db.table.MasterType
+import com.ealva.welite.db.table.SQLiteMaster
+import com.ealva.welite.db.table.TableDependencies
 import com.ealva.welite.db.statements.deleteWhere
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.SqlExecutor

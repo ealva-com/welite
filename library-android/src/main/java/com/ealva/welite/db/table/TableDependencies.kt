@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.schema
-
-import com.ealva.welite.db.table.Table
+package com.ealva.welite.db.table
 
 /**
  * Constructs a "sorted" list of Tables ordered by dependencies. If TableA depends on TableB,

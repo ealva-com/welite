@@ -43,9 +43,11 @@ object AlbumTable : Table() {
 
 object ArtistAlbumTable : Table() {
   val id = long("_id") { primaryKey() }
-  val artistId = long("ArtistId") { index().references(ArtistTable.id, ForeignKeyAction.CASCADE) }
-  val albumId = long("AlbumId") { index().references(AlbumTable.id, ForeignKeyAction.CASCADE) }
+  val artistId = reference("ArtistId", ArtistTable.id)
+  val albumId = reference("AlbumId", AlbumTable.id)
   init {
+    index(artistId)
+    index(albumId)
     uniqueIndex(artistId, albumId)
   }
 }

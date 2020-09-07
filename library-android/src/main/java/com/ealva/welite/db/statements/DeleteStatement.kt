@@ -23,7 +23,7 @@ import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.buildSql
 
-interface DeleteStatement : BaseStatement {
+interface DeleteStatement : Statement {
 
   companion object {
     operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement {
@@ -49,13 +49,9 @@ fun <T : Table> T.deleteAll(): DeleteStatement {
 }
 
 private class DeleteStatementImpl(
-  private val sql: String,
-  private val types: List<PersistentType<*>>
-) : DeleteStatement {
-
-  private var statementAndTypes: StatementAndTypes? = null
-
+  override val sql: String,
+  override val types: List<PersistentType<*>>
+) : BaseStatement(), DeleteStatement {
   override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
-    (statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
-      .executeDelete(bindArgs)
+    getStatementAndTypes(db).executeDelete(bindArgs)
 }

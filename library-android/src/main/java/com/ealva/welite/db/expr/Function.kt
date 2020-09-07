@@ -202,7 +202,7 @@ class Case(val value: Expression<*>? = null) {
     CaseWhen<T>(value).When(cond, result)
 }
 
-class CaseWhen<T>(val value: Expression<*>?) {
+class CaseWhen<T>(val value: Expression<*>?): BaseExpression<T>() {
   val cases: MutableList<Pair<Expression<Boolean>, Expression<out T>>> = mutableListOf()
 
   @Suppress("UNCHECKED_CAST", "FunctionName")
@@ -211,29 +211,59 @@ class CaseWhen<T>(val value: Expression<*>?) {
     return this as CaseWhen<R>
   }
 
+
   @Suppress("FunctionName")
   fun <R : T> Else(e: Expression<R>): Expression<R> = CaseWhenElse(this, e)
-}
 
-class CaseWhenElse<T, R : T>(
-  private val caseWhen: CaseWhen<T>,
-  private val elseResult: Expression<R>
-) :
-  BaseExpression<R>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("CASE ")
-    if (caseWhen.value != null) append(caseWhen.value)
+    if (value != null) append(value)
 
-    for ((first, second) in caseWhen.cases) {
+    cases.forEach { (first, second) ->
       append(" WHEN ")
       append(first)
       append(" THEN ")
       append(second)
     }
+  }
+}
 
+class CaseWhenElse<T, R : T>(
+  private val caseWhen: CaseWhen<T>,
+  private val elseResult: Expression<R>
+) : BaseExpression<R>() {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    caseWhen.appendTo(sqlBuilder)
     append(" ELSE ")
     append(elseResult)
     append(" END")
+  }
+}
+
+fun <T> raiseIgnore() = Raise<T>(Raise.RaiseType.IGNORE)
+fun <T> raiseRollback(msg: String) = Raise<T>(Raise.RaiseType.ROLLBACK, msg)
+fun <T> raiseAbort(msg: String) = Raise<T>(Raise.RaiseType.ABORT, msg)
+fun <T> raiseFail(msg: String) = Raise<T>(Raise.RaiseType.FAIL, msg)
+
+class Raise<T>(
+  private val raiseType: RaiseType,
+  private val msg: String = ""
+) : BaseExpression<T>() {
+  enum class RaiseType(val value: String) {
+    IGNORE("IGNORE"),
+    ROLLBACK("ROLLBACK"),
+    ABORT("ABORT"),
+    FAIL("FAIL")
+  }
+
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("RAISE(")
+    append(raiseType.value)
+    if (raiseType != RaiseType.IGNORE && msg.isNotEmpty()) {
+      append(", '")
+      append(msg)
+      append("'")
+    }
   }
 }
 

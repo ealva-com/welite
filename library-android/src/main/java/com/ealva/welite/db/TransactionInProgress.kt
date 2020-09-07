@@ -25,13 +25,14 @@ import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
+import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.schema.MasterType
-import com.ealva.welite.db.schema.SQLiteMaster
-import com.ealva.welite.db.schema.asMasterType
+import com.ealva.welite.db.table.MasterType
+import com.ealva.welite.db.table.SQLiteMaster
+import com.ealva.welite.db.table.asMasterType
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
 import com.ealva.welite.db.statements.InsertStatement
@@ -70,7 +71,7 @@ private val LOG by lazyLogger(TransactionInProgress::class)
 private const val NULL_SQL_FOUND = "Null sql table:%s type=%s position:%d"
 
 /**
- * These functions are scoped to a Transaction interface in an attempt to only read and write to
+ * These functions are scoped to a transaction interface in an attempt to only read and write to
  * the DB under an explicit transaction. Functions in this interface require the enclosing
  * transaction to be marked successful or rolled back, but leave the commit/rollback to a different
  * level.
@@ -119,7 +120,7 @@ interface TransactionInProgress : Queryable {
   /**
    * Create a Creatable database entity (Table, Index, View, ...)
    */
-  fun Creatable.create()
+  fun Creatable.create(temporary: Boolean = false)
 
   /**
    * Drop a Creatable database entity (Table, Index, View, ...)
@@ -137,10 +138,6 @@ interface TransactionInProgress : Queryable {
       TransactionInProgressImpl(dbConfig)
   }
 }
-
-fun TransactionInProgress.createAll(list: List<Creatable>) = list.forEach { it.create() }
-
-fun TransactionInProgress.dropAll(list: List<Creatable>) = list.forEach { it.drop() }
 
 private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
   private val arguments = Array(argTypes.size) { UNBOUND }
@@ -306,7 +303,8 @@ private class TransactionInProgressImpl(
 
   override fun UpdateStatement.update(bindArgs: (ArgBindings) -> Unit): Long = execute(db, bindArgs)
 
-  override fun Creatable.create() = create(this@TransactionInProgressImpl)
+  override fun Creatable.create(temporary: Boolean) =
+    create(this@TransactionInProgressImpl, temporary)
 
   override fun Creatable.drop() = drop(this@TransactionInProgressImpl)
 
@@ -321,11 +319,11 @@ private class TransactionInProgressImpl(
    */
   fun SelectFrom.count(where: Op<Boolean>?): Query = Query(QueryBuilder(this, where, true))
 
-  override val Table.exists
+  override val Creatable.exists
     get() = try {
-      val tableType = MasterType.Table.toString()
+      val tableType = masterType.toString()
       SQLiteMaster.selectWhere {
-        (SQLiteMaster.type eq tableType) and (SQLiteMaster.tbl_name eq identity.unquoted)
+        (SQLiteMaster.type eq tableType) and (SQLiteMaster.name eq identity.unquoted)
       }.count() == 1L
     } catch (e: Exception) {
       LOG.e(e) { it("Error checking table existence") }
@@ -473,10 +471,10 @@ private const val INDEX_FK_VIOLATION_ROW_ID = 1
 private const val INDEX_FK_VIOLATION_REFERS_TO = 2
 private const val INDEX_FK_VIOLATION_CONSTRAINT_INDEX = 3
 
-private typealias ExpressionToIndexMap = Object2IntMap<SqlTypeExpression<*>>
+private typealias ExpressionToIndexMap = Object2IntMap<Expression<*>>
 
-private fun List<SqlTypeExpression<*>>.mapExprToIndex(): ExpressionToIndexMap {
-  return Object2IntOpenHashMap<SqlTypeExpression<*>>(size).apply {
+private fun List<Expression<*>>.mapExprToIndex(): ExpressionToIndexMap {
+  return Object2IntOpenHashMap<Expression<*>>(size).apply {
     defaultReturnValue(-1)
     this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
   }

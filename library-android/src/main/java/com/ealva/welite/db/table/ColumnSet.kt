@@ -53,9 +53,9 @@ interface ColumnSet {
   fun naturalJoin(joinTo: ColumnSet): Join
 }
 
-fun ColumnSet.select(vararg columns: SqlTypeExpression<*>): SelectFrom = select(columns.distinct())
+fun ColumnSet.select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
 
-fun ColumnSet.select(columns: List<SqlTypeExpression<*>> = this.columns): SelectFrom =
+fun ColumnSet.select(columns: List<Expression<*>> = this.columns): SelectFrom =
   SelectFrom(columns.distinct(), this)
 
 fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
@@ -74,21 +74,21 @@ fun ColumnSet.selectWhere(build: () -> Op<Boolean>): QueryBuilder = selectWhere(
  */
 interface SelectFrom {
   /** Result columns as they appear in a Select */
-  val resultColumns: List<SqlTypeExpression<*>>
+  val resultColumns: List<Expression<*>>
 
   /** Represents the ```FROM``` clause of a query */
   val sourceSet: ColumnSet
 
   companion object {
     operator fun invoke(
-      resultColumns: List<SqlTypeExpression<*>>,
+      resultColumns: List<Expression<*>>,
       sourceSet: ColumnSet
     ): SelectFrom = SelectFromImpl(resultColumns, sourceSet)
   }
 }
 
 private data class SelectFromImpl(
-  override val resultColumns: List<SqlTypeExpression<*>>,
+  override val resultColumns: List<Expression<*>>,
   override val sourceSet: ColumnSet
 ) : SelectFrom
 
@@ -109,3 +109,13 @@ fun SelectFrom.subset(vararg columns: SqlTypeExpression<*>): SelectFrom = subset
 /** Take a subset of the [SelectFrom.resultColumns]  */
 fun SelectFrom.subset(columns: List<SqlTypeExpression<*>>): SelectFrom =
   SelectFrom(columns.distinct(), sourceSet)
+
+fun ColumnSet.selectCase(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
+
+fun ColumnSet.selectCase(columns: List<Expression<*>> = this.columns): SelectFrom =
+  SelectFrom(columns.distinct(), this)
+
+interface SelectCase {
+
+}
+

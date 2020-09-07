@@ -16,7 +16,7 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.expr.SqlTypeExpression
+import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.type.PersistentType
 
 /**
@@ -26,7 +26,7 @@ data class QuerySeed(
   /**
    * The list of columns selected in the query. Used when reading the query results.
    */
-  val columns: List<SqlTypeExpression<*>>,
+  val columns: List<Expression<*>>,
   /**
    * The full sql of the query
    */

@@ -19,6 +19,7 @@ package com.ealva.welite.db
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.Query
@@ -112,9 +113,10 @@ interface Queryable {
   fun QueryBuilder.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
-   * True if the table, as known via [Table.identity], exists in the database, else false
+   * True if the Creatable, as known via [Creatable.identity], exists in the database, else false.
+   * Creatable implementations are Table, Index, View, Trigger
    */
-  val Table.exists: Boolean
+  val Creatable.exists: Boolean
 
   /**
    * The description of the table in the database

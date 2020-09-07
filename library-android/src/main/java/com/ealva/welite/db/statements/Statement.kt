@@ -22,8 +22,22 @@ import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
 
-interface BaseStatement {
+interface Statement {
+  val sql: String
+  val bindArgCount: Int
   fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
+}
+
+abstract class BaseStatement : Statement {
+  override val bindArgCount: Int
+    get() = types.size
+
+  protected abstract val types: List<PersistentType<*>>
+
+  private val _statementAndTypes: StatementAndTypes? = null
+  internal fun getStatementAndTypes(db: SQLiteDatabase): StatementAndTypes {
+    return (_statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
+  }
 }
 
 internal class StatementAndTypes(
@@ -36,21 +50,23 @@ internal class StatementAndTypes(
     get() = types.indices
 
   fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long {
-    statement.clearBindings()
-    bindArgs(this)
+    bindArgsToStatement(bindArgs)
     return statement.executeInsert()
   }
 
   fun executeDelete(bindArgs: (ArgBindings) -> Unit): Long {
-    statement.clearBindings()
-    bindArgs(this)
+    bindArgsToStatement(bindArgs)
     return statement.executeUpdateDelete().toLong()
   }
 
   fun executeUpdate(bindArgs: (ArgBindings) -> Unit): Long {
+    bindArgsToStatement(bindArgs)
+    return statement.executeUpdateDelete().toLong()
+  }
+
+  private fun bindArgsToStatement(bindArgs: (ArgBindings) -> Unit) {
     statement.clearBindings()
     bindArgs(this)
-    return statement.executeUpdateDelete().toLong()
   }
 
   override fun bindNull(index: Int) {

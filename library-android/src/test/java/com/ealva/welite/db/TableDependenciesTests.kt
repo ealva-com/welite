@@ -19,7 +19,7 @@
 package com.ealva.welite.db
 
 import android.os.Build.VERSION_CODES.LOLLIPOP
-import com.ealva.welite.db.schema.TableDependencies
+import com.ealva.welite.db.table.TableDependencies
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.nhaarman.expect.expect

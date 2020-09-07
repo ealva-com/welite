@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.schema
-
-import com.ealva.welite.db.table.Table
+package com.ealva.welite.db.table
 
 sealed class MasterType(val value: String) {
   object Table : MasterType("table")

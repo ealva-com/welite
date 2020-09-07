@@ -49,15 +49,15 @@ class UpdateBuilder<T : Table>(
   }
 }
 
-interface UpdateStatement : BaseStatement {
-
+interface UpdateStatement : Statement {
   companion object {
     operator fun <T : Table> invoke(
       table: T,
       onConflict: OnConflict,
       assignColumns: T.(ColumnValues) -> Unit
     ): UpdateStatement {
-      return UpdateStatementImpl(buildStatement(onConflict, table, null, assignColumns))
+      val (sql, types) = buildStatement(onConflict, table, null, assignColumns)
+      return UpdateStatementImpl(sql, types)
     }
 
     operator fun <T : Table> invoke(
@@ -66,7 +66,8 @@ interface UpdateStatement : BaseStatement {
       where: Op<Boolean>,
       assignColumns: T.(ColumnValues) -> Unit
     ): UpdateStatement {
-      return UpdateStatementImpl(buildStatement(onConflict, table, where, assignColumns))
+      val (sql, types) = buildStatement(onConflict, table, where, assignColumns)
+      return UpdateStatementImpl(sql, types)
     }
 
     private fun <T : Table> buildStatement(
@@ -96,14 +97,9 @@ interface UpdateStatement : BaseStatement {
 }
 
 private class UpdateStatementImpl(
-  sqlAndTypes: Pair<String, List<PersistentType<*>>>
-) : UpdateStatement {
-  private val sql: String = sqlAndTypes.first
-  private val types: List<PersistentType<*>> = sqlAndTypes.second
-
-  private var statementAndTypes: StatementAndTypes? = null
-
+  override val sql: String,
+  override val types: List<PersistentType<*>>,
+) : BaseStatement(), UpdateStatement {
   override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
-    (statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
-      .executeUpdate(bindArgs)
+    getStatementAndTypes(db).executeUpdate(bindArgs)
 }

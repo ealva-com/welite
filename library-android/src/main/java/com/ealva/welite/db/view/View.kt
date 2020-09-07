@@ -30,6 +30,7 @@ import com.ealva.welite.db.table.DuplicateColumnException
 import com.ealva.welite.db.table.ForeignKeyConstraint
 import com.ealva.welite.db.table.Join
 import com.ealva.welite.db.table.JoinType
+import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.QuerySeed
@@ -188,7 +189,9 @@ abstract class View(
     }
   }
 
-  val identity = viewName.asIdentity()
+  override val masterType: MasterType = MasterType.View
+
+  override val identity = viewName.asIdentity()
 
   /**
    * Create a ViewColumn from a Column that will appear in a query. If

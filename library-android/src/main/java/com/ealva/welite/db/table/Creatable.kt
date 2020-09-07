@@ -16,6 +16,8 @@
 
 package com.ealva.welite.db.table
 
+import com.ealva.welite.db.type.Identity
+
 /**
  * Denotes implementations can be created and dropped. Creates are always IF NOT EXISTS
  */
@@ -31,4 +33,8 @@ interface Creatable {
    * being executed (typically a single DROP)
    */
   fun drop(executor: SqlExecutor)
+
+  val masterType: MasterType
+
+  val identity: Identity
 }
