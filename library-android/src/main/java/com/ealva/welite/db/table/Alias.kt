@@ -177,12 +177,3 @@ val Join.lastQueryBuilderAlias: QueryBuilderAlias?
 private fun Join.lastPartAsQueryBuilderAlias() = joinParts.map {
   it.joinPart as? QueryBuilderAlias
 }.firstOrNull()
-
-@Suppress("unused")
-fun <T : Any> wrapAsExpression(query: QueryBuilder) = object : BaseExpression<T?>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    append("(")
-    query.appendTo(this)
-    append(")")
-  }
-}

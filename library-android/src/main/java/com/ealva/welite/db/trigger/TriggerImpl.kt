@@ -21,17 +21,20 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
 import com.ealva.welite.db.statements.InsertStatement
-import com.ealva.welite.db.statements.Statement
 import com.ealva.welite.db.statements.UpdateStatement
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.QueryBuilder
+import com.ealva.welite.db.table.SelectFrom
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
+import com.ealva.welite.db.type.StatementSeed
+import com.ealva.welite.db.type.append
 import com.ealva.welite.db.type.asIdentity
 import com.ealva.welite.db.type.buildStr
 
@@ -59,7 +62,7 @@ private class TriggerImpl<T : Table>(
   private val updateCols: List<Column<*>>,
   private val table: T,
   private val whenCondition: Expression<Boolean>?,
-  private val statements: List<Statement>
+  private val statements: List<StatementSeed>
 ) : Trigger<T> {
 
   init {
@@ -95,13 +98,13 @@ private class TriggerImpl<T : Table>(
 
     append(" BEGIN ")
     statements.forEach { statement ->
-      check(statement.bindArgCount == 0) {
+      check(statement.types.isEmpty()) {
         "Trigger does not support statements with bindable arguments. SQL=${statement.sql}"
       }
-      append(statement.sql)
-      append(";")
+      append(statement)
+      append("; ")
     }
-    append(" END;")
+    append("END;")
   }
 
   override fun drop(executor: SqlExecutor) {
@@ -136,7 +139,7 @@ interface TriggerUpdate<T : Table> {
 
 @WeLiteMarker
 interface TriggerStatements {
-  val statements: List<Statement>
+  val statements: List<StatementSeed>
 
   fun <T : Table> T.insert(
     onConflict: OnConflict = OnConflict.Unspecified,
@@ -152,10 +155,9 @@ interface TriggerStatements {
 
   fun <T : Table> TriggerUpdate<T>.where(where: T.() -> Op<Boolean>)
 
-//  fun <T : Table> T.select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
-//
-//  fun <T : Table> T.select(columns: List<Expression<*>> = this.columns): SelectFrom =
-//    SelectFrom(columns.distinct(), this)
+  fun select(vararg columns: Expression<*>): SelectFrom = SelectFrom(columns.distinct(), null)
+
+  fun SelectFrom.where(where: Op<Boolean>?)
 
   /**
    * Refer to a column as "NEW.columnName" in a trigger
@@ -178,7 +180,7 @@ private class TriggerStatementsImpl(
   private val table: Table,
   private val event: Trigger.Event
 ) : TriggerStatements {
-  override val statements: MutableList<Statement> = mutableListOf()
+  override val statements: MutableList<StatementSeed> = mutableListOf()
 
   override fun <T> new(column: Column<T>): Column<T> {
     check(event === Trigger.Event.INSERT || event === Trigger.Event.UPDATE) {
@@ -200,11 +202,11 @@ private class TriggerStatementsImpl(
     onConflict: OnConflict,
     assignColumns: T.(ColumnValues) -> Unit
   ) {
-    statements += InsertStatement(this, onConflict, assignColumns)
+    statements += InsertStatement.statementSeed(this, onConflict, assignColumns)
   }
 
   override fun <T : Table> T.delete(where: () -> Op<Boolean>) {
-    statements += DeleteStatement(this, where())
+    statements += DeleteStatement.statementSeed(this, where())
   }
 
   override fun <T : Table> T.update(
@@ -213,13 +215,22 @@ private class TriggerStatementsImpl(
   ): TriggerUpdate<T> {
     return object : TriggerUpdate<T> {
       override fun addWhere(where: T.() -> Op<Boolean>) {
-        statements += UpdateStatement(this@update, onConflict, this@update.where(), assignColumns)
+        statements += UpdateStatement.statementSeed(
+          this@update,
+          onConflict,
+          this@update.where(),
+          assignColumns
+        )
       }
     }
   }
 
   override fun <T : Table> TriggerUpdate<T>.where(where: T.() -> Op<Boolean>) {
     addWhere(where)
+  }
+
+  override fun SelectFrom.where(where: Op<Boolean>?) {
+    statements += QueryBuilder(this, where).statementSeed()
   }
 }
 

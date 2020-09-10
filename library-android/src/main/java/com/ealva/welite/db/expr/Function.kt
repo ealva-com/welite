@@ -23,8 +23,9 @@ import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 
-abstract class Function<T>(override val persistentType: PersistentType<T>) :
-  BaseSqlTypeExpression<T>()
+abstract class Function<T>(
+  override val persistentType: PersistentType<T>
+) : BaseSqlTypeExpression<T>()
 
 class CustomFunction<T>(
   private val functionName: String,
@@ -32,8 +33,7 @@ class CustomFunction<T>(
   private val exprList: List<Expression<*>>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    append(functionName)
-    append('(')
+    append(functionName).append('(')
     exprList.appendEach { append(it) }
     append(')')
   }
@@ -196,35 +196,41 @@ class Count(
   }
 }
 
-class Case(val value: Expression<*>? = null) {
+class Case(private val caseExpression: Expression<*>? = null) {
   @Suppress("FunctionName")
-  fun <T> When(cond: Expression<Boolean>, result: Expression<T>): CaseWhen<T> =
-    CaseWhen<T>(value).When(cond, result)
+  fun <T> caseWhen(cond: Expression<Boolean>, result: Expression<T>): CaseWhen<T> =
+    CaseWhen<T>(caseExpression).caseWhen(cond, result)
 }
 
-class CaseWhen<T>(val value: Expression<*>?): BaseExpression<T>() {
+class CaseWhen<T>(private val caseExpression: Expression<*>?): BaseExpression<T>() {
   val cases: MutableList<Pair<Expression<Boolean>, Expression<out T>>> = mutableListOf()
 
   @Suppress("UNCHECKED_CAST", "FunctionName")
-  fun <R : T> When(cond: Expression<Boolean>, result: Expression<R>): CaseWhen<R> {
+  fun <R : T> caseWhen(cond: Expression<Boolean>, result: Expression<R>): CaseWhen<R> {
     cases.add(cond to result)
     return this as CaseWhen<R>
   }
 
 
   @Suppress("FunctionName")
-  fun <R : T> Else(e: Expression<R>): Expression<R> = CaseWhenElse(this, e)
+  fun <R : T> caseElse(e: Expression<R>): Expression<R> = CaseWhenElse(this, e)
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("CASE ")
-    if (value != null) append(value)
+
+    caseExpression?.let { expr ->
+      append(expr)
+      append(" ")
+    }
 
     cases.forEach { (first, second) ->
-      append(" WHEN ")
+      append("WHEN ")
       append(first)
       append(" THEN ")
       append(second)
     }
+
+    append(" END")
   }
 }
 
@@ -240,40 +246,42 @@ class CaseWhenElse<T, R : T>(
   }
 }
 
-fun <T> raiseIgnore() = Raise<T>(Raise.RaiseType.IGNORE)
-fun <T> raiseRollback(msg: String) = Raise<T>(Raise.RaiseType.ROLLBACK, msg)
-fun <T> raiseAbort(msg: String) = Raise<T>(Raise.RaiseType.ABORT, msg)
-fun <T> raiseFail(msg: String) = Raise<T>(Raise.RaiseType.FAIL, msg)
+fun raiseIgnore(): BaseExpression<String> = Raise(Raise.RaiseType.IGNORE)
+fun raiseRollback(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.ROLLBACK, msg)
+fun raiseAbort(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.ABORT, msg)
+fun raiseFail(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.FAIL, msg)
 
-class Raise<T>(
+private class Raise private constructor(
   private val raiseType: RaiseType,
-  private val msg: String = ""
-) : BaseExpression<T>() {
+  private val msg: String
+) : BaseExpression<String>() {
   enum class RaiseType(val value: String) {
     IGNORE("IGNORE"),
     ROLLBACK("ROLLBACK"),
     ABORT("ABORT"),
-    FAIL("FAIL")
+    FAIL("FAIL");
+
+    override fun toString(): String = value
   }
+
+  fun SqlBuilder.append(raiseType: RaiseType) = apply { append(raiseType.value) }
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("RAISE(")
-    append(raiseType.value)
+    append(raiseType)
     if (raiseType != RaiseType.IGNORE && msg.isNotEmpty()) {
       append(", '")
       append(msg)
-      append("'")
+    }
+    append("')")
+  }
+
+  companion object {
+    operator fun invoke(raiseType: RaiseType, msg: String = ""): BaseExpression<String> {
+      return Raise(raiseType, msg)
     }
   }
 }
-
-// class Coalesce<out T, S : T?, R : T>(
-//  private val expr: ExpressionWithColumnType<S>,
-//  private val alternate: ExpressionWithColumnType<out T>
-// ) : Function<R>(alternate.columnType) {
-//  override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit =
-//    queryBuilder { append("COALESCE(", expr, ", ", alternate, ")") }
-// }
 
 class Cast<T>(
   private val expr: Expression<*>,

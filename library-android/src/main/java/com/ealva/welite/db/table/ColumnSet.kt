@@ -53,46 +53,113 @@ interface ColumnSet {
   fun naturalJoin(joinTo: ColumnSet): Join
 }
 
+/**
+ * Start select by selecting all [columns]
+ */
 fun ColumnSet.select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
 
+/**
+ * Start select with [columns] which defaults to all columns of this [ColumnSet]
+ */
 fun ColumnSet.select(columns: List<Expression<*>> = this.columns): SelectFrom =
   SelectFrom(columns.distinct(), this)
 
+/**
+ * Select COUNT(*) (no columns) using [where]
+ */
+fun ColumnSet.selectCount(where: () -> Op<Boolean>): QueryBuilder =
+  QueryBuilder(set = select(emptyList()), where = where(), count = true)
+
+/**
+ * Select all columns [where]
+ */
 fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
 
+/**
+ * Select all columns and all rows
+ */
 fun ColumnSet.selectAll(): QueryBuilder = QueryBuilder(SelectFrom(columns, this), null)
 
 /**
- * Select all columns of this [ColumnSet] and call [build] to make the where expression
+ * Select all columns of this [ColumnSet] and call [where] to make the where expression
  */
-fun ColumnSet.selectWhere(build: () -> Op<Boolean>): QueryBuilder = selectWhere(build())
+fun ColumnSet.selectWhere(where: () -> Op<Boolean>): QueryBuilder = selectWhere(where())
 
 /**
- * A SelectFrom is a subset of columns from a ColumnSet, [resultColumns]s, which are the
- * fields to be read in a query. The columns know how to read themselves from the underlying DB
- * layer. Also contains the [sourceSet] which is the ```FROM``` part of a query.
+ * SelectFrom is a subset of columns from a ColumnSet, plus any added expressions which appear as
+ * a result column, which are the fields to be read in a query. The columns know how to read
+ * themselves from the underlying DB layer. Also contains the ```FROM``` part of a query.
  */
 interface SelectFrom {
+  fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder
+
+  fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder
+
+  fun sourceSetColumnsInResult(): List<Column<*>>
+
+  fun <T> findSourceSetOriginal(original: Column<T>): Column<*>?
+
+  /** Take a subset of the result columns  */
+  fun subset(vararg columns: Expression<*>): SelectFrom
+
+  /** Take a subset of the result columns  */
+  fun subset(columns: List<Expression<*>>): SelectFrom
+
+  fun <T> findResultColumnExpressionAlias(
+    original: SqlTypeExpression<T>
+  ): SqlTypeExpressionAlias<T>?
+
   /** Result columns as they appear in a Select */
   val resultColumns: List<Expression<*>>
-
-  /** Represents the ```FROM``` clause of a query */
-  val sourceSet: ColumnSet
 
   companion object {
     operator fun invoke(
       resultColumns: List<Expression<*>>,
-      sourceSet: ColumnSet
+      sourceSet: ColumnSet?
     ): SelectFrom = SelectFromImpl(resultColumns, sourceSet)
   }
 }
 
 private data class SelectFromImpl(
-  override val resultColumns: List<Expression<*>>,
-  override val sourceSet: ColumnSet
-) : SelectFrom
+  private val columns: List<Expression<*>>,
+  private val sourceSet: ColumnSet?
+) : SelectFrom {
+  override fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    sourceSet?.let { columnSet ->
+      append(" FROM ")
+      columnSet.appendTo(this)
+    }
+  }
 
-fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder =  QueryBuilder(this, where)
+  override fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    columns.appendEach { append(it) }
+  }
+
+  override fun sourceSetColumnsInResult(): List<Column<*>> {
+    return sourceSet?.columns?.filterTo(mutableListOf()) { it in columns } ?: emptyList()
+  }
+
+  override fun <T> findSourceSetOriginal(original: Column<T>): Column<*>? {
+    return sourceSet?.columns?.find { it == original }
+  }
+
+  override fun subset(vararg columns: Expression<*>): SelectFrom = subset(columns.asList())
+
+  override fun subset(columns: List<Expression<*>>): SelectFrom =
+    SelectFrom(columns.distinct(), sourceSet)
+
+  override fun <T> findResultColumnExpressionAlias(
+    original: SqlTypeExpression<T>
+  ): SqlTypeExpressionAlias<T>? {
+    @Suppress("UNCHECKED_CAST")
+    return columns.find { it == original } as? SqlTypeExpressionAlias<T>
+  }
+
+  override val resultColumns: List<Expression<*>>
+    get() = columns.toList()
+}
+
+fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(this, where)
 
 /**
  * Calls [where] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
@@ -102,20 +169,3 @@ fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
 
 /** All rows will be returned */
 fun SelectFrom.all() = where(null)
-
-/** Take a subset of the [SelectFrom.resultColumns]  */
-fun SelectFrom.subset(vararg columns: SqlTypeExpression<*>): SelectFrom = subset(columns.asList())
-
-/** Take a subset of the [SelectFrom.resultColumns]  */
-fun SelectFrom.subset(columns: List<SqlTypeExpression<*>>): SelectFrom =
-  SelectFrom(columns.distinct(), sourceSet)
-
-fun ColumnSet.selectCase(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
-
-fun ColumnSet.selectCase(columns: List<Expression<*>> = this.columns): SelectFrom =
-  SelectFrom(columns.distinct(), this)
-
-interface SelectCase {
-
-}
-

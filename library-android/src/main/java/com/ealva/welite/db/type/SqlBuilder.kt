@@ -234,12 +234,33 @@ fun setSqlBuilderCapacity(defaultCapacity: Int) {
   SqlBuilderCache.builderCapacity = maxOf(MIN_BUILDER_CAPACITY, defaultCapacity)
 }
 
-fun buildSql(builderAction: SqlBuilder.() -> Unit): Pair<String, List<PersistentType<*>>> {
+/**
+ * The base data for all Statements and Query, contains a list of types representing each
+ * parameter which much be bound (which may be empty) and the statement/query sql
+ */
+data class StatementSeed(
+  /**
+   * The list of the types of arguments which need to be bound for each statement execution. This is
+   * each place a "?" appears in [sql]. The [PersistentType] is responsible for accepting
+   * an argument from the client, converting if necessary, and binding it into statement args.
+   */
+  val types: List<PersistentType<*>>,
+  /**
+   * The full sql of the statement
+   */
+  val sql: String,
+)
+
+fun SqlBuilder.append(seed: StatementSeed): SqlBuilder = apply {
+  append(seed.sql)
+}
+
+fun buildSql(builderAction: SqlBuilder.() -> Unit): StatementSeed {
   val builder = SqlBuilderCache.get()
   val sql = builder.apply(builderAction).toString()
   val types = builder.types
   SqlBuilderCache.put(builder)
-  return Pair(sql, types)
+  return StatementSeed(types, sql)
 }
 
 fun buildStr(builderAction: SqlBuilder.() -> Unit): String {

@@ -60,10 +60,8 @@ infix fun <T : Comparable<T>, S : T?> Expression<in S>.greaterEq(other: Expressi
 fun <T> SqlTypeExpression<T>.between(from: T, to: T): Between =
   Between(this, literal(from), literal(to))
 
-@Suppress("MemberVisibilityCanBePrivate")
 fun <T> Expression<T>.isNull(): IsNullOp = IsNullOp(this)
 
-@Suppress("MemberVisibilityCanBePrivate")
 fun <T> Expression<T>.isNotNull(): IsNotNullOp = IsNotNullOp(this)
 
 infix operator fun <T> SqlTypeExpression<T>.plus(t: T): PlusOp<T, T> =
@@ -169,6 +167,8 @@ fun Expression<String>.substring(start: Int, length: Int): Substring =
   Substring(this, intLiteral(start), intLiteral(length))
 
 fun Expression<String>.trim(): Trim = Trim(this)
+
+fun Expression<Long>.random(): Random = Random()
 
 fun Expression<String>.lowerCase(): LowerCase = LowerCase(this)
 

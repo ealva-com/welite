@@ -21,18 +21,12 @@ import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.ealva.ealvalog.e
-import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
-import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.table.MasterType
-import com.ealva.welite.db.table.SQLiteMaster
-import com.ealva.welite.db.table.asMasterType
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
 import com.ealva.welite.db.statements.InsertStatement
@@ -42,27 +36,26 @@ import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.DbConfig
-import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.OnConflict.Unspecified
 import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.QuerySeed
+import com.ealva.welite.db.table.SQLiteMaster
 import com.ealva.welite.db.table.SelectFrom
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker
+import com.ealva.welite.db.table.asMasterType
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.PersistentType
-import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
-import it.unimi.dsi.fastutil.objects.Object2IntMap
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -175,6 +168,20 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBind
   }
 }
 
+private const val INDEX_FK_ID = 0
+private const val INDEX_FK_SEQ = 1
+private const val INDEX_FK_TABLE = 2
+private const val INDEX_FK_FROM = 3
+private const val INDEX_FK_TO = 4
+private const val INDEX_FK_ON_UPDATE = 5
+private const val INDEX_FK_ON_DELETE = 6
+// const private val index_fk_match = 7
+
+private const val INDEX_FK_VIOLATION_TABLE = 0
+private const val INDEX_FK_VIOLATION_ROW_ID = 1
+private const val INDEX_FK_VIOLATION_REFERS_TO = 2
+private const val INDEX_FK_VIOLATION_CONSTRAINT_INDEX = 3
+
 private class TransactionInProgressImpl(
   private val dbConfig: DbConfig
 ) : TransactionInProgress, SqlExecutor {
@@ -207,10 +214,8 @@ private class TransactionInProgressImpl(
     seed: QuerySeed,
     bind: (ArgBindings) -> Unit,
     action: (Cursor) -> Unit
-  ) = with(seed) {
-    DbCursorWrapper(db.select(sql, doBind(types, bind)), columns.mapExprToIndex()).use { cursor ->
-      while (cursor.moveToNext()) action(cursor)
-    }
+  ) = CursorWrapper(db.select(seed.sql, doBind(seed.types, bind)), seed.columns).use { cursor ->
+    while (cursor.moveToNext()) action(cursor)
   }
 
   override fun <T> Query.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
@@ -226,10 +231,8 @@ private class TransactionInProgressImpl(
     bind: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Flow<T> = flow {
-    with(seed) {
-      DbCursorWrapper(db.select(sql, doBind(types, bind)), columns.mapExprToIndex()).use { cursor ->
-        while (cursor.moveToNext()) emit(factory(cursor))
-      }
+    CursorWrapper(db.select(seed.sql, doBind(seed.types, bind)), seed.columns).use { cursor ->
+      while (cursor.moveToNext()) emit(factory(cursor))
     }
   }.flowOn(dbConfig.dispatcher)
 
@@ -248,10 +251,8 @@ private class TransactionInProgressImpl(
     bind: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Sequence<T> = sequence {
-    with(seed) {
-      DbCursorWrapper(db.select(sql, doBind(types, bind)), columns.mapExprToIndex()).use { cursor ->
-        while (cursor.moveToNext()) yield(factory(cursor))
-      }
+    CursorWrapper(db.select(seed.sql, doBind(seed.types, bind)), seed.columns).use { cursor ->
+      while (cursor.moveToNext()) yield(factory(cursor))
     }
   }
 
@@ -260,9 +261,8 @@ private class TransactionInProgressImpl(
   override fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit): Long =
     this@TransactionInProgressImpl.doLongForQuery(build(), bind)
 
-  private fun doLongForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): Long = with(seed) {
-    db.longForQuery(sql, doBind(types, bind))
-  }
+  private fun doLongForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): Long =
+    db.longForQuery(seed.sql, doBind(seed.types, bind))
 
   override fun Query.stringForQuery(bind: (ArgBindings) -> Unit): String =
     doStringForQuery(seed, bind)
@@ -270,9 +270,8 @@ private class TransactionInProgressImpl(
   override fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit): String =
     this@TransactionInProgressImpl.doStringForQuery(build(), bind)
 
-  private fun doStringForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): String = with(seed) {
-    db.stringForQuery(sql, doBind(types, bind))
-  }
+  private fun doStringForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): String =
+    db.stringForQuery(seed.sql, doBind(seed.types, bind))
 
   override fun Query.count(bind: (ArgBindings) -> Unit): Long = doCount(seed, bind)
 
@@ -443,11 +442,6 @@ private class TransactionInProgressImpl(
     db.execSQL("VACUUM;")
   }
 
-  @Suppress("unused")
-  fun execSql(sql: String, bindArgs: List<Any?> = emptyList()) {
-    if (bindArgs.isEmpty()) db.execSQL(sql) else db.execSQL(sql, bindArgs.toTypedArray())
-  }
-
   override fun exec(sql: String, vararg bindArgs: Any) {
     db.execSQL(sql, bindArgs)
   }
@@ -457,138 +451,3 @@ private class TransactionInProgressImpl(
   }
 }
 
-private const val INDEX_FK_ID = 0
-private const val INDEX_FK_SEQ = 1
-private const val INDEX_FK_TABLE = 2
-private const val INDEX_FK_FROM = 3
-private const val INDEX_FK_TO = 4
-private const val INDEX_FK_ON_UPDATE = 5
-private const val INDEX_FK_ON_DELETE = 6
-// const private val index_fk_match = 7
-
-private const val INDEX_FK_VIOLATION_TABLE = 0
-private const val INDEX_FK_VIOLATION_ROW_ID = 1
-private const val INDEX_FK_VIOLATION_REFERS_TO = 2
-private const val INDEX_FK_VIOLATION_CONSTRAINT_INDEX = 3
-
-private typealias ExpressionToIndexMap = Object2IntMap<Expression<*>>
-
-private fun List<Expression<*>>.mapExprToIndex(): ExpressionToIndexMap {
-  return Object2IntOpenHashMap<Expression<*>>(size).apply {
-    defaultReturnValue(-1)
-    this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
-  }
-}
-
-private typealias ACursor = android.database.Cursor
-
-private class DbCursorWrapper(
-  private val cursor: ACursor,
-  private val exprMap: ExpressionToIndexMap
-) : Cursor, Row, AutoCloseable {
-  override val count: Int
-    get() = cursor.count
-
-  override val position: Int
-    get() = cursor.position
-
-  fun moveToNext(): Boolean = cursor.moveToNext()
-
-  @Suppress("NOTHING_TO_INLINE")
-  private inline fun <T> SqlTypeExpression<T>.index() = exprMap.getInt(this)
-
-  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
-    expression.persistentType.columnValue(this, expression.index())
-
-  override fun <T> get(expression: SqlTypeExpression<T>): T {
-    return getOptional(expression) ?: throw IllegalStateException(unexpectedNullMessage(expression))
-  }
-
-  override fun getBlob(columnIndex: Int): ByteArray = cursor.getBlob(columnIndex)
-  override fun getString(columnIndex: Int): String = cursor.getString(columnIndex)
-  override fun getShort(columnIndex: Int) = cursor.getShort(columnIndex)
-  override fun getInt(columnIndex: Int) = cursor.getInt(columnIndex)
-  override fun getLong(columnIndex: Int) = cursor.getLong(columnIndex)
-  override fun getFloat(columnIndex: Int) = cursor.getFloat(columnIndex)
-  override fun getDouble(columnIndex: Int) = cursor.getDouble(columnIndex)
-  override fun isNull(columnIndex: Int) = cursor.isNull(columnIndex)
-  override fun columnName(columnIndex: Int): String = cursor.getColumnName(columnIndex)
-
-  override fun close() {
-    if (!cursor.isClosed) cursor.close()
-  }
-
-  private fun <T> unexpectedNullMessage(expression: SqlTypeExpression<T>) =
-    "Unexpected NULL reading column=${expression.name()} of expected type ${expression.sqlType}"
-
-  private fun <T> SqlTypeExpression<T>.name() = cursor.getColumnName(index())
-}
-
-internal fun SQLiteDatabase.select(sql: String, args: Array<String> = emptyArray()): ACursor {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
-  return rawQuery(sql, args)
-}
-
-internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String> = emptyArray()): Long {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
-  return DatabaseUtils.longForQuery(this, sql, args)
-}
-
-internal fun SQLiteDatabase.stringForQuery(
-  sql: String,
-  args: Array<String> = emptyArray()
-): String {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
-  return DatabaseUtils.stringForQuery(this, sql, args)
-}
-
-private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>) {
-  LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, selectionArgs.contentToString()) }
-  explainQueryPlan(sql, selectionArgs).forEachIndexed { index, row ->
-    LOG.i { it("%d: %s", index, row) }
-  }
-}
-
-private fun SQLiteDatabase.explainQueryPlan(
-  sql: String,
-  selectionArgs: Array<String>
-): List<String> {
-  return mutableListOf<String>().apply {
-    rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { cursor ->
-      while (cursor.moveToNext()) add(cursor.rowToString())
-    }
-  }
-}
-
-/**
- * Convert the current row of the cursor to a string containing column "name:value" pairs
- * delimited with ", "
- */
-private fun ACursor.rowToString(): String = buildStr {
-  for (i in 0 until columnCount) {
-    append(getColumnName(i)).append(':').append(getStringOrNull(i)).append(", ")
-  }
-}
-
-private fun ACursor.getOptLong(columnIndex: Int, ifNullValue: Long = -1): Long =
-  if (isNull(columnIndex)) ifNullValue else getLong(columnIndex)
-
-private fun ACursor.getStringOrNull(columnIndex: Int): String =
-  if (isNull(columnIndex)) "NULL" else getString(columnIndex)
-
-private const val ID_COLUMN = 0
-private const val NAME_COLUMN = 1
-private const val TYPE_COLUMN = 2
-private const val NULLABLE_COLUMN = 3
-private const val DEF_VAL_COLUMN = 4
-private const val PK_COLUMN = 5
-private const val NOT_NULLABLE = 1
-private val ACursor.columnMetadata: ColumnMetadata
-  get() = ColumnMetadata(
-    getInt(ID_COLUMN),
-    getString(NAME_COLUMN),
-    FieldType.fromType(getString(TYPE_COLUMN)),
-    getInt(NULLABLE_COLUMN) != NOT_NULLABLE, // 1 = not nullable
-    getStringOrNull(DEF_VAL_COLUMN),
-    getInt(PK_COLUMN)
-  )

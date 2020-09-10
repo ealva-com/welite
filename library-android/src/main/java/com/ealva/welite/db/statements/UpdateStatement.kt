@@ -23,6 +23,7 @@ import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
 
 fun <T : Table> T.update(
@@ -55,51 +56,51 @@ interface UpdateStatement : Statement {
       table: T,
       onConflict: OnConflict,
       assignColumns: T.(ColumnValues) -> Unit
-    ): UpdateStatement {
-      val (sql, types) = buildStatement(onConflict, table, null, assignColumns)
-      return UpdateStatementImpl(sql, types)
-    }
+    ): UpdateStatement = UpdateStatementImpl(
+      statementSeed(table, onConflict, null, assignColumns)
+    )
 
     operator fun <T : Table> invoke(
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       where: Op<Boolean>,
       assignColumns: T.(ColumnValues) -> Unit
-    ): UpdateStatement {
-      val (sql, types) = buildStatement(onConflict, table, where, assignColumns)
-      return UpdateStatementImpl(sql, types)
-    }
+    ): UpdateStatement = UpdateStatementImpl(
+      statementSeed(table, onConflict, where, assignColumns)
+    )
 
-    private fun <T : Table> buildStatement(
-      onConflict: OnConflict,
+    fun <T : Table> statementSeed(
       table: T,
+      onConflict: OnConflict,
       where: Op<Boolean>?,
       assignColumns: T.(ColumnValues) -> Unit
-    ): Pair<String, List<PersistentType<*>>> {
-      return buildSql {
-        append(onConflict.updateOr)
-        append(table.identity.value)
+    ): StatementSeed = buildSql {
+      append(onConflict.updateOr)
+      append(table.identity.value)
 
-        val columnValues = ColumnValues()
-        table.assignColumns(columnValues)
+      val columnValues = ColumnValues()
+      table.assignColumns(columnValues)
 
-        columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
-          append(columnValue)
-        }
+      columnValues.columnValueList.appendTo(this, prefix = " SET ") { columnValue ->
+        append(columnValue)
+      }
 
-        where?.let { where ->
-          append(" WHERE ")
-          append(where)
-        }
+      where?.let { where ->
+        append(" WHERE ")
+        append(where)
       }
     }
   }
 }
 
 private class UpdateStatementImpl(
-  override val sql: String,
-  override val types: List<PersistentType<*>>,
+  private val seed: StatementSeed
 ) : BaseStatement(), UpdateStatement {
+  override val sql: String
+    get() = seed.sql
+  override val types: List<PersistentType<*>>
+    get() = seed.types
+
   override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
     getStatementAndTypes(db).executeUpdate(bindArgs)
 }

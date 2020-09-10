@@ -333,100 +333,6 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     _columns.addColumn(column)
   }
 
-  private val columnFactory by lazy { ColumnFactoryImpl() }
-
-  private inner class ColumnFactoryImpl : ColumnFactory {
-    override fun byte(name: String, block: SetConstraints<Byte>): Column<Byte> =
-      this@Table.byte(name, block)
-
-    override fun optByte(name: String, block: SetConstraints<Byte?>): Column<Byte?> =
-      this@Table.optByte(name, block)
-
-    override fun short(name: String, block: SetConstraints<Short>): Column<Short> =
-      this@Table.short(name, block)
-
-    override fun optShort(name: String, block: SetConstraints<Short?>): Column<Short?> =
-      this@Table.optShort(name, block)
-
-    override fun integer(name: String, block: SetConstraints<Int>): Column<Int> =
-      this@Table.integer(name, block)
-
-    override fun optInteger(name: String, block: SetConstraints<Int?>): Column<Int?> =
-      this@Table.optInteger(name, block)
-
-    override fun long(name: String, block: SetConstraints<Long>): Column<Long> =
-      this@Table.long(name, block)
-
-    override fun optLong(name: String, block: SetConstraints<Long?>): Column<Long?> =
-      this@Table.optLong(name, block)
-
-    override fun float(name: String, block: SetConstraints<Float>): Column<Float> =
-      this@Table.float(name, block)
-
-    override fun optFloat(name: String, block: SetConstraints<Float?>) =
-      this@Table.optFloat(name, block)
-
-    override fun double(name: String, block: SetConstraints<Double>): Column<Double> =
-      this@Table.double(name, block)
-
-    override fun optDouble(name: String, block: SetConstraints<Double?>): Column<Double?> =
-      this@Table.optDouble(name, block)
-
-    override fun text(name: String, block: SetConstraints<String>): Column<String> =
-      this@Table.text(name, block)
-
-    override fun optText(name: String, block: SetConstraints<String?>) =
-      this@Table.optText(name, block)
-
-    override fun blob(name: String, block: SetConstraints<Blob>): Column<Blob> =
-      this@Table.blob(name, block)
-
-    override fun optBlob(name: String, block: SetConstraints<Blob?>): Column<Blob?> =
-      this@Table.optBlob(name, block)
-
-    @ExperimentalUnsignedTypes
-    override fun ubyte(name: String, block: SetConstraints<UByte>): Column<UByte> =
-      this@Table.ubyte(name, block)
-
-    @ExperimentalUnsignedTypes
-    override fun optUbyte(name: String, block: SetConstraints<UByte?>): Column<UByte?> =
-      this@Table.optUbyte(name, block)
-
-    @ExperimentalUnsignedTypes
-    override fun uShort(name: String, block: SetConstraints<UShort>): Column<UShort> =
-      this@Table.uShort(name, block)
-
-    @ExperimentalUnsignedTypes
-    override fun optUshort(name: String, block: SetConstraints<UShort?>): Column<UShort?> =
-      this@Table.optUshort(name, block)
-
-    @ExperimentalUnsignedTypes
-    override fun ulong(name: String, block: SetConstraints<ULong>): Column<ULong> =
-      this@Table.ulong(name, block)
-
-    @ExperimentalUnsignedTypes
-    override fun optUlong(name: String, block: SetConstraints<ULong?>): Column<ULong?> =
-      this@Table.optUlong(name, block)
-
-    override fun bool(name: String, block: SetConstraints<Boolean>): Column<Boolean> =
-      this@Table.bool(name, block)
-
-    override fun optBool(name: String, block: SetConstraints<Boolean?>): Column<Boolean?> =
-      this@Table.optBool(name, block)
-
-    override fun <T : Enum<T>> enumeration(
-      name: String,
-      klass: KClass<T>,
-      block: SetConstraints<T>
-    ): Column<T> = this@Table.enumeration(name, klass, block)
-
-    override fun <T : Enum<T>> enumerationByName(
-      name: String,
-      klass: KClass<T>,
-      block: SetConstraints<T>
-    ): Column<T> = this@Table.enumerationByName(name, klass, block)
-  }
-
   fun <T, C : CompositeColumn<T>> makeComposite(builder: (ColumnFactory) -> C): C {
     return builder(columnFactory)
   }
@@ -634,6 +540,100 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   }
 
   override fun hashCode(): Int = tableName.hashCode()
+
+  private val columnFactory by lazy { ColumnFactoryImpl(this) }
+
+  private class ColumnFactoryImpl(private val table: Table) : ColumnFactory {
+    override fun byte(name: String, block: SetConstraints<Byte>): Column<Byte> =
+      table.byte(name, block)
+
+    override fun optByte(name: String, block: SetConstraints<Byte?>): Column<Byte?> =
+      table.optByte(name, block)
+
+    override fun short(name: String, block: SetConstraints<Short>): Column<Short> =
+      table.short(name, block)
+
+    override fun optShort(name: String, block: SetConstraints<Short?>): Column<Short?> =
+      table.optShort(name, block)
+
+    override fun integer(name: String, block: SetConstraints<Int>): Column<Int> =
+      table.integer(name, block)
+
+    override fun optInteger(name: String, block: SetConstraints<Int?>): Column<Int?> =
+      table.optInteger(name, block)
+
+    override fun long(name: String, block: SetConstraints<Long>): Column<Long> =
+      table.long(name, block)
+
+    override fun optLong(name: String, block: SetConstraints<Long?>): Column<Long?> =
+      table.optLong(name, block)
+
+    override fun float(name: String, block: SetConstraints<Float>): Column<Float> =
+      table.float(name, block)
+
+    override fun optFloat(name: String, block: SetConstraints<Float?>) =
+      table.optFloat(name, block)
+
+    override fun double(name: String, block: SetConstraints<Double>): Column<Double> =
+      table.double(name, block)
+
+    override fun optDouble(name: String, block: SetConstraints<Double?>): Column<Double?> =
+      table.optDouble(name, block)
+
+    override fun text(name: String, block: SetConstraints<String>): Column<String> =
+      table.text(name, block)
+
+    override fun optText(name: String, block: SetConstraints<String?>) =
+      table.optText(name, block)
+
+    override fun blob(name: String, block: SetConstraints<Blob>): Column<Blob> =
+      table.blob(name, block)
+
+    override fun optBlob(name: String, block: SetConstraints<Blob?>): Column<Blob?> =
+      table.optBlob(name, block)
+
+    @ExperimentalUnsignedTypes
+    override fun ubyte(name: String, block: SetConstraints<UByte>): Column<UByte> =
+      table.ubyte(name, block)
+
+    @ExperimentalUnsignedTypes
+    override fun optUbyte(name: String, block: SetConstraints<UByte?>): Column<UByte?> =
+      table.optUbyte(name, block)
+
+    @ExperimentalUnsignedTypes
+    override fun uShort(name: String, block: SetConstraints<UShort>): Column<UShort> =
+      table.uShort(name, block)
+
+    @ExperimentalUnsignedTypes
+    override fun optUshort(name: String, block: SetConstraints<UShort?>): Column<UShort?> =
+      table.optUshort(name, block)
+
+    @ExperimentalUnsignedTypes
+    override fun ulong(name: String, block: SetConstraints<ULong>): Column<ULong> =
+      table.ulong(name, block)
+
+    @ExperimentalUnsignedTypes
+    override fun optUlong(name: String, block: SetConstraints<ULong?>): Column<ULong?> =
+      table.optUlong(name, block)
+
+    override fun bool(name: String, block: SetConstraints<Boolean>): Column<Boolean> =
+      table.bool(name, block)
+
+    override fun optBool(name: String, block: SetConstraints<Boolean?>): Column<Boolean?> =
+      table.optBool(name, block)
+
+    override fun <T : Enum<T>> enumeration(
+      name: String,
+      klass: KClass<T>,
+      block: SetConstraints<T>
+    ): Column<T> = table.enumeration(name, klass, block)
+
+    override fun <T : Enum<T>> enumerationByName(
+      name: String,
+      klass: KClass<T>,
+      block: SetConstraints<T>
+    ): Column<T> = table.enumerationByName(name, klass, block)
+  }
 
   companion object {
     const val RESERVED_PREFIX = "sqlite_"

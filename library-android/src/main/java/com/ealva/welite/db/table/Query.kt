@@ -18,26 +18,54 @@ package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.StatementSeed
 
 /**
  * QuerySeed contains all the info to build a Query
  */
-data class QuerySeed(
-  /**
-   * The list of columns selected in the query. Used when reading the query results.
-   */
-  val columns: List<Expression<*>>,
-  /**
-   * The full sql of the query
-   */
-  val sql: String,
+interface QuerySeed {
   /**
    * The list of the types of arguments which need to be bound for each query execution. This is
    * each place a "?" appears in the [sql]. The [PersistentType] is responsible for accepting
    * an argument from the client, converting if necessary, and binding it into query args.
    */
   val types: List<PersistentType<*>>
-)
+
+  /**
+   * The full sql of the query
+   */
+  val sql: String
+
+  /**
+   * The list of columns selected in the query. Used when reading the query results.
+   */
+  val columns: List<Expression<*>>
+
+  /**
+   * Make a copy but update the sql
+   */
+  fun copy(sql: String): QuerySeed
+
+  companion object {
+    operator fun invoke(seed: StatementSeed, columns: List<Expression<*>>): QuerySeed {
+      class QuerySeedImpl(
+        private val statementSeed: StatementSeed,
+        override val columns: List<Expression<*>>
+      ) : QuerySeed {
+
+        override fun copy(sql: String): QuerySeed {
+          return QuerySeed(statementSeed.copy(sql = sql), columns)
+        }
+
+        override val types: List<PersistentType<*>>
+          get() = seed.types
+        override val sql: String
+          get() = seed.sql
+      }
+      return QuerySeedImpl(seed, columns)
+    }
+  }
+}
 
 fun QueryBuilder.toQuery(): Query = Query(build())
 
@@ -47,7 +75,7 @@ interface Query {
   companion object {
     var logQueryPlans: Boolean = false
 
-    operator fun invoke(queryBuilder: QueryBuilder): Query = Query(queryBuilder.build())
+    operator fun invoke(queryBuilder: QueryBuilder): Query = queryBuilder.toQuery()
 
     /**
      * Make a Query instance. eg.
@@ -55,9 +83,7 @@ interface Query {
      * val query = Query(querySeed)
      * ```
      */
-    internal operator fun invoke(
-      querySeed: QuerySeed
-    ): Query = QueryImpl(querySeed)
+    internal operator fun invoke(querySeed: QuerySeed): Query = QueryImpl(querySeed)
   }
 }
 

@@ -23,16 +23,14 @@ import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
 
 interface Statement {
-  val sql: String
-  val bindArgCount: Int
   fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
 }
 
 abstract class BaseStatement : Statement {
-  override val bindArgCount: Int
-    get() = types.size
-
+  protected abstract val sql: String
   protected abstract val types: List<PersistentType<*>>
+
+  override fun toString(): String = sql
 
   private val _statementAndTypes: StatementAndTypes? = null
   internal fun getStatementAndTypes(db: SQLiteDatabase): StatementAndTypes {

@@ -21,21 +21,22 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
 
 interface DeleteStatement : Statement {
 
   companion object {
-    operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement {
-      val (_sql, _types) = buildSql {
-        append("DELETE FROM ")
-        append(table.identity.value)
-        if (where != null) {
-          append(" WHERE ")
-          append(where)
-        }
+    operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement =
+      DeleteStatementImpl(statementSeed(table, where))
+
+    fun statementSeed(table: Table, where: Op<Boolean>?): StatementSeed = buildSql {
+      append("DELETE FROM ")
+      append(table.identity.value)
+      if (where != null) {
+        append(" WHERE ")
+        append(where)
       }
-      return DeleteStatementImpl(_sql, _types)
     }
   }
 }
@@ -49,9 +50,14 @@ fun <T : Table> T.deleteAll(): DeleteStatement {
 }
 
 private class DeleteStatementImpl(
-  override val sql: String,
-  override val types: List<PersistentType<*>>
+  private val seed: StatementSeed
 ) : BaseStatement(), DeleteStatement {
+  override val sql: String
+    get() = seed.sql
+
+  override val types: List<PersistentType<*>>
+    get() = seed.types
+
   override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
     getStatementAndTypes(db).executeDelete(bindArgs)
 }

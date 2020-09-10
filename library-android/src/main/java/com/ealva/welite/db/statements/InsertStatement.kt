@@ -23,6 +23,7 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.type.PersistentType
+import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
 
 /**
@@ -41,23 +42,25 @@ interface InsertStatement : Statement {
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       assignColumns: T.(ColumnValues) -> Unit
-    ): InsertStatement {
-      val columnValues = ColumnValues().apply { table.assignColumns(this) }
-      val (sql, types) = buildSql {
-        append(onConflict.insertOr)
-        append(" INTO ")
-        append(table.identity.value)
-        columnValues.columnValueList.let { list ->
-          list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
-            appendName(columnValue)
-          }
-          append(" VALUES ")
-          list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
-            appendValue(columnValue)
-          }
+    ): InsertStatement = InsertStatementImpl(statementSeed(table, onConflict, assignColumns))
+
+    fun <T : Table> statementSeed(
+      table: T,
+      onConflict: OnConflict,
+      assignColumns: T.(ColumnValues) -> Unit
+    ): StatementSeed = buildSql {
+      append(onConflict.insertOr)
+      append(" INTO ")
+      append(table.identity.value)
+      ColumnValues().apply { table.assignColumns(this) }.columnValueList.let { list ->
+        list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
+          appendName(columnValue)
+        }
+        append(" VALUES ")
+        list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
+          appendValue(columnValue)
         }
       }
-      return InsertStatementImpl(sql, types)
     }
   }
 }
@@ -92,9 +95,13 @@ fun <T : Table> T.insertValues(
 }
 
 private class InsertStatementImpl(
-  override val sql: String,
-  override val types: List<PersistentType<*>>
+  private val seed: StatementSeed
 ) : BaseStatement(), InsertStatement {
+  override val sql: String
+    get() = seed.sql
+
+  override val types: List<PersistentType<*>>
+    get() = seed.types
 
   override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
     getStatementAndTypes(db).executeInsert(bindArgs)
