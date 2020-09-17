@@ -22,7 +22,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.BigTable.bigD
 import com.ealva.welite.db.BigTable.name
 import com.ealva.welite.db.BigTable.optBig
-import com.ealva.welite.db.dml.withPlaceTestDatabase
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.ForeignKeyAction

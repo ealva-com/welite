@@ -63,11 +63,9 @@ tasks.withType<KotlinCompile> {
 tasks.register("clean", Delete::class.java) {
   delete(rootProject.buildDir)
 }
-
 buildscript {
-  val kotlinVersion by extra("1.3.72")
   dependencies {
-    "classpath"("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+    "classpath"("com.android.tools.build:gradle:4.0.1")
   }
 }
 

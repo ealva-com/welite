@@ -178,7 +178,6 @@ In the above example the Person table is joined to a query alias of itself, and 
 ### Modules
   * library-android - contains the core classes of WeLite
   * library-javatime - contains column types for LocalDate and LocalDateTime. Requires dependency on "com.android.tools:desugar_jdk_libs:${Versions.DESUGAR}" and coreLibraryDesugaringEnabled = true in compile options
-  * library-test - contains shared test classes, won't be published
   * app - skeleton application demos configuration, Koin injection, simple database creation, table population, query, etc.
 
 ### Why this library?
@@ -196,7 +195,7 @@ Why "without entities"? We often find a one-to-many relationship between a row i
 
 ### TODO
   * Much more testing
-  * Expose more SQLite functionality (need DSL for Trigger)
+  * Expose more SQLite functionality
   * Rethink binding parameters. Currently, not enforcing type at compile-time and instead doing conversions at run-time
   
 ### Contributions

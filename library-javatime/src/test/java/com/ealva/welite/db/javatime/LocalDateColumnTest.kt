@@ -38,7 +38,7 @@ import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.hamcrest.Matchers.isA
+import org.hamcrest.CoreMatchers.isA
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

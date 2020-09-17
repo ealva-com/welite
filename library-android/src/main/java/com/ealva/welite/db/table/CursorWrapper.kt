@@ -14,37 +14,43 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
+import com.ealva.welite.db.expr.ExprList
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SqlTypeExpression
-import com.ealva.welite.db.table.ColumnMetadata
-import com.ealva.welite.db.table.Cursor
-import com.ealva.welite.db.table.FieldType
-import com.ealva.welite.db.table.Query
+import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
 import it.unimi.dsi.fastutil.objects.Object2IntMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 
+internal interface CursorWrapper : Cursor, Row, AutoCloseable {
+  fun moveToNext(): Boolean
+
+  companion object {
+    fun select(seed: QuerySeed, db: SQLiteDatabase, bind: (ArgBindings) -> Unit): CursorWrapper =
+      CursorWrapperImpl(db.select(seed.sql, doBind(seed.types, bind)), seed.columns)
+  }
+}
+
 private typealias ExpressionToIndexMap = Object2IntMap<Expression<*>>
 
-private fun List<Expression<*>>.mapExprToIndex(): ExpressionToIndexMap {
+private fun ExprList.mapExprToIndex(): ExpressionToIndexMap {
   return Object2IntOpenHashMap<Expression<*>>(size).apply {
     defaultReturnValue(-1)
     this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
   }
-}private typealias ACursor = android.database.Cursor
+}
 
-internal class CursorWrapper(
-  private val cursor: ACursor,
-  columns: List<Expression<*>>
-) : Cursor, Row, AutoCloseable {
+private typealias ACursor = android.database.Cursor
+
+private class CursorWrapperImpl(private val cursor: ACursor, columns: ExprList) : CursorWrapper {
   private val exprMap = columns.mapExprToIndex()
 
   override val count: Int
@@ -53,7 +59,10 @@ internal class CursorWrapper(
   override val position: Int
     get() = cursor.position
 
-  fun moveToNext(): Boolean = cursor.moveToNext()
+  override val columnCount: Int
+    get() = cursor.columnCount
+
+  override fun moveToNext(): Boolean = cursor.moveToNext()
 
   @Suppress("NOTHING_TO_INLINE")
   private inline fun <T> SqlTypeExpression<T>.index() = exprMap.getInt(this)
@@ -95,6 +104,9 @@ internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String> = empt
   return DatabaseUtils.longForQuery(this, sql, args)
 }
 
+internal fun SQLiteDatabase.longForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): Long =
+  longForQuery(seed.sql, doBind(seed.types, bind))
+
 internal fun SQLiteDatabase.stringForQuery(
   sql: String,
   args: Array<String> = emptyArray()
@@ -103,25 +115,16 @@ internal fun SQLiteDatabase.stringForQuery(
   return DatabaseUtils.stringForQuery(this, sql, args)
 }
 
-private val LOG by lazyLogger("QueryPlan")
+internal fun SQLiteDatabase.stringForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): String =
+  stringForQuery(seed.sql, doBind(seed.types, bind))
+
+private val QP_LOG by lazyLogger("QueryPlan")
 private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>) {
-  LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, selectionArgs.contentToString()) }
-  explainQueryPlan(sql, selectionArgs).forEachIndexed { index, row ->
-    LOG.i { it("%d: %s", index, row) }
+  QP_LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, selectionArgs.contentToString()) }
+  rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { cursor ->
+    while (cursor.moveToNext()) QP_LOG.i { it("%d: %s", cursor.position, cursor.rowToString()) }
   }
 }
-
-private fun SQLiteDatabase.explainQueryPlan(
-  sql: String,
-  selectionArgs: Array<String>
-): List<String> {
-  return mutableListOf<String>().apply {
-    rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { cursor ->
-      while (cursor.moveToNext()) add(cursor.rowToString())
-    }
-  }
-}
-
 /**
  * Convert the current row of the cursor to a string containing column "name:value" pairs
  * delimited with ", "
@@ -131,9 +134,6 @@ private fun ACursor.rowToString(): String = buildStr {
     append(getColumnName(i)).append(':').append(getStringOrNull(i)).append(", ")
   }
 }
-
-internal fun ACursor.getOptLong(columnIndex: Int, ifNullValue: Long = -1): Long =
-  if (isNull(columnIndex)) ifNullValue else getLong(columnIndex)
 
 private fun ACursor.getStringOrNull(columnIndex: Int): String =
   if (isNull(columnIndex)) "NULL" else getString(columnIndex)
@@ -154,3 +154,50 @@ internal val ACursor.columnMetadata: ColumnMetadata
     getStringOrNull(DEF_VAL_COLUMN),
     getInt(PK_COLUMN)
   )
+
+private fun doBind(
+  types: List<PersistentType<*>>,
+  bind: (ArgBindings) -> Unit
+): Array<String> = QueryArgs(types).let { queryArgs ->
+  bind(queryArgs)
+  check(queryArgs.allBound) {
+    "Unbound indices:${queryArgs.unboundIndices} in QueryArgs:$queryArgs"
+  }
+  queryArgs.args
+}
+
+private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
+  private val arguments = Array(argTypes.size) { UNBOUND }
+
+  override operator fun <T> set(index: Int, value: T?) {
+    require(index in argTypes.indices) { "Arg types $index out of bounds ${argTypes.indices}" }
+    require(index in arguments.indices) { "Args $index out of bounds ${arguments.indices}" }
+    arguments[index] = argTypes[index].valueToString(value)
+  }
+
+  override val argCount: Int
+    get() = argTypes.size
+
+  val args: Array<String>
+    get() = arguments.copyOf()
+
+  val allBound: Boolean
+    get() = arguments.indexOfFirst { it === UNBOUND } < 0
+
+  val unboundIndices: List<Int>
+    get() = arguments.mapIndexedNotNullTo(ArrayList(arguments.size)) { index, arg ->
+      if (arg === UNBOUND) index else null
+    }
+
+  override fun toString(): String {
+    return arguments.contentToString()
+  }
+
+  companion object {
+    /**
+     * Marker in argument array indicating the arg at an index has not been bound. Use object
+     * identity for comparison on the chance this string is a valid bound value.
+     */
+    private const val UNBOUND = "Unbound"
+  }
+}

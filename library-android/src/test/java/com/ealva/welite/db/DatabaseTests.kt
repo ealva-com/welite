@@ -66,7 +66,7 @@ object SomeMediaTable : Table() {
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [LOLLIPOP])
-class DatabaseTest {
+class DatabaseTests {
   @get:Rule var coroutineRule = CoroutineRule()
   @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
@@ -175,6 +175,7 @@ class DatabaseTest {
       expect(onOpenCalled).toBe(true) { "onOpen not called" }
       rollback()
     }
+    db.close()
   }
 
   @Test
@@ -330,7 +331,6 @@ class DatabaseTest {
         ArtistAlbumTable.sql.let { artistAlbum ->
           expect(artistAlbum.table).toHaveSize(1)
           expect(artistAlbum.table[0]).toBe(
-//            """CREATE TABLE "ArtistAlbum" ("_id" INTEGER NOT NULL PRIMARY KEY, "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES "Artist"("_id"), CONSTRAINT "fk_ArtistAlbum_AlbumId__id" FOREIGN KEY ("AlbumId") REFERENCES "Album"("_id"))"""
             """CREATE TABLE "ArtistAlbum" ("_id" INTEGER NOT NULL PRIMARY KEY,""" +
               """ "ArtistId" INTEGER NOT NULL, "AlbumId" INTEGER NOT NULL, CONSTRAINT""" +
               """ "fk_ArtistAlbum_ArtistId__id" FOREIGN KEY ("ArtistId") REFERENCES""" +

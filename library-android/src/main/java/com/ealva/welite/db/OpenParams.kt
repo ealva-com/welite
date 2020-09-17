@@ -173,6 +173,9 @@ interface LookasideSlot {
   val count: Int
 
   companion object {
+    /**
+     * Create a LookasideSlot with [size] and [count]
+     */
     operator fun invoke(size: Int, count: Int): LookasideSlot {
       data class LookasideSlotImpl(override val size: Int, override val count: Int) : LookasideSlot
       require(size >= 0 && count >= 0) { "Size and count must be >= 0, size:$size count:$count" }

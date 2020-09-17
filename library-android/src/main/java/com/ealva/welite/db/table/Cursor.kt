@@ -30,6 +30,11 @@ interface Cursor {
   val position: Int
 
   /**
+   * Number of columns in a row
+   */
+  val columnCount: Int
+
+  /**
    * Get value [T], which is possibly null, of the column [expression] at the current
    * cursor [position]
    */

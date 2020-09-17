@@ -23,6 +23,8 @@ import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 
+typealias ExprList = List<Expression<*>>
+
 abstract class Function<T>(
   override val persistentType: PersistentType<T>
 ) : BaseSqlTypeExpression<T>()
@@ -30,7 +32,7 @@ abstract class Function<T>(
 class CustomFunction<T>(
   private val functionName: String,
   persistentType: PersistentType<T>,
-  private val exprList: List<Expression<*>>
+  private val exprList: ExprList
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(functionName).append('(')
@@ -202,7 +204,7 @@ class Case(private val caseExpression: Expression<*>? = null) {
     CaseWhen<T>(caseExpression).caseWhen(cond, result)
 }
 
-class CaseWhen<T>(private val caseExpression: Expression<*>?): BaseExpression<T>() {
+class CaseWhen<T>(private val caseExpression: Expression<*>?) : BaseExpression<T>() {
   val cases: MutableList<Pair<Expression<Boolean>, Expression<out T>>> = mutableListOf()
 
   @Suppress("UNCHECKED_CAST", "FunctionName")
@@ -210,7 +212,6 @@ class CaseWhen<T>(private val caseExpression: Expression<*>?): BaseExpression<T>
     cases.add(cond to result)
     return this as CaseWhen<R>
   }
-
 
   @Suppress("FunctionName")
   fun <R : T> caseElse(e: Expression<R>): Expression<R> = CaseWhenElse(this, e)
@@ -277,6 +278,11 @@ private class Raise private constructor(
   }
 
   companion object {
+    /**
+     * Make a Raise function from the [raiseType] and [msg] to be included
+     *
+     * [SQLite Raise function](https://www.sqlite.org/syntax/raise-function.html)
+     */
     operator fun invoke(raiseType: RaiseType, msg: String = ""): BaseExpression<String> {
       return Raise(raiseType, msg)
     }

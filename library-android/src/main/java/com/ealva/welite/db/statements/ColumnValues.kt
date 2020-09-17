@@ -50,6 +50,9 @@ interface ColumnValues {
   operator fun <T> get(column: Column<T>): BindArgument
 
   companion object {
+    /**
+     * Make a ColumnValues instance which contains columns and their respective value/expression.
+     */
     operator fun invoke(): ColumnValues = ColumnValuesImpl()
   }
 }

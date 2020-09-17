@@ -215,13 +215,16 @@ interface ConstraintCollection : Iterable<ColumnConstraint> {
   fun isRowId(isIntegerType: Boolean): Boolean
 
   companion object {
+    /**
+     * Make a ConstraintCollection with an initial [persistentType]
+     */
     operator fun invoke(persistentType: PersistentType<*>): ConstraintCollection {
       return ConstraintList(persistentType)
     }
   }
 }
 
-class ConstraintList(
+private class ConstraintList(
   private val persistentType: PersistentType<*>
 ) : ConstraintCollection, Iterable<ColumnConstraint> {
   private val constraints = mutableListOf<ColumnConstraint>()

@@ -185,6 +185,10 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
   }
 
   companion object {
+    /**
+     * Make a Join from [table] to [otherTable] of type [joinType], which defaults to
+     * [JoinType.INNER], from [onColumn] to [otherColumn], adding any [additionalConstraint]
+     */
     operator fun invoke(
       table: ColumnSet,
       otherTable: ColumnSet,

@@ -27,9 +27,15 @@ import com.ealva.welite.db.type.buildSql
 interface DeleteStatement : Statement {
 
   companion object {
+    /**
+     * Make a DeleteStatement from a [table] and [where] clause
+     */
     operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement =
       DeleteStatementImpl(statementSeed(table, where))
 
+    /**
+     * Make the StatementSeed from a [table] and [where] clause for a DeleteStatement
+     */
     fun statementSeed(table: Table, where: Op<Boolean>?): StatementSeed = buildSql {
       append("DELETE FROM ")
       append(table.identity.value)

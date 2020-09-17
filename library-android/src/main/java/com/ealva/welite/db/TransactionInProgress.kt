@@ -35,6 +35,7 @@ import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Cursor
+import com.ealva.welite.db.table.CursorWrapper
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.MasterType
@@ -51,10 +52,12 @@ import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker
 import com.ealva.welite.db.table.asMasterType
+import com.ealva.welite.db.table.columnMetadata
+import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.table.where
-import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.buildStr
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -127,44 +130,11 @@ interface TransactionInProgress : Queryable {
   fun vacuum()
 
   companion object {
+    /**
+     * Create a TransactionInProgress using [dbConfig]
+     */
     internal operator fun invoke(dbConfig: DbConfig): TransactionInProgress =
       TransactionInProgressImpl(dbConfig)
-  }
-}
-
-private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
-  private val arguments = Array(argTypes.size) { UNBOUND }
-
-  override operator fun <T> set(index: Int, value: T?) {
-    require(index in argTypes.indices) { "Arg types $index out of bounds ${argTypes.indices}" }
-    require(index in arguments.indices) { "Args $index out of bounds ${arguments.indices}" }
-    arguments[index] = argTypes[index].valueToString(value)
-  }
-
-  override val argCount: Int
-    get() = argTypes.size
-
-  val args: Array<String>
-    get() = arguments.copyOf()
-
-  val allBound: Boolean
-    get() = arguments.indexOfFirst { it === UNBOUND } < 0
-
-  val unboundIndices: List<Int>
-    get() = arguments.mapIndexedNotNullTo(ArrayList(arguments.size)) { index, arg ->
-      if (arg === UNBOUND) index else null
-    }
-
-  override fun toString(): String {
-    return arguments.contentToString()
-  }
-
-  companion object {
-    /**
-     * Marker in argument array indicating the arg at an index has not been bound. Use object
-     * identity for comparison on the chance this string is valid bound value.
-     */
-    private const val UNBOUND = "Unbound"
   }
 }
 
@@ -199,41 +169,21 @@ private class TransactionInProgressImpl(
     this@TransactionInProgressImpl.doForEach(build(), bind, action)
   }
 
-  private fun doBind(
-    types: List<PersistentType<*>>,
-    bind: (ArgBindings) -> Unit
-  ): Array<String> = QueryArgs(types).let { queryArgs ->
-    bind(queryArgs)
-    check(queryArgs.allBound) {
-      "Unbound indices:${queryArgs.unboundIndices} in QueryArgs:$queryArgs"
-    }
-    queryArgs.args
-  }
-
-  private fun doForEach(
-    seed: QuerySeed,
-    bind: (ArgBindings) -> Unit,
-    action: (Cursor) -> Unit
-  ) = CursorWrapper(db.select(seed.sql, doBind(seed.types, bind)), seed.columns).use { cursor ->
-    while (cursor.moveToNext()) action(cursor)
-  }
+  private fun doForEach(seed: QuerySeed, bind: (ArgBindings) -> Unit, action: (Cursor) -> Unit) =
+    CursorWrapper.select(seed, db, bind).use { while (it.moveToNext()) action(it) }
 
   override fun <T> Query.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
     doFlow(seed, bind, factory)
 
-  override fun <T> QueryBuilder.flow(
-    bind: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
-  ): Flow<T> = this@TransactionInProgressImpl.doFlow(build(), bind, factory)
+  override fun <T> QueryBuilder.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
+    this@TransactionInProgressImpl.doFlow(build(), bind, factory)
 
   private fun <T> doFlow(
     seed: QuerySeed,
     bind: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Flow<T> = flow {
-    CursorWrapper(db.select(seed.sql, doBind(seed.types, bind)), seed.columns).use { cursor ->
-      while (cursor.moveToNext()) emit(factory(cursor))
-    }
+    CursorWrapper.select(seed, db, bind).use { while (it.moveToNext()) emit(factory(it)) }
   }.flowOn(dbConfig.dispatcher)
 
   override fun <T> Query.sequence(
@@ -251,27 +201,21 @@ private class TransactionInProgressImpl(
     bind: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Sequence<T> = sequence {
-    CursorWrapper(db.select(seed.sql, doBind(seed.types, bind)), seed.columns).use { cursor ->
+    CursorWrapper.select(seed, db, bind).use { cursor ->
       while (cursor.moveToNext()) yield(factory(cursor))
     }
   }
 
-  override fun Query.longForQuery(bind: (ArgBindings) -> Unit): Long = doLongForQuery(seed, bind)
+  override fun Query.longForQuery(bind: (ArgBindings) -> Unit): Long = db.longForQuery(seed, bind)
 
   override fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit): Long =
-    this@TransactionInProgressImpl.doLongForQuery(build(), bind)
-
-  private fun doLongForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): Long =
-    db.longForQuery(seed.sql, doBind(seed.types, bind))
+    this@TransactionInProgressImpl.db.longForQuery(build(), bind)
 
   override fun Query.stringForQuery(bind: (ArgBindings) -> Unit): String =
-    doStringForQuery(seed, bind)
+    db.stringForQuery(seed, bind)
 
   override fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit): String =
-    this@TransactionInProgressImpl.doStringForQuery(build(), bind)
-
-  private fun doStringForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): String =
-    db.stringForQuery(seed.sql, doBind(seed.types, bind))
+    this@TransactionInProgressImpl.db.stringForQuery(build(), bind)
 
   override fun Query.count(bind: (ArgBindings) -> Unit): Long = doCount(seed, bind)
 
@@ -279,7 +223,7 @@ private class TransactionInProgressImpl(
     this@TransactionInProgressImpl.doCount(build(), bind)
 
   private fun doCount(seed: QuerySeed, bindArgs: (ArgBindings) -> Unit): Long {
-    return doLongForQuery(maybeModifyCountSeed(seed), bindArgs)
+    return db.longForQuery(maybeModifyCountSeed(seed), bindArgs)
   }
 
   private fun maybeModifyCountSeed(seed: QuerySeed): QuerySeed =
@@ -322,7 +266,7 @@ private class TransactionInProgressImpl(
     get() = try {
       val tableType = masterType.toString()
       SQLiteMaster.selectWhere {
-        (SQLiteMaster.type eq tableType) and (SQLiteMaster.name eq identity.unquoted)
+        SQLiteMaster.type eq tableType and (SQLiteMaster.name eq identity.unquoted)
       }.count() == 1L
     } catch (e: Exception) {
       LOG.e(e) { it("Error checking table existence") }
@@ -451,3 +395,7 @@ private class TransactionInProgressImpl(
   }
 }
 
+private typealias ACursor = android.database.Cursor
+
+internal fun ACursor.getOptLong(columnIndex: Int, ifNullValue: Long = -1): Long =
+  if (isNull(columnIndex)) ifNullValue else getLong(columnIndex)

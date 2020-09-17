@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.dml
+package com.ealva.welite.db
 
 import android.content.Context
 import android.os.Build
@@ -66,7 +66,7 @@ class AliasTests {
       query {
         val expAlias = Person.name.max().alias("m")
 
-        val query: Join = Join(Person).joinQuery({ it[expAlias].eq(Person.name) }) {
+        val query: Join = Join(Person).joinQuery({ it[expAlias] eq Person.name }) {
           Person.select(Person.cityId, expAlias).all().groupBy(Person.cityId)
         }
         val innerExp = checkNotNull(query.lastQueryBuilderAlias)[expAlias]

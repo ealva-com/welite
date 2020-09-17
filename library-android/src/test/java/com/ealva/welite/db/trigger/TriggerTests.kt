@@ -70,7 +70,7 @@ val IdTriple.mediaId: Long
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
-class ViewTests {
+class TriggerTests {
   @get:Rule var coroutineRule = CoroutineRule()
   @get:Rule var thrown: ExpectedException = ExpectedException.none()
 

@@ -73,7 +73,7 @@ class ForeignKeySchemaTests {
               from = "AlbumId",
               to = "_id",
               onUpdate = ForeignKeyAction.NO_ACTION,
-              onDelete = ForeignKeyAction.CASCADE
+              onDelete = ForeignKeyAction.NO_ACTION
             )
           )
           expect(list[1]).toBe(
@@ -84,7 +84,7 @@ class ForeignKeySchemaTests {
               from = "ArtistId",
               to = "_id",
               onUpdate = ForeignKeyAction.NO_ACTION,
-              onDelete = ForeignKeyAction.CASCADE
+              onDelete = ForeignKeyAction.NO_ACTION
             )
           )
         }

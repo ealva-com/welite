@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.dml
+package com.ealva.welite.db
 
 import android.content.Context
 import android.database.sqlite.SQLiteException
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.isNull
@@ -146,39 +145,26 @@ class JoinTests {
 
   @Test
   fun `test join with relationship table`() = coroutineRule.runBlockingTest {
-    val numbers = object : Table() {
-      val id = long("id") { primaryKey() }
-    }
-    val names = object : Table() {
-      val name = text("name") { primaryKey() }
-    }
-    val numberNameRel = object : Table() {
-      @Suppress("unused")
-      val id = long("id") { primaryKey() }
-      val numberId = reference("id_ref", numbers.id)
-      val name = reference("name_ref", names.name)
-    }
-
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(numbers, names, numberNameRel),
+      tables = listOf(Numbers, Names, NumberNameRel),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
-        numbers.insert { it[id] = 1 }
-        numbers.insert { it[id] = 2 }
-        names.insert { it[name] = "Francis" }
-        names.insert { it[name] = "Bart" }
-        numberNameRel.insert {
+        Numbers.insert { it[id] = 1 }
+        Numbers.insert { it[id] = 2 }
+        Names.insert { it[name] = "Francis" }
+        Names.insert { it[name] = "Bart" }
+        NumberNameRel.insert {
           it[numberId] = 2
           it[name] = "Francis"
         }
         setSuccessful()
       }
       query {
-        (numbers innerJoin numberNameRel innerJoin names)
+        (Numbers innerJoin NumberNameRel innerJoin Names)
           .selectAll()
-          .flow { Pair(it[numbers.id], it[names.name]) }
+          .flow { Pair(it[Numbers.id], it[Names.name]) }
           .singleOrNull()
           ?.let { (id, name) ->
             expect(id).toBe(2)
@@ -271,9 +257,9 @@ class JoinTests {
           personAlias,
           JoinType.LEFT,
           stringLiteral("nathalia"),
-          personAlias[person.id]
-        ).selectWhere { person.id eq "amber" }
-          .flow { Pair(it[person.name], it[personAlias[person.name]]) }
+          personAlias[Person.id]
+        ).selectWhere { Person.id eq "amber" }
+          .flow { Pair(it[Person.name], it[personAlias[Person.name]]) }
           .singleOrNull() ?: fail("expected single item")
 
         expect(pair.first).toBe("Amber")
@@ -281,4 +267,19 @@ class JoinTests {
       }
     }
   }
+}
+
+object Numbers : Table() {
+  val id = long("id") { primaryKey() }
+}
+
+object Names : Table() {
+  val name = text("name") { primaryKey() }
+}
+
+object NumberNameRel : Table() {
+  @Suppress("unused")
+  val id = long("id") { primaryKey() }
+  val numberId = reference("id_ref", Numbers.id)
+  val name = reference("name_ref", Names.name)
 }

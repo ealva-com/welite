@@ -74,7 +74,7 @@ class InstantComposite(
   override val columns: List<Column<*>> = listOf(epochSeconds, nanos)
 
   override fun eq(t: Instant): Op<Boolean> {
-    return (epochSeconds.eq(t.epochSecond).and(nanos.eq(t.nano)))
+    return epochSeconds eq t.epochSecond and (nanos eq t.nano)
   }
 
   override fun descriptionDdl(): List<String> {

@@ -30,14 +30,17 @@ import com.ealva.ealvalog.w
 import com.ealva.welite.db.WeResult.Success
 import com.ealva.welite.db.WeResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
-import com.ealva.welite.db.table.MasterType
-import com.ealva.welite.db.table.SQLiteMaster
-import com.ealva.welite.db.table.TableDependencies
 import com.ealva.welite.db.statements.deleteWhere
 import com.ealva.welite.db.table.DbConfig
+import com.ealva.welite.db.table.MasterType
+import com.ealva.welite.db.table.SQLiteMaster
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.TableDependencies
 import com.ealva.welite.db.table.WeLiteMarker
+import com.ealva.welite.db.table.knownTypes
+import com.ealva.welite.db.table.longForQuery
+import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.toStatementString
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -88,9 +91,14 @@ interface Database {
    * marked as either successful, [Transaction.setSuccessful], or rolled back,
    * [Transaction.rollback].
    *
+   * If [autoCommit] is true, which is the default, and [Transaction.rollback] is not invoked,
+   * [Transaction.setSuccessful] is automatically called for the client. If [autoCommit] is false
+   * the client must invoke setSuccessful() or rollback().
+   *
    * When the txn closes, if neither success nor rollback has been called an error will be logged.
    * If [throwIfNoChoice] is true, which is the default, a [NeitherSuccessNorRollbackException] will
-   * be thrown. If [throwIfNoChoice] is false execution continues but the txn will not be committed.
+   * be thrown. If [throwIfNoChoice] is false, execution continues but the txn will not be
+   * committed.
    *
    * If [exclusive] is false, which is the default, a reserved lock is acquired. While
    * holding a reserved lock, this session is allowed to read or write but other sessions are only
@@ -118,6 +126,7 @@ interface Database {
   suspend fun <R> transaction(
     exclusive: Boolean = false,
     unitOfWork: String = "Unnamed Txn",
+    autoCommit: Boolean = true,
     throwIfNoChoice: Boolean = true,
     work: suspend Transaction.() -> R
   ): R
@@ -348,6 +357,7 @@ private class WeLiteDatabase(
   override suspend fun <R> transaction(
     exclusive: Boolean,
     unitOfWork: String,
+    autoCommit: Boolean,
     throwIfNoChoice: Boolean,
     work: suspend Transaction.() -> R
   ): R {
@@ -355,7 +365,11 @@ private class WeLiteDatabase(
     val result = withContext(dispatcher) {
       try {
         assertNotUiThread() // client can set dispatcher, need to check
-        Success(beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { it.work() })
+        Success(
+          beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { txn ->
+            txn.work().also { if (autoCommit && !txn.rolledBack) txn.setSuccessful() }
+          }
+        )
       } catch (e: Exception) {
         e.asUnsuccessful { "Exception during transaction" }
       }
@@ -393,11 +407,16 @@ private class WeLiteDatabase(
   }
 
   /**
-   * Provides the interface to an ongoing transaction. Client is not concerned with commit/rollback
-   * which is handled at another level
+   * Provides the interface to an ongoing transaction. At this point the client is not concerned
+   * with commit/rollback, which is expected to be handled at another level, and just needs
+   * read/write access.
+   *
+   * Can't invoke this during SQLite/OpenHelper startup (onConfigure->onOpen) as it will call
+   * [SQLiteOpenHelper.getWritableDatabase] which will result in an
+   * ```IllegalStateException("getDatabase called recursively")```
    */
   override fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R = try {
-    assertNotUiThread()
+    assertNotUiThread() // client can set dispatcher, need to check
     check(!closed) { "Database has been closed" }
     TransactionInProgress(this).work()
   } catch (e: Exception) {
@@ -416,10 +435,8 @@ private class WeLiteDatabase(
     throwIfNoChoice: Boolean
   ): Transaction = Transaction(this, exclusive, unitOfWork, throwIfNoChoice)
 
-  private fun assertNotUiThread() {
-    if (!allowWorkOnUiThread && isUiThread)
-      throw IllegalStateException("Cannot access the Database on the UI thread.")
-  }
+  private fun assertNotUiThread() =
+    check(allowWorkOnUiThread || isNotUiThread) { "Cannot access the Database on the UI thread." }
 }
 
 private class ErrorHandler(private val database: Database) : DatabaseErrorHandler {
@@ -593,6 +610,9 @@ private class OpenHelper private constructor(
   companion object {
     private val LOG by lazyLogger()
 
+    /**
+     * Make an OpenHelper which is a subclass of [SQLiteOpenHelper]
+     */
     internal operator fun invoke(
       context: Context,
       database: WeLiteDatabase,

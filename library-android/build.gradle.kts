@@ -52,14 +52,6 @@ android {
     }
   }
 
-  sourceSets.getByName("androidTest") {
-    java.srcDir("src/sharedTest/java")
-  }
-
-  sourceSets.getByName("test") {
-    java.srcDir("src/sharedTest/java")
-  }
-
   lintOptions {
     isWarningsAsErrors = false
     isAbortOnError = true
@@ -101,9 +93,7 @@ dependencies {
   testImplementation(ThirdParty.EALVALOG)
   testImplementation(ThirdParty.EALVALOG_CORE)
   testImplementation(ThirdParty.EALVALOG_ANDROID)
-  testImplementation(project(":library-test"))
 
-  androidTestImplementation(project(":library-test"))
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER)
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT)
   androidTestImplementation(TestingLib.EXPECT)

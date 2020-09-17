@@ -107,7 +107,7 @@ abstract class BasePersistentType<T>(
       require(nullable) { "NULL in non-nullable column" }
       "NULL"
     }
-    DefaultValueMarker -> "DEFAULT"
+    DefaultValueMarker -> DefaultValueMarker.toString()
     is Iterable<*> -> value.joinToString(",", transform = ::valueToString)
     else -> nonNullValueToString(value)
   }

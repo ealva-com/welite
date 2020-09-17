@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.dml
+package com.ealva.welite.db
 
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.Database
-import com.ealva.welite.db.dml.Doctors.degree
-import com.ealva.welite.db.dml.Doctors.doctorName
-import com.ealva.welite.db.dml.Specialty.description
-import com.ealva.welite.db.dml.Visits.patientName
-import com.ealva.welite.db.dml.Visits.visitDate
+import com.ealva.welite.db.Doctors.degree
+import com.ealva.welite.db.Doctors.doctorName
+import com.ealva.welite.db.Specialty.description
+import com.ealva.welite.db.Visits.patientName
+import com.ealva.welite.db.Visits.visitDate
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.statements.insertValues

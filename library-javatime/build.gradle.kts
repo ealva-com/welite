@@ -86,7 +86,6 @@ dependencies {
 
   // unsure exactly why receiving a warning for not including this testAnnotationProcessor
   testAnnotationProcessor("com.google.auto.service:auto-service:1.0-rc4")
-  testImplementation(project(":library-test"))
   testImplementation(TestingLib.JUNIT)
   testImplementation(AndroidTestingLib.ANDROIDX_TEST_CORE)
   testImplementation(AndroidTestingLib.ANDROIDX_TEST_RULES)
@@ -97,7 +96,6 @@ dependencies {
   testImplementation(ThirdParty.EALVALOG_CORE)
   testImplementation(ThirdParty.EALVALOG_ANDROID)
 
-  androidTestImplementation(project(":library-test"))
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER)
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT)
   androidTestImplementation(TestingLib.EXPECT)

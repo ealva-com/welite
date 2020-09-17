@@ -16,7 +16,6 @@
 
 package com.ealva.welite.test.common
 
-import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table
 
 object MediaFileTable : Table() {
@@ -36,6 +35,7 @@ object AlbumTable : Table() {
   val id = long("_id") { primaryKey() }
   val albumName = text("AlbumName") { collateNoCase() }
   val artistName = text("ArtistName") { collateNoCase() }
+
   init {
     uniqueIndex(albumName, artistName)
   }
@@ -45,6 +45,7 @@ object ArtistAlbumTable : Table() {
   val id = long("_id") { primaryKey() }
   val artistId = reference("ArtistId", ArtistTable.id)
   val albumId = reference("AlbumId", AlbumTable.id)
+
   init {
     index(artistId)
     index(albumId)

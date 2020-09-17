@@ -197,15 +197,17 @@ fun QueryBuilder.orWhere(orPart: () -> Op<Boolean>) = adjustWhere {
   if (this == null) expr else this or expr
 }
 
+/**
+ * Use this query builder as an expression
+ */
 fun <T : Any> QueryBuilder.asExpression(): Expression<T> {
   return wrapAsExpression(this)
 }
 
-@Suppress("unused")
-fun <T : Any> wrapAsExpression(query: QueryBuilder) = object : BaseExpression<T>() {
+fun <T : Any> wrapAsExpression(queryBuilder: QueryBuilder) = object : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("(")
-    query.appendTo(this)
+    queryBuilder.appendTo(this)
     append(")")
   }
 }

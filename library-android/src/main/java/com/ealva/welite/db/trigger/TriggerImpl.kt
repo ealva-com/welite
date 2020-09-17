@@ -170,6 +170,10 @@ interface TriggerStatements {
   fun <T> old(column: Column<T>): Column<T>
 
   companion object {
+    /**
+     * Create a [TriggerStatements], from [table] specifying the [event] causing the execution of
+     * the Trigger, which will contain the statements to execute when the [Trigger] is fired.
+     */
     operator fun invoke(table: Table, event: Trigger.Event): TriggerStatements {
       return TriggerStatementsImpl(table, event)
     }
@@ -234,6 +238,10 @@ private class TriggerStatementsImpl(
   }
 }
 
+/**
+ * Make a [Trigger] with [name] for table [T] to be executed [beforeAfter] the given [event] and
+ * call [addStatements] to add all the statements to be executed when the trigger fires.
+ */
 fun <T : Table> T.trigger(
   name: String,
   beforeAfter: Trigger.BeforeAfter,

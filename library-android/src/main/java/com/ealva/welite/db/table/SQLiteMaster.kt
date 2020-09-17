@@ -25,17 +25,17 @@ sealed class MasterType(val value: String) {
 
   override fun toString() = value
 
-  companion object {
-    val knownTypes = setOf(Table, Index, View, Trigger)
-  }
+  companion object
 }
 
-fun String.asMasterType(): MasterType = when (this) {
-  MasterType.Table.value -> MasterType.Table
-  MasterType.Index.value -> MasterType.Index
-  MasterType.Trigger.value -> MasterType.Trigger
-  MasterType.View.value -> MasterType.View
-  else -> MasterType.Unknown(this)
+private val KNOWN_TYPES =
+  listOf(MasterType.Table, MasterType.Index, MasterType.View, MasterType.Trigger)
+val MasterType.Companion.knownTypes
+  get() = KNOWN_TYPES
+
+fun String?.asMasterType(): MasterType {
+  return KNOWN_TYPES.firstOrNull { type -> type.value.equals(this, ignoreCase = true) }
+    ?: MasterType.Unknown(this ?: "NULL")
 }
 
 /**

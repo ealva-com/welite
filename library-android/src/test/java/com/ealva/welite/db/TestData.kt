@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.dml
+package com.ealva.welite.db
 
 import android.content.Context
-import com.ealva.welite.db.Database
-import com.ealva.welite.db.OpenParams
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
@@ -51,7 +49,7 @@ suspend fun withPlaceTestDatabase(
   val db = TestDatabase(context, tables, testDispatcher, enableForeignKeyConstraints)
   if (tables.contains(Place)) {
     db.transaction {
-      Place.insert {
+      val clevelandId = Place.insert {
         it[name] = "Cleveland"
       }
 
@@ -66,7 +64,7 @@ suspend fun withPlaceTestDatabase(
       Person.insert {
         it[id] = "louis"
         it[name] = "Louis"
-        it[cityId] = 1
+        it[cityId] = clevelandId
       }
 
       Person.insert {

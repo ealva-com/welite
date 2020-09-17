@@ -37,7 +37,7 @@ suspend fun withTestDatabase(
   }
 }
 
-@Suppress("FunctionNaming", "FunctionName")
+@Suppress("TestFunctionName")
 fun TestDatabase(
   context: Context,
   tables: List<Table>,

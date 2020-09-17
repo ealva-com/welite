@@ -144,7 +144,7 @@ data class ForeignKeyConstraint(
     }
 }
 
-class CheckConstraint(
+class CheckConstraint private constructor(
   private val tableIdentity: Identity,
   private val checkName: Identity,
   private val checkOp: String
@@ -181,6 +181,9 @@ class CheckConstraint(
   }
 
   companion object {
+    /**
+     * Make a CheckConstraint
+     */
     internal operator fun invoke(table: Table, name: Identity, op: Op<Boolean>): CheckConstraint {
       require(name.value.isNotBlank()) { "Check constraint name cannot be blank" }
       val tableIdentity = table.identity
@@ -216,9 +219,6 @@ class Index(
   override val masterType: MasterType = MasterType.Index
   override val identity: Identity
     get() = indexName.asIdentity()
-
-  fun onlyDiffersInName(other: Index): Boolean =
-    indexName != other.indexName && columns == other.columns && unique == other.unique
 
   override fun toString(): String = makeCreateSql()
 
