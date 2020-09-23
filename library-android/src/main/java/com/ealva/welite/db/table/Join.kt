@@ -19,6 +19,7 @@ package com.ealva.welite.db.table
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.appendTo
+import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
 
 typealias JoinCondition = Pair<Expression<*>, Expression<*>>
@@ -58,6 +59,8 @@ fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
 ): Join = join(otherTable, JoinType.NATURAL, onColumn(), otherTable.otherColumn())
 
 class Join(val columnSet: ColumnSet) : ColumnSet {
+
+  override val identity: Identity = columnSet.identity
 
   override val columns: List<Column<*>>
     get() = _joinParts.flatMapTo(columnSet.columns.toMutableList()) { it.joinPart.columns }

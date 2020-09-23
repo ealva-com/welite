@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.Doctors.degree
-import com.ealva.welite.db.Doctors.doctorName
-import com.ealva.welite.db.Specialty.description
-import com.ealva.welite.db.Visits.patientName
-import com.ealva.welite.db.Visits.visitDate
+import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.statements.insertValues
-import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.where
+import com.ealva.welite.db.table.Doctors.degree
+import com.ealva.welite.db.table.Doctors.doctorName
+import com.ealva.welite.db.table.Specialty.description
+import com.ealva.welite.db.table.Visits.patientName
+import com.ealva.welite.db.table.Visits.visitDate
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect

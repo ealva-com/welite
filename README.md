@@ -1,3 +1,4 @@
+
 WeLite
 ======
 
@@ -18,7 +19,7 @@ Create a single Database instance and then inject/locate where needed.
 Database(
   context = androidContext(),
   fileName = "FileName",
-  tables = listOf(TableA, TableB, TableC),
+  tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
   version = 1,
   migrations = emptyList(),
   openParams = OpenParams(
@@ -31,6 +32,9 @@ Database(
   onOpen { database -> /* your code */  }
 }
  ``` 
+The table list passed to Database will be ordered based on dependencies before being created. 
+```Database.tables``` returns the tables in this "dependency" order.
+
 When constructing the Database a DatabaseLifecycle object provides for configuration on 
 each step toward fully configured, created, and open. The client optionally provides a lambda to
 be called at each step. The interfaces provided to these configuration lambdas are designed based
@@ -67,14 +71,16 @@ object ArtistAlbumTable : Table() {
 }
 ```   
 ### Insert Data
-To insert data, or any database operation, a transaction needs to be opened. The Database.transaction() will execute the given lambda via a CoroutineDispatcher which defaults to Dispatchers.IO but may be provided by the client. 
+To insert data, or any database operation, a transaction needs to be opened. The 
+Database.transaction() will execute the given lambda via a CoroutineDispatcher which defaults to 
+Dispatchers.IO but may be provided by the client. 
 ```kotlin
 db.transaction {
   // build an insert statement which contains bindable arguments
   val insertStatement = MediaFileTable.insertValues {
-    it[mediaUri] = bindString()
-    it[fileName] = bindString()
-    it[mediaTitle] = bindString()
+    it[mediaUri].bindArg()
+    it[fileName].bindArg()
+    it[mediaTitle].bindArg()
   }
 
   // use the insert statement to insert the data, which is most efficient for bulk inserting
@@ -100,19 +106,23 @@ db.transaction {
 
   // single insert with bind variables
   MediaFileTable.insert({ it[0] = "/dir/Music/fourth.mp3" }) {
-    it[mediaUri] = bindString()
+    it[mediaUri].bindArg()
     it[fileName] = "fourth"
     it[mediaTitle] = "Fourth Title"
   }
 
-  // txn must be marked successful or will not commit. Can also call Transaction.rollback()
+  // typically not necessary as the transaction will auto setSuccessful() by default if not
+  // rolled back and an exception is not thrown. 
   setSuccessful()
 }
 ```  
 ### Query Data
-Queries are performed on a ColumnSet, such as Table, Join, Alias... The DSL provides for the typical select (columns) where (expression) to generate QueryBuilder object on which the client can call orderBy, groupBy, etc. and then build the Query for reuse.
+Queries are performed on a ColumnSet, such as Table, Join, Alias... The DSL provides for the 
+typical select (columns) where (expression) to generate QueryBuilder object on which the client 
+can call orderBy, groupBy, etc. and then build the Query for reuse.
 
-For example, to get the count of rows in the MediaFileTable where the mediaTitle column has "Hits" somewhere in the string:
+For example, to get the count of rows in the MediaFileTable where the mediaTitle column has "Hits" 
+somewhere in the string:
 ```kotlin
 val count = query {
   MediaFileTable.select(fileName).where { mediaTitle like "%Hits%" }.count()
@@ -128,9 +138,12 @@ query {
         .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 }
 ```
-A select of the artist id on the ArtistTable, where artistName equals the artist in question, is performed and is transformed to a sequence where a single item is expected. If the result of singleOrNull is null, then the data is inserted.
+A Select of the artist id on the ArtistTable, where artistName equals the artist in question, is 
+performed and is transformed to a sequence where a single item is expected. If the result of 
+singleOrNull is null, then the data is inserted.
 
-This snippet from a unit test shows how to refer to a Table alias column via the original table column:
+This snippet from a unit test shows how to refer to a Table alias column via the original table 
+column:
 ```kotlin
 query {
   val personAlias = Person.alias("person_alias")
@@ -144,7 +157,8 @@ query {
 }
 ```
 
-An example from a unit test demonstrates a query on a Join that uses both an expression alias and a query alias.
+An example from a unit test demonstrates a query on a Join that uses both an expression alias and a 
+query alias.
 ```kotlin
 query {
   val expAlias: SqlTypeExpressionAlias<String> = Person.name.max().alias("pxa")
@@ -174,32 +188,56 @@ SELECT "Person"."id", "Person"."name", "Person"."place_id", "uqa"."place_id"
   ) uqa ON "Person"."name" = uqa.pxa
 */
 ```
-In the above example the Person table is joined to a query alias of itself, and the join further uses an alias expression. The sequence generator yields the Person's name and a count of sequence items is taken. Examining the generated SQL gives some idea of what is happening in the lower layers of the library.
+In the above example the Person table is joined to a query alias of itself, and the join further 
+uses an alias expression. The sequence generator yields the Person's name and a count of sequence 
+items is taken. Examining the generated SQL gives some idea of what is happening in the lower 
+layers of the library.
 ### Modules
   * library-android - contains the core classes of WeLite
-  * library-javatime - contains column types for LocalDate and LocalDateTime. Requires dependency on "com.android.tools:desugar_jdk_libs:${Versions.DESUGAR}" and coreLibraryDesugaringEnabled = true in compile options
-  * app - skeleton application demos configuration, Koin injection, simple database creation, table population, query, etc.
+  * library-javatime - contains column types for LocalDate and LocalDateTime. Requires dependency 
+  on ```com.android.tools:desugar_jdk_libs:${Versions.DESUGAR}``` and 
+  ```coreLibraryDesugaringEnabled = true``` in compile options
+  * app - skeleton application demos configuration, Koin injection, simple database creation, table 
+  population, query, etc.
 
 ### Why this library?
-For WeLite the desire is to push all SQL down into the library and treat it as an implementation detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe tables and relationships, and then use the resulting objects for CRUD work, keeping SQL and SQLite API hidden (objects versus SQL string handling). 
+For WeLite the desire is to push all SQL down into the library and treat it as an implementation 
+detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe 
+tables and relationships, and then use the resulting objects for CRUD work, keeping SQL and SQLite 
+API hidden (objects versus SQL string handling). 
 
-The goal of this library to not to be a full-blown ORM. Instead, this library simplifies reading rows and converting them to POJOs efficiently using RDBMS features, primarily supporting simple types, and putting few lines of the Relational-OO mapping in the client code (specifying which columns are needed to construct a POJO).   
+The goal of this library to not to be a full-blown ORM. Instead, this library simplifies reading 
+rows and converting them to POJOs efficiently using RDBMS features, primarily supporting simple 
+types, and putting few lines of the Relational-OO mapping in the client code (specifying which 
+columns are needed to construct a POJO).   
 
-Both the [Squash] and [Exposed] libraries influence this library, primarily the DSL code. However, WeLite calls directly into the Android SQLite API and does not go through a JDBC driver, which alleviates the need (and code) to deal with variations in SQL and RDBMS features. Also, the WeLite design philosophy differs from these other libraries in specific areas. Pre 1.0 versions will see significant API changes.       
-
+Both the [Squash] and [Exposed] libraries influence this library, primarily the DSL code. 
+However, WeLite calls directly into the Android SQLite API and does not go through a JDBC driver, 
+which alleviates the need (and code) to deal with variations in SQL and RDBMS features. Also, the 
+WeLite design philosophy differs from these other libraries in specific areas. Pre 1.0 versions 
+will see significant API changes.       
 
 ### The name?
-Lite=SQLite and We="without entities". After attempting to port an in-house solution to Room and searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a Kotlin DSL to build the underlying SQL. The goal is to store and retrieve data with as little friction as possible, while providing benefits of a Kotlin interface. That said, the client controls what objects are created from rows in a query. While we envision flows of data classes or simple types, the user is free to construct any type of object(s).
+Lite=SQLite and We="without entities". After attempting to port an in-house solution to Room and 
+searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a 
+Kotlin DSL to build the underlying SQL. The goal is to store and retrieve data with as little 
+friction as possible, while providing benefits of a Kotlin interface. That said, the client 
+controls what objects are created from rows in a query. While we envision flows of data classes or 
+simple types, the user is free to construct any type of object(s).
 
-Why "without entities"? We often find a one-to-many relationship between a row in a table to a Kotlin object. So we don't try to enforce a row to entity mapping or load data unnecessarily. A higher level layer providing more ORM type functionality could be built over WeLite.  
+Why "without entities"? We often find a one-to-many relationship between a row in a table to a 
+Kotlin object. So we don't try to enforce a row to entity mapping or load data unnecessarily. A 
+higher level layer providing more ORM type functionality could be built over WeLite.  
 
 ### TODO
   * Much more testing
   * Expose more SQLite functionality
-  * Rethink binding parameters. Currently, not enforcing type at compile-time and instead doing conversions at run-time
+  * Rethink binding parameters. Currently, not enforcing type at compile-time and instead doing 
+  conversions at run-time
   
 ### Contributions
-Contributions welcome. Please fill out the template for the situation and include it in the Issue you open.
+Contributions welcome. Please fill out the template for the situation and include it in the Issue 
+you open.
   * [Defect Report][bug_report]
   * [Feature Request][feature_request]
   * [Pull Request][pull_request]

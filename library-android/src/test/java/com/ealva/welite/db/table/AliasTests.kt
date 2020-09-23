@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.max
-import com.ealva.welite.db.table.Join
-import com.ealva.welite.db.table.JoinType
-import com.ealva.welite.db.table.QueryBuilderAlias
-import com.ealva.welite.db.table.SqlTypeExpressionAlias
-import com.ealva.welite.db.table.alias
-import com.ealva.welite.db.table.all
-import com.ealva.welite.db.table.joinQuery
-import com.ealva.welite.db.table.lastQueryBuilderAlias
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect
@@ -74,7 +63,7 @@ class AliasTests {
         val actual = query.lastQueryBuilderAlias?.alias
         expect(actual).toBe("q0")
         expect(query.selectAll().count()).toBe(3L)
-        query.select(Person.columns + innerExp).all().forEach {
+        query.select(Person.columns + innerExp).all().sequence {
           expect(it[innerExp]).toNotBeNull()
         }
       }

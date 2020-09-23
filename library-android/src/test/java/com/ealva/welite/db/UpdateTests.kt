@@ -21,11 +21,16 @@ import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.statements.update
+import com.ealva.welite.db.statements.updateColumns
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.Person
+import com.ealva.welite.db.table.Place
+import com.ealva.welite.db.table.Review
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.where
+import com.ealva.welite.db.table.withPlaceTestDatabase
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.ArtistAlbumTable
 import com.ealva.welite.test.common.ArtistTable
@@ -72,7 +77,7 @@ class UpdateTests {
         setSuccessful()
       }
       transaction {
-        ArtistTable.update { it[artistName] = goodName }
+        ArtistTable.updateColumns { it[artistName] = goodName }
           .where { artistName eq badName }
           .update()
 
@@ -84,28 +89,81 @@ class UpdateTests {
     }
   }
 
+  @Test
+  fun `test update Person name`() = coroutineRule.runBlockingTest {
+    withPlaceTestDatabase(
+      context = appCtx,
+      tables = listOf(Place, Person, Review),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      val nathaliaId = "nathalia"
+      query {
+        expect(
+          Person
+            .select(Person.name)
+            .where { Person.id eq nathaliaId }
+            .sequence { it[Person.name] }
+            .first()
+        ).toBe("Nathalia")
+      }
+
+      val newName = "Natalie"
+      transaction {
+        Person
+          .updateColumns { it[name] = newName }
+          .where { id eq nathaliaId }
+          .update()
+      }
+
+      query {
+        expect(
+          Person
+            .select(Person.name)
+            .where { Person.id eq nathaliaId }
+            .sequence { it[Person.name] }
+            .first()
+        ).toBe(newName)
+      }
+    }
+  }
+
+  @Test
+  fun `test update with join`() = coroutineRule.runBlockingTest {
+    withPlaceTestDatabase(
+      context = appCtx,
+      tables = listOf(Place, Person, Review),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      val join = Person.innerJoin(Review)
+      transaction {
+        join.updateColumns {
+          it[Review.post] = Person.name
+          it[Review.value] = 123
+        }
+      }
+      query {
+        join.selectAll().sequence {
+          expect(it[Person.name]).toBe(it[Review.post])
+          expect(it[Review.value]).toBe(123)
+        }
+      }
+    }
+  }
+
   private fun Transaction.insertData(
     artist: String,
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    var idArtist: Long = 0
-    ArtistTable.select(ArtistTable.id)
+    val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
-      .forEach {
-        idArtist = it[ArtistTable.id]
-      }
+      .sequence { it[ArtistTable.id] }
+      .firstOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    if (idArtist == 0L) idArtist = ArtistTable.insert { it[artistName] = artist }
-
-    var idAlbum: Long = 0
-    AlbumTable.select(AlbumTable.id)
+    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
       .where { AlbumTable.albumName eq album }
-      .forEach {
-        idAlbum = it[AlbumTable.id]
-      }
-
-    if (idAlbum == 0L) idAlbum = AlbumTable.insert {
+      .sequence { it[AlbumTable.id] }
+      .firstOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist
     }

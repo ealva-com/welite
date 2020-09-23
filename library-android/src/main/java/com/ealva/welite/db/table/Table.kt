@@ -87,7 +87,14 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   override val columns: List<Column<*>>
     get() = _columns
 
-  private val indices = mutableListOf<Index>()
+  private val _indices = mutableListOf<Index>()
+
+  /**
+   * Index list exposed for testing
+   */
+  val indices: List<Index>
+    get() = _indices.toList()
+
   private val checkConstraints = mutableListOf<Pair<String, Op<Boolean>>>()
 
   override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.apply { append(identity) }
@@ -350,19 +357,28 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   private fun isCustomPKNameDefined(): Boolean =
     primaryKey?.let { it.identity().unquoted != "pk_$tableName" } == true
 
-  fun index(customIndexName: String, firstColumn: Column<*>, vararg columns: Column<*>) =
-    makeIndex(customIndexName, false, firstColumn, columns.toList())
+  /**
+   * Returned Index is exposed for testing.
+   */
+  fun index(customName: String, firstColumn: Column<*>, vararg columns: Column<*>): Index =
+    makeIndex(customName, false, firstColumn, columns.toList())
 
-  fun index(firstColumn: Column<*>, vararg columns: Column<*>) =
+  /**
+   * Returned Index is exposed for testing.
+   */
+  fun index(firstColumn: Column<*>, vararg columns: Column<*>): Index =
     makeIndex(null, false, firstColumn, columns.toList())
 
-  fun uniqueIndex(
-    customIndexName: String,
-    firstColumn: Column<*>,
-    vararg columns: Column<*>
-  ) = makeIndex(customIndexName, true, firstColumn, columns.toList())
+  /**
+   * Returned Index is exposed for testing.
+   */
+  fun uniqueIndex(customName: String, firstColumn: Column<*>, vararg columns: Column<*>): Index =
+    makeIndex(customName, true, firstColumn, columns.toList())
 
-  fun uniqueIndex(firstColumn: Column<*>, vararg columns: Column<*>) =
+  /**
+   * Returned Index is exposed for testing.
+   */
+  fun uniqueIndex(firstColumn: Column<*>, vararg columns: Column<*>): Index =
     makeIndex(null, true, firstColumn, columns.toList())
 
   private fun makeIndex(
@@ -370,21 +386,18 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     isUnique: Boolean,
     firstColumn: Column<*>,
     otherColumns: List<Column<*>>
-  ) {
-    val tableIdentity = identity
-    indices.add(
-      Index(
-        tableIdentity,
-        otherColumns.toMutableList().apply {
-          add(0, firstColumn)
-          forEach { column ->
-            require(columns.contains(column)) { "Column '$column' not in table '$tableName'" }
-          }
-        },
-        isUnique,
-        customIndexName
-      )
-    )
+  ): Index {
+    return Index(
+      this,
+      otherColumns.toMutableList().apply {
+        add(0, firstColumn)
+        forEach { column ->
+          require(columns.contains(column)) { "Column '$column' not in table '$tableName'" }
+        }
+      },
+      isUnique,
+      customIndexName
+    ).also { _indices.add(it) }
   }
 
   @ExperimentalUnsignedTypes
@@ -507,7 +520,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     preCreate()
     LOG.i { it("Creating %s", tableName) }
     executor.exec(createStatement(temporary))
-    indices.forEach { index -> index.create(executor) }
+    _indices.forEach { index -> index.create(executor) }
   }
 
   override fun drop(executor: SqlExecutor) {
@@ -517,6 +530,9 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 
   protected open fun preCreate() {}
 
+  /**
+   * Called for each Table after ALL tables have been created
+   */
   internal fun postCreate(executor: SqlExecutor) {
     LOG.i { it("postCreate $tableName") }
     onPostCreate(executor)
@@ -540,6 +556,10 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   }
 
   override fun hashCode(): Int = tableName.hashCode()
+
+  internal fun removeIndex(index: Index): Boolean {
+    return _indices.remove(index)
+  }
 
   private val columnFactory by lazy { ColumnFactoryImpl(this) }
 

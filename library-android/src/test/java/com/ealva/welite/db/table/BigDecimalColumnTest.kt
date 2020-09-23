@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.BigTable.bigD
-import com.ealva.welite.db.BigTable.name
-import com.ealva.welite.db.BigTable.optBig
+import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.statements.insertValues
-import com.ealva.welite.db.table.ForeignKeyAction
-import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.where
+import com.ealva.welite.db.table.BigTable.bigD
+import com.ealva.welite.db.table.BigTable.name
+import com.ealva.welite.db.table.BigTable.optBig
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase

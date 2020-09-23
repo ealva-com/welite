@@ -20,12 +20,19 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
+import com.ealva.welite.db.expr.bindString
 import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.statements.deleteWhere
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.Person
+import com.ealva.welite.db.table.Place
+import com.ealva.welite.db.table.Review
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.where
+import com.ealva.welite.db.table.withPlaceTestDatabase
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.ArtistAlbumTable
 import com.ealva.welite.test.common.ArtistTable
@@ -73,11 +80,52 @@ class DeleteTests {
 
       transaction {
         expect(MediaFileTable.selectWhere(MediaFileTable.id eq mediaId).count()).toBe(1)
-        expect(MediaFileTable.deleteWhere { MediaFileTable.id eq mediaId }.delete()).toBe(1)
+        expect(MediaFileTable.delete { MediaFileTable.id eq mediaId }).toBe(1)
         setSuccessful()
       }
 
       query { expect(MediaFileTable.selectWhere(MediaFileTable.id eq mediaId).count()).toBe(0) }
+    }
+  }
+
+  @Test
+  fun `test deleteAll and delete`() = coroutineRule.runBlockingTest {
+    withPlaceTestDatabase(
+      context = appCtx,
+      tables = listOf(Place, Person, Review),
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      transaction { Review.deleteAll() }
+      query {
+        expect(Review.selectAll().count()).toBe(0)
+        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(1)
+      }
+      transaction { Person.delete { Person.name like "%ber" } }
+      query {
+        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(0)
+      }
+    }
+  }
+
+  @Test
+  fun `test deleteWhere`() = coroutineRule.runBlockingTest {
+    withPlaceTestDatabase(
+      context = appCtx,
+      tables = listOf(Place, Person, Review),
+      enableForeignKeyConstraints = false,
+      testDispatcher = coroutineRule.testDispatcher
+    ) {
+      val deleteStmt = Person.deleteWhere { Person.name like bindString() }
+      transaction {
+        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(1)
+        expect(Person.select(Person.id).where { Person.name like "%lia" }.count()).toBe(1)
+        deleteStmt.delete { it[0] = "%ber" }
+        deleteStmt.delete { it[0] = "%lia" }
+      }
+      query {
+        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(0)
+        expect(Person.select(Person.id).where { Person.name like "%lia" }.count()).toBe(0)
+      }
     }
   }
 

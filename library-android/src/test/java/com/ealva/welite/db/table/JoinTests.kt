@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
 import android.database.sqlite.SQLiteException
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
+import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.expr.stringLiteral
-import com.ealva.welite.db.table.Alias
-import com.ealva.welite.db.table.Cursor
-import com.ealva.welite.db.table.JoinType
-import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.alias
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.selectWhere
-import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect
@@ -77,13 +69,13 @@ class JoinTests {
           .where {
             (Person.id eq "louis" or (Person.name eq "Rick") and (Person.cityId eq Place.id))
           }
-          .forEach {
-            val userName = it[Person.name]
-            val cityName = it[Place.name]
-            when (userName) {
-              "Louis" -> expect(cityName).toBe("Cleveland")
-              "Rick" -> expect(cityName).toBe("South Point")
-              else -> error("Unexpected user $userName")
+          .sequence { Pair(it[Person.name], it[Place.name]) }
+          .toList().also { list -> expect(list.size).toBe(2) }
+          .forEach { (person, city) ->
+            when (person) {
+              "Louis" -> expect(city).toBe("Cleveland")
+              "Rick" -> expect(city).toBe("South Point")
+              else -> error("Unexpected user/city $person/$city")
             }
           }
       }

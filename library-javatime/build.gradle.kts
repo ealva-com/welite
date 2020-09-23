@@ -85,7 +85,7 @@ dependencies {
   implementation(ThirdParty.COROUTINE_ANDROID)
 
   // unsure exactly why receiving a warning for not including this testAnnotationProcessor
-  testAnnotationProcessor("com.google.auto.service:auto-service:1.0-rc4")
+  testAnnotationProcessor("com.google.auto.service:auto-service:1.0-rc7")
   testImplementation(TestingLib.JUNIT)
   testImplementation(AndroidTestingLib.ANDROIDX_TEST_CORE)
   testImplementation(AndroidTestingLib.ANDROIDX_TEST_RULES)

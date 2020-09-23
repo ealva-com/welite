@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.table.Column
-import com.ealva.welite.db.table.ForeignKeyAction
-import com.ealva.welite.db.table.Table
 import com.ealva.welite.test.common.SqlExecutorSpy
 import com.nhaarman.expect.expect
 import org.junit.Before
@@ -62,6 +59,13 @@ class CreateTableTests {
           account.columns.joinToString { it.descriptionDdl() } + """, CONSTRAINT "pk_""" +
           tableName + """" PRIMARY KEY ("""" + id1Name + """", """" + id2Name + """"))"""
       )
+    }
+
+    SqlExecutorSpy().let { spy ->
+      account.drop(spy)
+      val ddl = spy.execSqlList
+      expect(ddl).toHaveSize(1)
+      expect(ddl[0]).toBe("""DROP TABLE IF EXISTS "Account"""")
     }
   }
 

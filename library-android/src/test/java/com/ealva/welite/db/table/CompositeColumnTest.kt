@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
 import android.os.Build
@@ -22,10 +22,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.table.BaseCompositeColumn
-import com.ealva.welite.db.table.Column
-import com.ealva.welite.db.table.CompositeColumn
-import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.SqlBuilder
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail

@@ -178,7 +178,6 @@ abstract class View(
   private val querySeed: QuerySeed
 ) : ColumnSet, Creatable, Comparable<View> {
 
-  @Suppress("unused")
   constructor(name: String = "", query: Query) : this(name, query.seed)
 
   constructor(name: String = "", builder: QueryBuilder) : this(name, builder.build())

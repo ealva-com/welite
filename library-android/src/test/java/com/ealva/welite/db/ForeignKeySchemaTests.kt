@@ -43,6 +43,7 @@ import java.io.File
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class ForeignKeySchemaTests {
   @get:Rule var coroutineRule = CoroutineRule()
+
   private lateinit var appCtx: Context
 
   @Before

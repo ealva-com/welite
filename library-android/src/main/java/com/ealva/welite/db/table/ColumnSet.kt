@@ -20,6 +20,7 @@ import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.ExprList
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
+import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
 
 /**
@@ -28,6 +29,7 @@ import com.ealva.welite.db.type.SqlBuilder
  */
 interface ColumnSet {
   val columns: List<Column<*>>
+  val identity: Identity
 
   /**
    * Appends the ```FROM``` clause, without the "FROM", of this ColumnSet to

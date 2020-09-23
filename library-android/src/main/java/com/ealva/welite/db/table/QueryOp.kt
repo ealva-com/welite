@@ -20,6 +20,8 @@ import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.type.SqlBuilder
 
+fun exists(queryBuilder: QueryBuilder): Op<Boolean> = Exists(queryBuilder)
+
 class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("EXISTS (")
@@ -28,6 +30,8 @@ class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   }
 }
 
+fun notExists(queryBuilder: QueryBuilder): Op<Boolean> = NotExists(queryBuilder)
+
 class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("NOT EXISTS (")
@@ -35,6 +39,9 @@ class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
     append(")")
   }
 }
+
+infix fun <T> Expression<T>.inSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
+  InSubQueryOp(this, queryBuilder)
 
 class InSubQueryOp<T>(
   private val expr: Expression<T>,
@@ -47,6 +54,9 @@ class InSubQueryOp<T>(
     append(")")
   }
 }
+
+infix fun <T> Expression<T>.notInSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
+  NotInSubQueryOp(this, queryBuilder)
 
 class NotInSubQueryOp<T>(
   private val expr: Expression<T>,

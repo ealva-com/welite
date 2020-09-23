@@ -30,7 +30,6 @@ import com.ealva.ealvalog.w
 import com.ealva.welite.db.WeResult.Success
 import com.ealva.welite.db.WeResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
-import com.ealva.welite.db.statements.deleteWhere
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.SQLiteMaster
@@ -312,7 +311,7 @@ private class WeLiteDatabase(
   requireMigration: Boolean,
   openParams: OpenParams,
   configure: DatabaseLifecycle.() -> Unit
-) : Database, DbConfig, AutoCloseable {
+) : Database, DbConfig {
   private var closed = false
   private val openHelper: OpenHelper = OpenHelper(
     context = context,
@@ -580,9 +579,7 @@ private class OpenHelper private constructor(
   private fun dropAll() {
     database.ongoingTransaction {
       setSchemaWritable(true)
-      SQLiteMaster
-        .deleteWhere { SQLiteMaster.type inList MasterType.knownTypes.map { it.value } }
-        .delete()
+      SQLiteMaster.delete { SQLiteMaster.type inList MasterType.knownTypes.map { it.value } }
       setSchemaWritable(false)
       vacuum()
       tegridyCheck()

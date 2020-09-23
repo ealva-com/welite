@@ -47,12 +47,11 @@ interface DeleteStatement : Statement {
   }
 }
 
+/**
+ * Build a DeleteStatement which can be reused binding args each time
+ */
 fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {
   return DeleteStatement(this, where())
-}
-
-fun <T : Table> T.deleteAll(): DeleteStatement {
-  return DeleteStatement(this, null)
 }
 
 private class DeleteStatementImpl(

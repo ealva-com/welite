@@ -25,6 +25,11 @@ import com.ealva.welite.db.table.FieldType.IntegerField
 import com.ealva.welite.db.table.FieldType.RealField
 import com.ealva.welite.db.table.FieldType.TextField
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.trigger.DeleteAlbumTrigger
+import com.ealva.welite.db.trigger.DeleteArtistTrigger
+import com.ealva.welite.db.trigger.DeleteMediaTrigger
+import com.ealva.welite.db.trigger.InsertMediaTrigger
+import com.ealva.welite.db.view.FullMediaView
 import com.ealva.welite.test.common.AlbumTable
 import com.ealva.welite.test.common.ArtistAlbumTable
 import com.ealva.welite.test.common.ArtistTable
@@ -33,6 +38,7 @@ import com.ealva.welite.test.common.MediaFileTable
 import com.ealva.welite.test.common.SqlExecutorSpy
 import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
+import com.nhaarman.expect.ListMatcher
 import com.nhaarman.expect.StringMatcher
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -288,7 +294,6 @@ class DatabaseTests {
     }
   }
 
-  @Suppress("LongMethod") // detekt
   @Test
   fun `create tables with foreign keys`() = coroutineRule.runBlockingTest {
     withTestDatabase(
@@ -421,6 +426,120 @@ class DatabaseTests {
       )
     )
     db.query {}
+  }
+
+  @Test
+  fun `test create and drop table`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = emptyList(),
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      transaction { MediaFileTable.create() }
+      query { expect(MediaFileTable.exists).toBe(true) }
+      transaction { MediaFileTable.drop() }
+      query { expect(MediaFileTable.exists).toBe(false) }
+    }
+  }
+
+  @ExperimentalUnsignedTypes
+  @Test
+  fun `test create and drop View`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      query {
+        expect(MediaFileTable.exists).toBe(true)
+        expect(AlbumTable.exists).toBe(true)
+        expect(ArtistTable.exists).toBe(true)
+        expect(ArtistAlbumTable.exists).toBe(true)
+      }
+      transaction { FullMediaView.create() }
+      query { expect(FullMediaView.exists).toBe(true) }
+      transaction { FullMediaView.drop() }
+      query { expect(FullMediaView.exists).toBe(false) }
+    }
+  }
+
+  @Test
+  fun `test create and drop Trigger`() = coroutineRule.runBlockingTest {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      query {
+        expect(MediaFileTable.exists).toBe(true)
+        expect(AlbumTable.exists).toBe(true)
+        expect(ArtistTable.exists).toBe(true)
+        expect(ArtistAlbumTable.exists).toBe(true)
+      }
+      transaction {
+        DeleteArtistTrigger.create()
+        DeleteAlbumTrigger.create()
+        InsertMediaTrigger.create()
+        DeleteMediaTrigger.create()
+      }
+      query {
+        expect(DeleteArtistTrigger.exists).toBe(true)
+        expect(DeleteAlbumTrigger.exists).toBe(true)
+        expect(InsertMediaTrigger.exists).toBe(true)
+        expect(DeleteMediaTrigger.exists).toBe(true)
+      }
+      transaction {
+        DeleteArtistTrigger.drop()
+        DeleteAlbumTrigger.drop()
+        InsertMediaTrigger.drop()
+        DeleteMediaTrigger.drop()
+      }
+      query {
+        expect(DeleteArtistTrigger.exists).toBe(false)
+        expect(DeleteAlbumTrigger.exists).toBe(false)
+        expect(InsertMediaTrigger.exists).toBe(false)
+        expect(DeleteMediaTrigger.exists).toBe(false)
+      }
+    }
+  }
+
+  @Test
+  fun `test create and drop Index`() = coroutineRule.runBlockingTest {
+    val aTable = object : Table() {
+      @Suppress("unused") val id = long("_id") { primaryKey() }
+      val artistName = text("ArtistName") { collateNoCase() }
+    }
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(aTable),
+      testDispatcher = coroutineRule.testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      query { expect(aTable.exists).toBe(true) }
+      val index = transaction { aTable.index(aTable.artistName).also { index -> index.create() } }
+      query {
+        expect(index.exists).toBe(true)
+        expect(aTable.indices).toContain(index)
+      }
+      transaction { index.drop() }
+      query {
+        expect(index.exists).toBe(false)
+        expect(aTable.indices).toNotContain(index)
+      }
+    }
+  }
+}
+
+fun <T> ListMatcher<T>.toNotContain(expected: T, message: (() -> Any?)? = null) {
+  if (actual == null) {
+    fail("Expected value to contain $expected, but the actual value was null.", message)
+  }
+
+  if ((actual as List<T>).contains(expected)) {
+    fail("Expected $actual to contain $expected", message)
   }
 }
 

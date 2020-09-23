@@ -105,6 +105,9 @@ fun concat(separator: String = "", expr: List<Expression<String>>): Concat = Con
 infix fun <T : String?> Expression<T>.like(pattern: String): LikeOp =
   LikeOp(this, stringParam(pattern))
 
+infix fun <T : String?> Expression<T>.like(expr: Expression<T>): LikeOp =
+  LikeOp(this, expr)
+
 infix fun <T : String?> Expression<T>.notLike(pattern: String): NotLikeOp =
   NotLikeOp(this, stringParam(pattern))
 
@@ -163,28 +166,29 @@ enum class SortOrder(val sqlName: String) {
   override fun toString() = sqlName
 }
 
-fun Expression<String>.substring(start: Int, length: Int): Substring =
+fun Expression<String>.substring(start: Int, length: Int): Function<String> =
   Substring(this, intLiteral(start), intLiteral(length))
 
-fun Expression<String>.trim(): Trim = Trim(this)
+fun Expression<String>.trim(): Function<String> = Trim(this)
 
-fun Expression<Long>.random(): Random = Random()
+fun Expression<Long>.random(): Function<Long> = Random()
 
-fun Expression<String>.lowerCase(): LowerCase = LowerCase(this)
+fun Expression<String>.lowerCase(): Function<String> = LowerCase(this)
 
-fun Expression<String>.upperCase(): UpperCase = UpperCase(this)
+fun Expression<String>.upperCase(): Function<String> = UpperCase(this)
 
-fun <T : Comparable<T>> SqlTypeExpression<T>.avg(): Avg<T> = Avg(this, this.persistentType)
+fun <T : Comparable<T>> SqlTypeExpression<T>.avg(): Function<T> = Avg(this, this.persistentType)
 
-fun <T : Any?> SqlTypeExpression<T>.sum(): Sum<T> = Sum(this, this.persistentType)
+fun <T : Any?> SqlTypeExpression<T>.sum(): Function<T> = Sum(this, this.persistentType)
 
-fun <T : Comparable<T>> SqlTypeExpression<T>.min(): Min<T> = Min(this, this.persistentType)
+fun <T : Comparable<T>> SqlTypeExpression<T>.min(): Function<T> = Min(this, this.persistentType)
 
-fun <T : Comparable<T>> SqlTypeExpression<T>.max(): Max<T> = Max(this, this.persistentType)
+fun <T : Comparable<T>> SqlTypeExpression<T>.max(): Function<T> = Max(this, this.persistentType)
 
-fun Expression<String>.groupConcat(separator: String? = null) = GroupConcat(this, separator)
+fun <T : String?> Expression<T>.groupConcat(separator: String? = null): GroupConcat<T> =
+  GroupConcat(this, separator)
 
-fun SqlTypeExpression<*>.count(): Count = Count(this)
+fun SqlTypeExpression<*>.count(): Function<Long> = Count(this)
 
 fun <R> Expression<*>.cast(persistentType: PersistentType<R>): SqlTypeExpression<R> =
   Cast(this, persistentType)

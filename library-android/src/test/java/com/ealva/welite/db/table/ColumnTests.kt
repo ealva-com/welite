@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
 import android.os.Build.VERSION_CODES.LOLLIPOP
@@ -22,8 +22,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.BaseSqlTypeExpression
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
-import com.ealva.welite.db.table.Column
-import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.IntegerPersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.test.common.SqlExecutorSpy

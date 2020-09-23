@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db
+package com.ealva.welite.db.table
 
 import android.content.Context
-import com.ealva.welite.db.table.Column
-import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.Database
+import com.ealva.welite.db.OpenParams
 import kotlinx.coroutines.CoroutineDispatcher
 
 object Place : Table() {

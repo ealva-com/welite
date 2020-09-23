@@ -139,7 +139,6 @@ class TriggerTests {
         DeleteArtistTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         insertData("Led Zeppelin", "Houses of the Holy", "Dy'er Mak'er", uri)
-        setSuccessful()
       }
 
       query {
@@ -149,7 +148,6 @@ class TriggerTests {
 
       transaction {
         expect(ArtistTable.delete { ArtistTable.artistName eq "Led Zeppelin" }).toBe(1)
-        setSuccessful()
       }
 
       query {
@@ -171,7 +169,6 @@ class TriggerTests {
         DeleteAlbumTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         insertData("Led Zeppelin", "Houses of the Holy", "Dy'er Mak'er", uri)
-        setSuccessful()
       }
 
       query {
@@ -182,7 +179,6 @@ class TriggerTests {
       transaction {
         expect(DeleteAlbumTrigger.exists).toBe(true)
         expect(AlbumTable.delete { AlbumTable.albumName eq "Houses of the Holy" }).toBe(1)
-        setSuccessful()
       }
 
       query {
@@ -203,7 +199,6 @@ class TriggerTests {
         InsertMediaTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         insertData("Led Zeppelin", "Houses of the Holy", "Dy'er Mak'er", uri)
-        setSuccessful()
       }
 
       query {
@@ -227,7 +222,6 @@ class TriggerTests {
         InsertMediaTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         insertData("Led Zeppelin", "Houses of the Holy", "Dy'er Mak'er", uri)
-        setSuccessful()
       }
 
       query {
@@ -238,7 +232,6 @@ class TriggerTests {
       transaction {
         expect(InsertMediaTrigger.exists).toBe(true)
         insertData("An Artist", "An Album", "Song Title", Uri.EMPTY) // Uri.EMPTY should abort
-        setSuccessful()
       }
     }
   }
@@ -256,7 +249,6 @@ class TriggerTests {
         DeleteMediaTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         ids = insertData("Led Zeppelin", "Houses of the Holy", "Dy'er Mak'er", uri)
-        setSuccessful()
       }
 
       query {
@@ -268,7 +260,6 @@ class TriggerTests {
       transaction {
         val mediaId = checkNotNull(ids).mediaId
         MediaFileTable.delete { MediaFileTable.id eq mediaId }
-        setSuccessful()
       }
 
       query {
@@ -293,7 +284,6 @@ class TriggerTests {
         DeleteMediaTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         ids = insertData("Led Zeppelin", "Houses of the Holy", "Dy'er Mak'er", uri)
-        setSuccessful()
       }
 
       query {
@@ -308,7 +298,6 @@ class TriggerTests {
       transaction {
         val mediaId = checkNotNull(ids).mediaId
         MediaFileTable.delete { MediaFileTable.id eq mediaId }
-        setSuccessful()
       }
 
       query {
@@ -325,23 +314,15 @@ class TriggerTests {
     title: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    var idArtist: Long = 0
-    ArtistTable.select(ArtistTable.id)
+    val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
-      .forEach {
-        idArtist = it[ArtistTable.id]
-      }
+      .sequence { it[ArtistTable.id] }
+      .firstOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    if (idArtist == 0L) idArtist = ArtistTable.insert { it[artistName] = artist }
-
-    var idAlbum: Long = 0
-    AlbumTable.select(AlbumTable.id)
+    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
       .where { AlbumTable.albumName eq album }
-      .forEach {
-        idAlbum = it[AlbumTable.id]
-      }
-
-    if (idAlbum == 0L) idAlbum = AlbumTable.insert {
+      .sequence { it[AlbumTable.id] }
+      .firstOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist
     }

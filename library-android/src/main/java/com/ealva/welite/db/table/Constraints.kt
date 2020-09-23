@@ -197,7 +197,7 @@ private const val CREATE_UNIQUE_INDEX = "CREATE UNIQUE INDEX IF NOT EXISTS "
 private const val CREATE_INDEX = "CREATE INDEX IF NOT EXISTS "
 
 class Index(
-  private val tableIdentity: Identity,
+  private val table: Table,
   private val columns: List<Column<*>>,
   private val unique: Boolean,
   private val customName: String? = null
@@ -205,6 +205,8 @@ class Index(
   init {
     require(columns.isNotEmpty()) { "At least one column is required to create an index" }
   }
+
+  val tableIdentity: Identity = table.identity
 
   private val indexName: String
     get() = customName ?: buildStr {
@@ -228,6 +230,7 @@ class Index(
   }
 
   override fun drop(executor: SqlExecutor) {
+    table.removeIndex(this)
     executor.exec(makeDropSql())
   }
 
@@ -254,7 +257,7 @@ class Index(
     if (tableIdentity != other.tableIdentity) return false
     if (columns != other.columns) return false
     if (unique != other.unique) return false
-    if (customName != other.customName) return false
+    if (indexName != other.indexName) return false
 
     return true
   }

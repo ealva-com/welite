@@ -107,6 +107,9 @@ interface TransactionInProgress : Queryable {
     where: () -> Op<Boolean>
   ): Long = DeleteStatement(this, where()).delete(bindArgs)
 
+  fun <T : Table> T.deleteAll(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long =
+    DeleteStatement(this, null).delete(bindArgs)
+
   /**
    * Clears bindings, binds arguments to this UpdateStatement, and execute the statement
    * returning the number of rows updated.
@@ -169,22 +172,11 @@ private class TransactionInProgressImpl(
     this@TransactionInProgressImpl.doForEach(build(), bind, action)
   }
 
-  private fun doForEach(seed: QuerySeed, bind: (ArgBindings) -> Unit, action: (Cursor) -> Unit) =
-    CursorWrapper.select(seed, db, bind).use { while (it.moveToNext()) action(it) }
-
   override fun <T> Query.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
     doFlow(seed, bind, factory)
 
   override fun <T> QueryBuilder.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
     this@TransactionInProgressImpl.doFlow(build(), bind, factory)
-
-  private fun <T> doFlow(
-    seed: QuerySeed,
-    bind: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
-  ): Flow<T> = flow {
-    CursorWrapper.select(seed, db, bind).use { while (it.moveToNext()) emit(factory(it)) }
-  }.flowOn(dbConfig.dispatcher)
 
   override fun <T> Query.sequence(
     bind: (ArgBindings) -> Unit,
@@ -195,6 +187,24 @@ private class TransactionInProgressImpl(
     bind: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Sequence<T> = this@TransactionInProgressImpl.doSequence(build(), bind, factory)
+
+  private fun doForEach(
+    seed: QuerySeed,
+    bind: (ArgBindings) -> Unit,
+    action: (Cursor) -> Unit
+  ) = CursorWrapper.select(seed, db, bind).use { cursor ->
+    while (cursor.moveToNext()) action(cursor)
+  }
+
+  private fun <T> doFlow(
+    seed: QuerySeed,
+    bind: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Flow<T> = flow {
+    CursorWrapper.select(seed, db, bind).use { cursor ->
+      while (cursor.moveToNext()) emit(factory(cursor))
+    }
+  }.flowOn(dbConfig.dispatcher)
 
   private fun <T> doSequence(
     seed: QuerySeed,

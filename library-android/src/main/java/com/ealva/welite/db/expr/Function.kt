@@ -97,17 +97,16 @@ class Concat(
   }
 }
 
-class GroupConcat(
-  private val expr: Expression<String>,
+class GroupConcat<T : String?>(
+  private val expr: Expression<T>,
   private val separator: String?
 ) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("GROUP_CONCAT(")
     append(expr)
     separator?.let {
-      append(" SEPARATOR ")
+      append(" , ")
       append('\'')
-
       append(it)
       append('\'')
     }

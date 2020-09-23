@@ -19,15 +19,11 @@ package com.ealva.welite.db.table
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.Person
-import com.ealva.welite.db.Place
-import com.ealva.welite.db.Review
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.count
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.substring
-import com.ealva.welite.db.withPlaceTestDatabase
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.runBlockingTest
 import com.nhaarman.expect.expect

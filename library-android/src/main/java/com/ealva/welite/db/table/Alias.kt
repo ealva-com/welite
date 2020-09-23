@@ -117,6 +117,8 @@ class QueryBuilderAlias(private val queryBuilder: QueryBuilder, val alias: Strin
     append(alias)
   }
 
+  override val identity: Identity = alias.asIdentity()
+
   override val columns: List<Column<*>>
     get() = queryBuilder.sourceSetColumnsInResult().map { it.clone() }
 

@@ -129,7 +129,10 @@ class QueryBuilder private constructor(
 
   fun distinct(value: Boolean = true) = apply { distinct = value }
 
-  fun groupBy(vararg columns: Expression<*>) = apply { groupBy.addAll(columns) }
+  fun groupBy(first: Expression<*>, vararg columns: Expression<*>) = apply {
+    groupBy.add(first)
+    if (columns.isNotEmpty()) groupBy.addAll(columns)
+  }
 
   @Suppress("unused")
   fun having(op: () -> Op<Boolean>) = apply {

@@ -140,11 +140,7 @@ class LikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "L
 class NotLikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "NOT LIKE")
 
 fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, BytePersistentType())
-fun shortParam(value: Short): Expression<Short> = QueryParameter(
-  value,
-  ShortPersistentType()
-)
-
+fun shortParam(value: Short): Expression<Short> = QueryParameter(value, ShortPersistentType())
 fun intParam(value: Int): QueryParameter<Int> = QueryParameter(value, IntegerPersistentType())
 fun longParam(value: Long): Expression<Long> = QueryParameter(value, LongPersistentType())
 fun floatParam(value: Float): Expression<Float> = QueryParameter(value, FloatPersistentType())
