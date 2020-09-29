@@ -24,7 +24,7 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.type.IntegerPersistentType
 import com.ealva.welite.db.type.SqlBuilder
-import com.ealva.welite.test.common.SqlExecutorSpy
+import com.ealva.welite.test.shared.SqlExecutorSpy
 import com.nhaarman.expect.expect
 import org.junit.Before
 import org.junit.Test

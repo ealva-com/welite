@@ -19,7 +19,7 @@ package com.ealva.welite.db.table
 import android.content.Context
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.test.common.SqlExecutorSpy
+import com.ealva.welite.test.shared.SqlExecutorSpy
 import com.nhaarman.expect.expect
 import org.junit.Before
 import org.junit.Test

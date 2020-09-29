@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.test.common
+package com.ealva.welite.test.shared
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,9 +40,9 @@ class CoroutineRule constructor(
     Dispatchers.resetMain()
     testDispatcher.cleanupTestCoroutines()
   }
-}
 
-@ExperimentalCoroutinesApi
-fun CoroutineRule.runBlockingTest(block: suspend () -> Unit) = testDispatcher.runBlockingTest {
-  block()
+  @ExperimentalCoroutinesApi
+  fun runBlockingTest(block: suspend () -> Unit) = testDispatcher.runBlockingTest {
+    block()
+  }
 }

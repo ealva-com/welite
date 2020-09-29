@@ -216,7 +216,9 @@ private class ColumnImpl<T>(
   override fun desc() = apply { addConstraint(DescConstraint) }
 
   override fun autoIncrement() = apply {
-    if (!constraintList.hasPrimaryKey()) primaryKey()
+    if (!constraintList.hasPrimaryKey()) {
+      primaryKey()
+    }
     addConstraint(AutoIncrementConstraint)
   }
 

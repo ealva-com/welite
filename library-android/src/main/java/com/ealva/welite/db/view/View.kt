@@ -22,6 +22,7 @@ import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.Alias
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ColumnSet
@@ -148,15 +149,14 @@ private class ViewColumnImpl<T>(
   override fun markPrimaryKey() {}
 
   override fun compareTo(other: Column<*>): Int {
-    if (other !is ViewColumnImpl) return -1
-    return columnComparator.compare(this, other)
+    return if (other !is ViewColumnImpl) -1 else columnComparator.compare(this, other)
   }
 
   private val columnComparator: Comparator<ViewColumnImpl<*>> =
     compareBy({ column -> column.name }, { column -> column.view })
 }
 
-private val LOG by lazyLogger(View::class)
+private val LOG by lazyLogger(View::class, WeLiteLog.marker)
 
 /**
  * Represents a View in the database.

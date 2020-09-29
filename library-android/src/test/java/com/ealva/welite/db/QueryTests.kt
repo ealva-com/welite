@@ -28,14 +28,13 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.toQuery
 import com.ealva.welite.db.table.where
-import com.ealva.welite.test.common.AlbumTable
-import com.ealva.welite.test.common.AlbumTable.albumName
-import com.ealva.welite.test.common.ArtistAlbumTable
-import com.ealva.welite.test.common.ArtistTable
-import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.MediaFileTable
-import com.ealva.welite.test.common.runBlockingTest
-import com.ealva.welite.test.common.withTestDatabase
+import com.ealva.welite.test.shared.AlbumTable
+import com.ealva.welite.test.shared.AlbumTable.albumName
+import com.ealva.welite.test.shared.ArtistAlbumTable
+import com.ealva.welite.test.shared.ArtistTable
+import com.ealva.welite.test.shared.CoroutineRule
+import com.ealva.welite.test.shared.MediaFileTable
+import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.hamcrest.CoreMatchers.isA
@@ -53,6 +52,8 @@ import java.io.File
 @Config(sdk = [LOLLIPOP])
 class QueryTests {
   @get:Rule var coroutineRule = CoroutineRule()
+
+  @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context

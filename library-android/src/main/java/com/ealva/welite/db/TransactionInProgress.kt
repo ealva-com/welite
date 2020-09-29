@@ -27,6 +27,7 @@ import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.ColumnValues
 import com.ealva.welite.db.statements.DeleteStatement
 import com.ealva.welite.db.statements.InsertStatement
@@ -63,7 +64,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
-private val LOG by lazyLogger(TransactionInProgress::class)
+private val LOG by lazyLogger(TransactionInProgress::class, WeLiteLog.marker)
 private const val NULL_SQL_FOUND = "Null sql table:%s type=%s position:%d"
 
 /**
@@ -307,7 +308,8 @@ private class TransactionInProgressImpl(
       SQLiteMaster.select(sqlCol, typeCol)
         .where { SQLiteMaster.tbl_name eq identity.unquoted }
         .forEach { cursor ->
-          cursor.getOptional(sqlCol)?.let { sql ->
+          val sql = cursor[sqlCol, ""]
+          if (sql.isNotEmpty()) {
             when (val masterType = cursor[typeCol].asMasterType()) {
               is MasterType.Table -> tableSql += sql
               is MasterType.Index -> indices += sql
@@ -317,7 +319,7 @@ private class TransactionInProgressImpl(
                 LOG.e { it("With table:'%s' unknown type:'%s'", tableName, masterType) }
               }
             }
-          } ?: LOG.w { it(NULL_SQL_FOUND, tableName, cursor[typeCol], cursor.position) }
+          } else LOG.w { it(NULL_SQL_FOUND, tableName, cursor[typeCol], cursor.position) }
         }
       return TableSql(tableName, tableSql, indices, triggers, views)
     }
@@ -330,7 +332,9 @@ private class TransactionInProgressImpl(
       if (cursor.moveToFirst()) {
         return ArrayList<String>(cursor.count).apply {
           do {
-            if (!cursor.isNull(0)) add(cursor.getString(0))
+            if (!cursor.isNull(0)) {
+              add(cursor.getString(0))
+            }
           } while (cursor.moveToNext())
         }
       }
@@ -393,7 +397,7 @@ private class TransactionInProgressImpl(
   }
 
   override fun vacuum() {
-    db.execSQL("VACUUM;")
+    db.execSQL("VACUUM")
   }
 
   override fun exec(sql: String, vararg bindArgs: Any) {

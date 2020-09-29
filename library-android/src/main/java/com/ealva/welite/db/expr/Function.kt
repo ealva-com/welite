@@ -191,7 +191,9 @@ class Count(
 ) : Function<Long>(LongPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("COUNT(")
-    append(if (distinct) "DISTINCT " else "")
+    if (distinct) {
+      append("DISTINCT ")
+    }
     append(expr)
     append(")")
   }

@@ -19,10 +19,7 @@ package com.ealva.welite.db.table
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.expr.max
-import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.runBlockingTest
-import com.nhaarman.expect.expect
+import com.ealva.welite.test.shared.CoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
 import org.junit.Rule
@@ -30,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.ealva.welite.test.db.table.CommonCountTests as Common
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -47,61 +45,23 @@ class CountTests {
   @Test
   fun `test count() with distinct and columns with same name in different tables`() =
     coroutineRule.runBlockingTest {
-      withPlaceTestDatabase(
-        context = appCtx,
-        tables = listOf(Place, Person, Review),
-        testDispatcher = coroutineRule.testDispatcher
-      ) {
-        query {
-          expect(Place.innerJoin(Person).selectAll().distinct().count()).toBe(3)
-        }
-      }
+      Common.testCountWithDistinctAndColumnsWithSameNameInDifferentTables(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
     }
 
   @Test
   fun `test count() with distinct and columns with same name in different tables with alias`() =
     coroutineRule.runBlockingTest {
-      withPlaceTestDatabase(
-        context = appCtx,
-        tables = listOf(Place, Person, Review),
-        testDispatcher = coroutineRule.testDispatcher
-      ) {
-        query {
-          expect(
-            Place
-              .innerJoin(Person)
-              .select(Person.id.alias("peopleId"), Place.id)
-              .all()
-              .distinct()
-              .count()
-          ).toBe(3)
-        }
-      }
+      Common.testCountWithDistinctAndColumnsWithSameNameInDifferentTablesWithAlias(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
     }
 
   @Test
-  fun `test count() with groupBy Query`() =
-    coroutineRule.runBlockingTest {
-      withPlaceTestDatabase(
-        context = appCtx,
-        tables = listOf(Place, Person, Review),
-        testDispatcher = coroutineRule.testDispatcher
-      ) {
-        query {
-          expect(
-            Review
-              .select(Review.userId)
-              .all()
-              .distinct()
-              .count()
-          ).toBe(
-            Review
-              .select(Review.value.max())
-              .all()
-              .groupBy(Review.userId)
-              .count()
-          )
-        }
-      }
-    }
+  fun `test count() with groupBy Query`() = coroutineRule.runBlockingTest {
+    Common.testCountWithGroupByQuery(appCtx, coroutineRule.testDispatcher)
+  }
 }

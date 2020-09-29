@@ -86,7 +86,9 @@ class QueryBuilder private constructor(
     if (count) {
       append("COUNT(*)")
     } else {
-      if (distinct) append("DISTINCT ")
+      if (distinct) {
+        append("DISTINCT ")
+      }
       selectFrom.appendResultColumns(this)
     }
 

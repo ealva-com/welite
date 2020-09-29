@@ -16,12 +16,38 @@
 
 package com.ealva.welite.db.android.suite
 
+import com.ealva.welite.db.android.DatabaseTests
+import com.ealva.welite.db.android.DeleteTests
 import com.ealva.welite.db.android.ForeignKeySchemaTests
+import com.ealva.welite.db.android.expr.ConditionsTests
+import com.ealva.welite.db.android.expr.FunctionTests
+import com.ealva.welite.db.android.table.CountTests
+import com.ealva.welite.db.android.table.ExistsTests
+import com.ealva.welite.db.android.table.GroupByTests
+import com.ealva.welite.db.android.table.JoinTests
+import com.ealva.welite.db.android.table.NaturalJoinTests
+import com.ealva.welite.db.android.table.OrderByTests
+import com.ealva.welite.db.android.trigger.TriggerTests
+import com.ealva.welite.db.android.view.ViewTests
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 
+@ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 @RunWith(Suite::class)
-@Suite.SuiteClasses(ForeignKeySchemaTests::class)
-class AndroidTestSuite
+@Suite.SuiteClasses(
+  DatabaseTests::class,
+  DeleteTests::class,
+  ForeignKeySchemaTests::class,
+  ConditionsTests::class,
+  FunctionTests::class,
+  CountTests::class,
+  ExistsTests::class,
+  GroupByTests::class,
+  JoinTests::class,
+  NaturalJoinTests::class,
+  OrderByTests::class,
+  ViewTests::class,
+  TriggerTests::class
+) class AndroidTestSuite

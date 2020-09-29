@@ -19,11 +19,7 @@ package com.ealva.welite.db.table
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.expr.max
-import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.runBlockingTest
-import com.nhaarman.expect.expect
+import com.ealva.welite.test.shared.CoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
 import org.junit.Rule
@@ -31,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.ealva.welite.test.db.table.CommonAliasTests as Common
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -47,71 +44,14 @@ class AliasTests {
 
   @Test
   fun `test joinQuery with expression alias`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        val expAlias = Person.name.max().alias("m")
-
-        val query: Join = Join(Person).joinQuery({ it[expAlias] eq Person.name }) {
-          Person.select(Person.cityId, expAlias).all().groupBy(Person.cityId)
-        }
-        val innerExp = checkNotNull(query.lastQueryBuilderAlias)[expAlias]
-
-        val actual = query.lastQueryBuilderAlias?.alias
-        expect(actual).toBe("q0")
-        expect(query.selectAll().count()).toBe(3L)
-        query.select(Person.columns + innerExp).all().sequence {
-          expect(it[innerExp]).toNotBeNull()
-        }
-      }
-    }
+    Common.testJoinQueryWithExpressionAlias(appCtx, coroutineRule.testDispatcher)
   }
 
-  @ExperimentalUnsignedTypes
-  @Test
   fun `test joinQuery subquery alias expr alias query`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        val expAlias: SqlTypeExpressionAlias<String> = Person.name.max().alias("pxa")
-        val personAlias: QueryBuilderAlias = Person.select(Person.cityId, expAlias)
-          .all()
-          .groupBy(Person.cityId)
-          .alias("pqa")
-
-        expect(
-          Person.join(personAlias, JoinType.INNER, Person.name, personAlias[expAlias])
-            .selectAll()
-            .sequence { personAlias[expAlias] }
-            .count()
-        ).toBe(3)
-      }
-    }
+    Common.testJoinQuerySubqueryAliasExprAliasQuery(appCtx, coroutineRule.testDispatcher)
   }
 
-  @Test
   fun `test query alias table`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        val personAlias = Person.alias("person_alias")
-        expect(
-          personAlias.select(personAlias[Person.name], personAlias[Person.cityId])
-            .where { personAlias[Person.name] eq "Rick" }
-            .groupBy(personAlias[Person.cityId])
-            .sequence { it[personAlias[Person.name]] }
-            .count()
-        ).toBe(1)
-      }
-    }
+    Common.testQueryTableAlias(appCtx, coroutineRule.testDispatcher)
   }
 }

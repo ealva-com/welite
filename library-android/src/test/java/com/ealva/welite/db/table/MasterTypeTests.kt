@@ -19,8 +19,7 @@ package com.ealva.welite.db.table
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.runBlockingTest
+import com.ealva.welite.test.shared.CoroutineRule
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
@@ -33,7 +32,7 @@ import org.robolectric.annotation.Config
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
-class SQLiteMasterTests {
+class MasterTypeTests {
   @get:Rule var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context

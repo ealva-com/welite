@@ -16,16 +16,17 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.ealvalog.i
+import com.ealva.ealvalog.e
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.appendTo
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.asIdentity
 import com.ealva.welite.db.type.buildStr
 
-private val LOG by lazyLogger("Constraints.kt")
+private val LOG by lazyLogger("Constraints.kt", WeLiteLog.marker)
 
 /**
  * See [SQLite Foreign Key Support](https://sqlite.org/foreignkeys.html)
@@ -225,7 +226,7 @@ class Index(
   override fun toString(): String = makeCreateSql()
 
   override fun create(executor: SqlExecutor, temporary: Boolean) {
-    if (temporary) LOG.i { it("CREATE INDEX does not support TEMPORARY") }
+    if (temporary) LOG.e { it("CREATE INDEX does not support TEMPORARY. Ignoring...") }
     executor.exec(makeCreateSql())
   }
 

@@ -20,6 +20,7 @@ import com.ealva.ealvalog.e
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
+import com.ealva.welite.db.log.WeLiteLog
 import java.io.InputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -31,7 +32,7 @@ internal object DefaultValueMarker {
   override fun toString(): String = "DEFAULT"
 }
 
-fun Any.cantConvert(convertedType: String) {
+private fun Any.cantConvert(convertedType: String) {
   throw IllegalArgumentException(
     "Cannot convert type:${this::class.qualifiedName} value:$this to $convertedType"
   )
@@ -82,7 +83,7 @@ interface PersistentType<T> {
   fun asNullable(): PersistentType<T?>
 }
 
-private val LOG by lazyLogger(PersistentType::class)
+private val LOG by lazyLogger(PersistentType::class, WeLiteLog.marker)
 private const val NULL_NOT_ALLOWED_MSG: String = "Value at index=%d null but column is not nullable"
 
 abstract class BasePersistentType<T>(
@@ -360,7 +361,7 @@ open class BlobPersistentType<T : Blob?> : BasePersistentType<T>("BLOB") {
     is Blob -> bindable.bind(index, value.bytes)
     is ByteArray -> bindable.bind(index, value)
     is InputStream -> bindable.bind(index, value.readBytes())
-    else -> value.cantConvert("String")
+    else -> value.cantConvert("Blob")
   }
 
   override fun clone(): PersistentType<T?> = BlobPersistentType()
@@ -574,8 +575,9 @@ class ScaledBigDecimalAsLongType<T : BigDecimal?> private constructor(
     val bindVal = if (value.scale() != scale) {
       LOG.w { it("Scale differs, value:${value.scale()} column:$scale. Adjusting scale.") }
       value.setScale(scale, roundingMode)
-    } else value
-
+    } else {
+      value
+    }
     longType.bind(bindable, index, bindVal.unscaledValue().toLong())
   }
 

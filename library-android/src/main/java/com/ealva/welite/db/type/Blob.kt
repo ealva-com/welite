@@ -22,4 +22,19 @@ class Blob(val bytes: ByteArray) {
   override fun toString(): String {
     return bytes.toString(Charset.defaultCharset()) // android default is always UTF-8
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as Blob
+
+    if (!bytes.contentEquals(other.bytes)) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    return bytes.contentHashCode()
+  }
 }

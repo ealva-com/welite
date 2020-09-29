@@ -30,6 +30,7 @@ import com.ealva.ealvalog.w
 import com.ealva.welite.db.WeResult.Success
 import com.ealva.welite.db.WeResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.SQLiteMaster
@@ -300,7 +301,7 @@ interface Database {
   }
 }
 
-private val LOG by lazyLogger(Database::class)
+private val LOG by lazyLogger(Database::class, WeLiteLog.marker)
 
 private class WeLiteDatabase(
   context: Context,
@@ -444,7 +445,9 @@ private class ErrorHandler(private val database: Database) : DatabaseErrorHandle
 
   private val defaultDatabaseErrorHandler = DefaultDatabaseErrorHandler()
   override fun onCorruption(dbObj: SQLiteDatabase?) {
-    if (useDefault) defaultDatabaseErrorHandler.onCorruption(dbObj)
+    if (useDefault) {
+      defaultDatabaseErrorHandler.onCorruption(dbObj)
+    }
     onError(database)
   }
 }
@@ -601,11 +604,11 @@ private class OpenHelper private constructor(
    */
   @Throws(SQLException::class)
   private fun execPragma(statement: String) {
-    writableDatabase.execSQL("PRAGMA $statement;")
+    writableDatabase.execSQL("PRAGMA $statement")
   }
 
   companion object {
-    private val LOG by lazyLogger()
+    private val LOG by lazyLogger(WeLiteLog.marker)
 
     /**
      * Make an OpenHelper which is a subclass of [SQLiteOpenHelper]
@@ -659,17 +662,17 @@ private class ConfigurationImpl(private val db: SQLiteDatabase) : DatabaseConfig
 
   override fun execPragma(statement: String) {
     checkNotClosed()
-    db.execSQL("PRAGMA $statement;")
+    db.execSQL("PRAGMA $statement")
   }
 
   override fun queryPragmaString(statement: String): String {
     checkNotClosed()
-    return db.stringForQuery("PRAGMA $statement;")
+    return db.stringForQuery("PRAGMA $statement")
   }
 
   override fun queryPragmaLong(statement: String): Long {
     checkNotClosed()
-    return db.longForQuery("PRAGMA $statement;")
+    return db.longForQuery("PRAGMA $statement")
   }
 }
 

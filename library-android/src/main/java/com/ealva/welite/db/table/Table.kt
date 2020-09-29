@@ -23,6 +23,7 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.type.Blob
 import com.ealva.welite.db.type.BlobPersistentType
 import com.ealva.welite.db.type.BooleanPersistentType
@@ -40,6 +41,7 @@ import com.ealva.welite.db.type.ShortPersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 import com.ealva.welite.db.type.UBytePersistentType
+import com.ealva.welite.db.type.UIntegerPersistentType
 import com.ealva.welite.db.type.ULongPersistentType
 import com.ealva.welite.db.type.UShortPersistentType
 import com.ealva.welite.db.type.UUIDPersistentType
@@ -50,10 +52,12 @@ import java.math.RoundingMode
 import java.util.UUID
 import kotlin.reflect.KClass
 
-private val LOG by lazyLogger(Table::class)
+private val LOG by lazyLogger(Table::class, WeLiteLog.marker)
 
 private const val CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "
 private const val CREATE_TEMP_TABLE = "CREATE TEMP TABLE IF NOT EXISTS "
+private const val IGNORED_CONSTRAINT_WITH_SAME_NAME =
+  "A CHECK constraint with name '%s' was ignored because there is already one with that name"
 
 typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
 
@@ -73,7 +77,7 @@ typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
  * @param name optional table name, defaulting to the class name with any "Table" suffix removed.
  */
 abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSet, Creatable {
-  open val tableName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
+  open val tableName: String = (if (name.isNotEmpty()) name else nameFromClass()).apply {
     require(systemTable || !startsWith(RESERVED_PREFIX)) {
       "Invalid Table name '$this', must not start with $RESERVED_PREFIX"
     }
@@ -99,7 +103,6 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 
   override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.apply { append(identity) }
 
-  @ExperimentalUnsignedTypes
   override fun join(
     joinTo: ColumnSet,
     joinType: JoinType,
@@ -191,11 +194,11 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     registerOptColumn(name, BlobPersistentType(), block)
 
   @ExperimentalUnsignedTypes
-  protected fun ubyte(name: String, block: SetConstraints<UByte> = {}): Column<UByte> =
+  protected fun uByte(name: String, block: SetConstraints<UByte> = {}): Column<UByte> =
     registerColumn(name, UBytePersistentType(), block)
 
   @ExperimentalUnsignedTypes
-  protected fun optUbyte(name: String, block: SetConstraints<UByte?> = {}): Column<UByte?> =
+  protected fun optUByte(name: String, block: SetConstraints<UByte?> = {}): Column<UByte?> =
     registerOptColumn(name, UBytePersistentType(), block)
 
   @ExperimentalUnsignedTypes
@@ -203,15 +206,23 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     registerColumn(name, UShortPersistentType(), block)
 
   @ExperimentalUnsignedTypes
-  protected fun optUshort(name: String, block: SetConstraints<UShort?> = {}): Column<UShort?> =
+  protected fun optUShort(name: String, block: SetConstraints<UShort?> = {}): Column<UShort?> =
     registerOptColumn(name, UShortPersistentType(), block)
 
   @ExperimentalUnsignedTypes
-  protected fun ulong(name: String, block: SetConstraints<ULong> = {}): Column<ULong> =
+  protected fun uInteger(name: String, block: SetConstraints<UInt> = {}): Column<UInt> =
+    registerColumn(name, UIntegerPersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun optUInteger(name: String, block: SetConstraints<UInt?> = {}): Column<UInt?> =
+    registerOptColumn(name, UIntegerPersistentType(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun uLong(name: String, block: SetConstraints<ULong> = {}): Column<ULong> =
     registerColumn(name, ULongPersistentType(), block)
 
   @ExperimentalUnsignedTypes
-  protected fun optUlong(name: String, block: SetConstraints<ULong?> = {}): Column<ULong?> =
+  protected fun optULong(name: String, block: SetConstraints<ULong?> = {}): Column<ULong?> =
     registerOptColumn(name, ULongPersistentType(), block)
 
   protected fun bool(name: String, block: SetConstraints<Boolean> = {}): Column<Boolean> =
@@ -226,7 +237,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     block: SetConstraints<T> = {}
   ): Column<T> = registerColumn(name, EnumerationPersistentType(klass), block)
 
-  protected fun <T : Enum<T>> enumerationByName(
+  protected fun <T : Enum<T>> enumByName(
     name: String,
     klass: KClass<T>,
     block: SetConstraints<T> = {}
@@ -404,14 +415,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   fun check(name: String = "", op: () -> Op<Boolean>) {
     if (name.isEmpty() || checkConstraints.none { it.first.equals(name, true) }) {
       checkConstraints.add(name to op())
-    } else {
-      LOG.w {
-        it(
-          """A CHECK constraint with name '""" + name +
-            """' was ignored because there is already one with that name"""
-        )
-      }
-    }
+    } else LOG.w { it(IGNORED_CONSTRAINT_WITH_SAME_NAME, name) }
   }
 
   /**
@@ -614,11 +618,11 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 
     @ExperimentalUnsignedTypes
     override fun ubyte(name: String, block: SetConstraints<UByte>): Column<UByte> =
-      table.ubyte(name, block)
+      table.uByte(name, block)
 
     @ExperimentalUnsignedTypes
     override fun optUbyte(name: String, block: SetConstraints<UByte?>): Column<UByte?> =
-      table.optUbyte(name, block)
+      table.optUByte(name, block)
 
     @ExperimentalUnsignedTypes
     override fun uShort(name: String, block: SetConstraints<UShort>): Column<UShort> =
@@ -626,15 +630,15 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
 
     @ExperimentalUnsignedTypes
     override fun optUshort(name: String, block: SetConstraints<UShort?>): Column<UShort?> =
-      table.optUshort(name, block)
+      table.optUShort(name, block)
 
     @ExperimentalUnsignedTypes
     override fun ulong(name: String, block: SetConstraints<ULong>): Column<ULong> =
-      table.ulong(name, block)
+      table.uLong(name, block)
 
     @ExperimentalUnsignedTypes
     override fun optUlong(name: String, block: SetConstraints<ULong?>): Column<ULong?> =
-      table.optUlong(name, block)
+      table.optULong(name, block)
 
     override fun bool(name: String, block: SetConstraints<Boolean>): Column<Boolean> =
       table.bool(name, block)
@@ -652,7 +656,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
       name: String,
       klass: KClass<T>,
       block: SetConstraints<T>
-    ): Column<T> = table.enumerationByName(name, klass, block)
+    ): Column<T> = table.enumByName(name, klass, block)
   }
 
   companion object {

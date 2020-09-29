@@ -85,7 +85,9 @@ private class TriggerImpl<T : Table>(
       append(" OF ")
       updateCols.forEachIndexed { index, column ->
         append(column.identity())
-        if (index < updateCols.size - 1) append(", ")
+        if (index < updateCols.size - 1) {
+          append(", ")
+        }
       }
     }
     append(" ON ")

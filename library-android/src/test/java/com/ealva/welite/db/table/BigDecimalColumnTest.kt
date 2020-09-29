@@ -25,9 +25,9 @@ import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.BigTable.bigD
 import com.ealva.welite.db.table.BigTable.name
 import com.ealva.welite.db.table.BigTable.optBig
-import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.runBlockingTest
-import com.ealva.welite.test.common.withTestDatabase
+import com.ealva.welite.test.shared.CoroutineRule
+import com.ealva.welite.test.shared.withTestDatabase
+import com.ealva.welite.test.db.table.withPlaceTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,6 +49,8 @@ private const val scale = 5
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class BigDecimalColumnTest {
   @get:Rule var coroutineRule = CoroutineRule()
+
+  @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context

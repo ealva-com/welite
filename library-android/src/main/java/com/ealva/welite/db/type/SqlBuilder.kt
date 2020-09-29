@@ -95,7 +95,9 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
   ) {
     strBuilder.append(prefix)
     forEachIndexed { index, element ->
-      if (index > 0) strBuilder.append(separator)
+      if (index > 0) {
+        strBuilder.append(separator)
+      }
       append(element)
     }
     strBuilder.append(postfix)
@@ -208,7 +210,9 @@ private object SqlBuilderCache {
   fun put(builder: SqlBuilderImpl) {
     if (queue.size < maxEntries) {
       puts++
-      if (builder.returnedToPool()) exceededCapacity++
+      if (builder.returnedToPool()) {
+        exceededCapacity++
+      }
       queue.offer(builder)
     }
   }

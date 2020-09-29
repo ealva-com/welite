@@ -136,7 +136,6 @@ class QueryBuilderAlias(private val queryBuilder: QueryBuilder, val alias: Strin
     return expressionAlias.delegate.alias("$alias.${expressionAlias.alias}").aliasOnlyExpression()
   }
 
-  @ExperimentalUnsignedTypes
   override fun join(
     joinTo: ColumnSet,
     joinType: JoinType,

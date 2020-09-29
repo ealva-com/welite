@@ -75,7 +75,7 @@ class TableDependencies(private val tables: List<Table>) {
         if (table !in visited) {
           recursion += table
           visited += table
-          (graph[table]?.any { traverse(it.key) } == true).also { if (!it) recursion -= table }
+          (graph[table]?.any { traverse(it.key) } ?: false).also { if (!it) recursion -= table }
         } else true
       } else false
     }

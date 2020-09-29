@@ -35,21 +35,23 @@ interface Cursor {
   val columnCount: Int
 
   /**
-   * Get value [T], which is possibly null, of the column [expression] at the current
-   * cursor [position]
-   */
-  fun <T> getOptional(expression: SqlTypeExpression<T>): T?
-
-  /**
-   * Get value [T] of the column [expression] at the current cursor [position]
-   * @throws IllegalStateException if the value in the DB is null
+   * Get value [T] of the column [expression] at the current cursor [position]. Typically accessed
+   * as ```cursor[Table.column]```. Throws IllegalStateException if the value in the DB is null
    */
   operator fun <T> get(expression: SqlTypeExpression<T>): T
 
   /**
    * Get value [T] of the column [expression] at the current cursor [position] or return
-   * [defaultValue] if the value in the DB is null
+   * [defaultValue] if the value in the DB is null. Typically accessed
+   * as ```cursor[Table.column, valueIfNull]```
    */
   operator fun <T> get(expression: SqlTypeExpression<T>, defaultValue: T): T =
     getOptional(expression) ?: defaultValue
+
+  /**
+   * Get value [T], which is possibly null, of the column [expression] at the current
+   * cursor [position]. Prefer [get] with a default value for easier syntax of
+   * ```cursor[Table.column, valueIfNull]``` and avoiding null.
+   */
+  fun <T> getOptional(expression: SqlTypeExpression<T>): T?
 }

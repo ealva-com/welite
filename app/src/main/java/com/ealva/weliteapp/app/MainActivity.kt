@@ -26,6 +26,7 @@ import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.javatime.localDate
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
@@ -47,7 +48,7 @@ object MediaFileTable : Table() {
   val localDate = localDate("local_date")
 }
 
-private val LOG by lazyLogger(MainActivity::class)
+private val LOG by lazyLogger(MainActivity::class, WeLiteLog.marker)
 
 class MainActivity : AppCompatActivity() {
   private val db: Database by inject()

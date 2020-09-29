@@ -22,12 +22,13 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.OpenParams
 import com.ealva.welite.db.journalMode
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.synchronousMode
 import com.ealva.weliteapp.app.MediaFileTable
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
-private val LOG by lazyLogger("Db.kt")
+private val LOG by lazyLogger("Db.kt", WeLiteLog.marker)
 
 val dbModule = module {
   single {

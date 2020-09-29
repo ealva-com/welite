@@ -21,9 +21,11 @@ import android.database.sqlite.SQLiteDatabase
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
+import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.ExprList
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SqlTypeExpression
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
@@ -95,12 +97,12 @@ private class CursorWrapperImpl(private val cursor: ACursor, columns: ExprList) 
 }
 
 internal fun SQLiteDatabase.select(sql: String, args: Array<String> = emptyArray()): ACursor {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
+  if (WeLiteLog.logQueryPlans) logQueryPlan(sql, args)
   return rawQuery(sql, args)
 }
 
 internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String> = emptyArray()): Long {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
+  if (WeLiteLog.logQueryPlans) logQueryPlan(sql, args)
   return DatabaseUtils.longForQuery(this, sql, args)
 }
 
@@ -111,25 +113,27 @@ internal fun SQLiteDatabase.stringForQuery(
   sql: String,
   args: Array<String> = emptyArray()
 ): String {
-  if (Query.logQueryPlans) logQueryPlan(sql, args)
+  if (WeLiteLog.logQueryPlans) logQueryPlan(sql, args)
   return DatabaseUtils.stringForQuery(this, sql, args)
 }
 
 internal fun SQLiteDatabase.stringForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): String =
   stringForQuery(seed.sql, doBind(seed.types, bind))
 
-private val QP_LOG by lazyLogger("QueryPlan")
+private val QP_LOG by lazyLogger("QueryPlan", WeLiteLog.marker)
 private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>) {
   QP_LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, selectionArgs.contentToString()) }
   rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { cursor ->
-    while (cursor.moveToNext()) QP_LOG.i { it("%d: %s", cursor.position, cursor.rowToString()) }
+    while (cursor.moveToNext()) {
+      QP_LOG.i { it("%d: %s", cursor.position, cursor.rowContentToString()) }
+    }
   }
 }
 /**
  * Convert the current row of the cursor to a string containing column "name:value" pairs
  * delimited with ", "
  */
-private fun ACursor.rowToString(): String = buildStr {
+private fun ACursor.rowContentToString(): String = buildStr {
   for (i in 0 until columnCount) {
     append(getColumnName(i)).append(':').append(getStringOrNull(i)).append(", ")
   }
@@ -166,12 +170,17 @@ private fun doBind(
   queryArgs.args
 }
 
+private val LOG by lazyLogger(QueryArgs::class, WeLiteLog.marker)
+
 private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
   private val arguments = Array(argTypes.size) { UNBOUND }
 
   override operator fun <T> set(index: Int, value: T?) {
     require(index in argTypes.indices) { "Arg types $index out of bounds ${argTypes.indices}" }
     require(index in arguments.indices) { "Args $index out of bounds ${arguments.indices}" }
+    if (arguments[index] !== UNBOUND) {
+      LOG.w { it("Arg at index:$index previously bound as ${arguments[index]}") }
+    }
     arguments[index] = argTypes[index].valueToString(value)
   }
 
@@ -195,9 +204,9 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBind
 
   companion object {
     /**
-     * Marker in argument array indicating the arg at an index has not been bound. Use object
-     * identity for comparison on the chance this string is a valid bound value.
+     * Marker in bind parameter array indicating the arg at an index has not been bound. Use object
+     * identity for comparison as this marker value might be a valid bound parameter.
      */
-    private const val UNBOUND = "Unbound"
+    private const val UNBOUND = "NULL"
   }
 }

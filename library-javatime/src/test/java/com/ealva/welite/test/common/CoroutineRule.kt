@@ -26,7 +26,7 @@ import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 @ExperimentalCoroutinesApi
-class CoroutineRule constructor(
+class CoroutineRule(
   val testDispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()
 ) : TestWatcher() {
 
@@ -40,9 +40,9 @@ class CoroutineRule constructor(
     Dispatchers.resetMain()
     testDispatcher.cleanupTestCoroutines()
   }
-}
 
-@ExperimentalCoroutinesApi
-fun CoroutineRule.runBlockingTest(block: suspend () -> Unit) = testDispatcher.runBlockingTest {
-  block()
+  @ExperimentalCoroutinesApi
+  fun runBlockingTest(block: suspend () -> Unit) = testDispatcher.runBlockingTest {
+    block()
+  }
 }

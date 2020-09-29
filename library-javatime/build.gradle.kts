@@ -96,8 +96,13 @@ dependencies {
   testImplementation(ThirdParty.EALVALOG_CORE)
   testImplementation(ThirdParty.EALVALOG_ANDROID)
 
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER)
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT)
+  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(TestingLib.JUNIT)
   androidTestImplementation(TestingLib.EXPECT)
   androidTestImplementation(TestingLib.COROUTINE_TEST)
   androidTestImplementation(ThirdParty.EALVALOG)

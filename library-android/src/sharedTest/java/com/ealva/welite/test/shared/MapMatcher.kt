@@ -16,7 +16,7 @@
 
 @file:Suppress("unused")
 
-package com.ealva.welite.test.common
+package com.ealva.welite.test.shared
 
 import com.nhaarman.expect.Matcher
 import com.nhaarman.expect.fail

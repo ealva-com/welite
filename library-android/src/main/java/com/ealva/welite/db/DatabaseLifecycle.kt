@@ -29,7 +29,7 @@ interface DatabaseLifecycle {
   /**
    * After the database has been opened, configured, all tables created, and all table post
    * processing, call [block] with the fully created Database instance. This function is called
-   * if the database tables need to be created - typically first app run.
+   * if the database tables need to be created (first app run or DB file deleted)
    */
   fun onCreate(block: (Database) -> Unit)
 

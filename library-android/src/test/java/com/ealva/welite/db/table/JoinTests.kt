@@ -20,20 +20,8 @@ import android.content.Context
 import android.database.sqlite.SQLiteException
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.WeLiteException
-import com.ealva.welite.db.expr.and
-import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.expr.isNull
-import com.ealva.welite.db.expr.or
-import com.ealva.welite.db.expr.stringLiteral
-import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.runBlockingTest
-import com.nhaarman.expect.expect
-import com.nhaarman.expect.fail
+import com.ealva.welite.test.shared.CoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.collectIndexed
-import kotlinx.coroutines.flow.singleOrNull
-import kotlinx.coroutines.flow.toList
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -41,12 +29,15 @@ import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.ealva.welite.test.db.table.CommonJoinTests as Common
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class JoinTests {
   @get:Rule var coroutineRule = CoroutineRule()
+
+  @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
@@ -58,220 +49,38 @@ class JoinTests {
 
   @Test
   fun `test join inner join`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        Person.innerJoin(Place)
-          .select(Person.name, Place.name)
-          .where {
-            (Person.id eq "louis" or (Person.name eq "Rick") and (Person.cityId eq Place.id))
-          }
-          .sequence { Pair(it[Person.name], it[Place.name]) }
-          .toList().also { list -> expect(list.size).toBe(2) }
-          .forEach { (person, city) ->
-            when (person) {
-              "Louis" -> expect(city).toBe("Cleveland")
-              "Rick" -> expect(city).toBe("South Point")
-              else -> error("Unexpected user/city $person/$city")
-            }
-          }
-      }
-    }
+    Common.testJoinInnerJoin(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
   fun `test fk join`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        Person.innerJoin(Place)
-          .select(Person.name, Place.name)
-          .where { Place.name eq "Cleveland" or Person.cityId.isNull() }
-          .flow { cursor: Cursor -> Pair(cursor[Person.name], cursor[Place.name]) }
-          .singleOrNull()
-          ?.let { (user, city) ->
-            expect(user).toBe("Louis")
-            expect(city).toBe("Cleveland")
-          } ?: fail("Expected an item from the flow")
-      }
-    }
+    Common.testFKJoin(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
   fun `test join with order by`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        (Place innerJoin Person innerJoin Review)
-          .selectAll()
-          .orderBy(Person.id)
-          .flow { cursor ->
-            Triple(cursor[Person.name], cursor[Review.post], cursor[Place.name])
-          }.collectIndexed { index, (person, post, city) ->
-            when (index) {
-              0 -> {
-                expect(person).toBe("Mike")
-                expect(post).toBe("Mike's post")
-                expect(city).toBe("South Point")
-              }
-              1 -> {
-                expect(person).toBe("Rick")
-                expect(post).toBe("Sup Dude")
-                expect(city).toBe("South Point")
-              }
-              else -> fail("Too many entities")
-            }
-          }
-      }
-    }
+    Common.testJoinWithOrderBy(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
   fun `test join with relationship table`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Numbers, Names, NumberNameRel),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      transaction {
-        Numbers.insert { it[id] = 1 }
-        Numbers.insert { it[id] = 2 }
-        Names.insert { it[name] = "Francis" }
-        Names.insert { it[name] = "Bart" }
-        NumberNameRel.insert {
-          it[numberId] = 2
-          it[name] = "Francis"
-        }
-        setSuccessful()
-      }
-      query {
-        (Numbers innerJoin NumberNameRel innerJoin Names)
-          .selectAll()
-          .flow { Pair(it[Numbers.id], it[Names.name]) }
-          .singleOrNull()
-          ?.let { (id, name) ->
-            expect(id).toBe(2)
-            expect(name).toBe("Francis")
-          } ?: fail("Expected only 1 item")
-      }
-    }
+    Common.testJoinWithRelationshipTable(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
   fun `test cross join`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        val allToSouthPoint: List<Pair<String, String>> = (Person crossJoin Place)
-          .select(Person.name, Person.cityId, Place.name)
-          .where { Place.name eq "South Point" }
-          .flow {
-            it[Person.name] to it[Place.name]
-          }
-          .toList()
-
-        val allUsers = setOf(
-          "Amber",
-          "Louis",
-          "Mike",
-          "Nathalia",
-          "Rick"
-        )
-        expect(allToSouthPoint.all { it.second == "South Point" }).toBe(true)
-        expect(allToSouthPoint.map { it.first }.toSet()).toBe(allUsers)
-      }
-    }
+    Common.testCrossJoin(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
   fun `test join multiple references fk violation`() = coroutineRule.runBlockingTest {
     thrown.expect(SQLiteException::class.java)
-    val fooTable = object : Table("foo") {
-      val baz = long("baz") { uniqueIndex() }
-    }
-    val barTable = object : Table("bar") {
-      val foo = reference("foo", fooTable.baz)
-      val foo2 = reference("foo2", fooTable.baz)
-      val baz = reference("baz", fooTable.baz)
-    }
-
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(fooTable, barTable),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      try {
-        transaction {
-          val fooId = fooTable.insert {
-            it[baz] = 5
-          }
-
-          barTable.insert {
-            it[foo] = fooId
-            it[foo2] = fooId
-            it[baz] = 5 // fk violation
-          }
-
-          setSuccessful()
-        }
-
-        fail("insert should have failed with an foreign key violation")
-      } catch (e: WeLiteException) {
-        throw requireNotNull(e.cause) // rethrow underlying exception
-      }
-    }
+    Common.testJoinMultipleReferencesFKViolation(appCtx, coroutineRule.testDispatcher)
   }
 
   @ExperimentalUnsignedTypes
   @Test
   fun `test join with alias`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      val person = Person
-      query {
-        val personAlias: Alias<Person> = person.alias("u2")
-        val pair = Person.join(
-          personAlias,
-          JoinType.LEFT,
-          stringLiteral("nathalia"),
-          personAlias[Person.id]
-        ).selectWhere { Person.id eq "amber" }
-          .flow { Pair(it[Person.name], it[personAlias[Person.name]]) }
-          .singleOrNull() ?: fail("expected single item")
-
-        expect(pair.first).toBe("Amber")
-        expect(pair.second).toBe("Nathalia")
-      }
-    }
+    Common.testJoinWithAlias(appCtx, coroutineRule.testDispatcher)
   }
-}
-
-object Numbers : Table() {
-  val id = long("id") { primaryKey() }
-}
-
-object Names : Table() {
-  val name = text("name") { primaryKey() }
-}
-
-object NumberNameRel : Table() {
-  @Suppress("unused")
-  val id = long("id") { primaryKey() }
-  val numberId = reference("id_ref", Numbers.id)
-  val name = reference("name_ref", Names.name)
 }

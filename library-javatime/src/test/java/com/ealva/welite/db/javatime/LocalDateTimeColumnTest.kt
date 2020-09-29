@@ -34,7 +34,6 @@ import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.runBlockingTest
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -70,6 +69,8 @@ object HasVisitTimeRef : Table() {
 class LocalDateTimeColumnTest {
   @ExperimentalCoroutinesApi
   @get:Rule var coroutineRule = CoroutineRule()
+
+  @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context

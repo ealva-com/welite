@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.test.common
+package com.ealva.welite.test.shared
 
 import android.content.Context
 import com.ealva.welite.db.Database

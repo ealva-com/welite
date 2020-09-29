@@ -21,8 +21,10 @@ package com.ealva.welite.db.table
  */
 interface ArgBindings {
   /**
-   * Set the argument at [index] to [value]. The underlying persistent type object handles any
-   * necessary conversions of value or throws on error
+   * Set the argument at [index] to [value]. The index is the position of the '?' bind-parameter in
+   * the SQL. The underlying persistent type object handles any necessary conversions of value or
+   * throws an exception on error. If a value is not bound at a particular index, that index will
+   * contain the equivalent of the null value and ultimately be bound as such.
    */
   operator fun <T> set(index: Int, value: T?)
 

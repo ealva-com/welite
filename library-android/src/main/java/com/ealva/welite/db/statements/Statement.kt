@@ -18,9 +18,15 @@ package com.ealva.welite.db.statements
 
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
+import com.ealva.ealvalog.i
+import com.ealva.ealvalog.invoke
+import com.ealva.ealvalog.lazyLogger
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
+
+private val LOG by lazyLogger(Statement::class, WeLiteLog.marker)
 
 interface Statement {
   fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
@@ -40,12 +46,18 @@ abstract class BaseStatement : Statement {
 
 internal class StatementAndTypes(
   private val statement: SQLiteStatement,
-  private val types: List<PersistentType<*>>
+  private val types: List<PersistentType<*>>,
+  private val logSql: Boolean = WeLiteLog.logSql
 ) : Bindable, ArgBindings {
   override val argCount: Int
     get() = types.size
   private val argRange: IntRange
     get() = types.indices
+
+  /**
+   * This is only used for logging
+   */
+  private val bindings: Array<Any?> = Array(argCount) { null }
 
   fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long {
     bindArgsToStatement(bindArgs)
@@ -63,32 +75,43 @@ internal class StatementAndTypes(
   }
 
   private fun bindArgsToStatement(bindArgs: (ArgBindings) -> Unit) {
-    statement.clearBindings()
+    clearBindings()
     bindArgs(this)
+    if (logSql) LOG.i { it("%s args:%s", statement, bindings.contentToString()) }
+  }
+
+  private fun clearBindings() {
+    statement.clearBindings()
+    bindings.fill(null)
   }
 
   override fun bindNull(index: Int) {
     ensureIndexInBounds(index)
+    bindings[index] = null
     statement.bindNull(index + 1)
   }
 
   override fun bind(index: Int, value: Long) {
     ensureIndexInBounds(index)
+    bindings[index] = value
     statement.bindLong(index + 1, value)
   }
 
   override fun bind(index: Int, value: Double) {
     ensureIndexInBounds(index)
+    bindings[index] = value
     statement.bindDouble(index + 1, value)
   }
 
   override fun bind(index: Int, value: String) {
     ensureIndexInBounds(index)
+    bindings[index] = value
     statement.bindString(index + 1, value)
   }
 
   override fun bind(index: Int, value: ByteArray) {
     ensureIndexInBounds(index)
+    bindings[index] = value
     statement.bindBlob(index + 1, value)
   }
 

@@ -19,13 +19,7 @@ package com.ealva.welite.db.table
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.db.expr.and
-import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.expr.like
-import com.ealva.welite.db.expr.or
-import com.ealva.welite.test.common.CoroutineRule
-import com.ealva.welite.test.common.runBlockingTest
-import com.nhaarman.expect.expect
+import com.ealva.welite.test.shared.CoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
 import org.junit.Rule
@@ -33,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.ealva.welite.test.db.table.CommonExistsTests as Common
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -49,74 +44,16 @@ class ExistsTests {
 
   @Test
   fun `test select exists`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        val result = Person
-          .selectWhere {
-            exists(Review.selectWhere { Review.userId eq Person.id and (Review.post like "%McD%") })
-          }
-          .sequence { it[Person.name] }
-          .toList()
-
-        expect(result).toHaveSize(1)
-        expect(result[0]).toBe("Nathalia")
-      }
-    }
+    Common.testSelectExists(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
   fun `test select exists and or`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        val result = Person
-          .selectWhere {
-            exists(
-              Review.selectWhere {
-                Review.userId eq Person.id and
-                  ((Review.post like "%McD%") or (Review.post like "%ost"))
-              }
-            )
-          }
-          .sequence { it[Person.name] }
-          .toList()
-
-        expect(result).toHaveSize(2)
-        expect(result).toBe(listOf("Mike", "Nathalia"))
-      }
-    }
+    Common.testSelectExistsAndOr(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
   fun `test select exists or exists`() = coroutineRule.runBlockingTest {
-    withPlaceTestDatabase(
-      context = appCtx,
-      tables = listOf(Place, Person, Review),
-      testDispatcher = coroutineRule.testDispatcher
-    ) {
-      query {
-        val result = Person
-          .selectWhere {
-            exists(
-              Review.selectWhere { Review.userId eq Person.id and (Review.post like "%McD%") }
-            ) or
-              exists(
-                Review.selectWhere { Review.userId eq Person.id and (Review.post like "%ost") }
-              )
-          }
-          .sequence { it[Person.name] }
-          .toList()
-
-        expect(result).toHaveSize(2)
-        expect(result).toBe(listOf("Mike", "Nathalia"))
-      }
-    }
+    Common.testSelectExistsOrExists(appCtx, coroutineRule.testDispatcher)
   }
 }

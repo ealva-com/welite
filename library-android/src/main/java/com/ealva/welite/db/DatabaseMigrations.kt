@@ -21,6 +21,7 @@ package com.ealva.welite.db
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
+import com.ealva.welite.db.log.WeLiteLog
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.TreeMap
@@ -49,7 +50,7 @@ private fun EndMigrationMap(): EndMigrationMap = EndMigrationMapImpl()
 @Suppress("FunctionName") // detekt
 private fun StartToEndMigrationMap(): StartToEndMigrationMap = StartToEndMigrationMapImpl()
 
-private val LOG by lazyLogger(Migration::class)
+private val LOG by lazyLogger(Migration::class, WeLiteLog.marker)
 
 /**
  * Finds the list of migrations that should be run to move from [startVersion] to [endVersion]
@@ -70,7 +71,9 @@ fun List<Migration>.findMigrationPath(startVersion: Int, endVersion: Int): List<
     }
   }
 
-  if (startVersion == endVersion) return emptyList()
+  if (startVersion == endVersion) {
+    return emptyList()
+  }
   val isUpgrade = endVersion > startVersion
   val result = ArrayList<Migration>(migrationMap.size)
   var start = startVersion

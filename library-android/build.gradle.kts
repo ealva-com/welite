@@ -52,6 +52,12 @@ android {
     }
   }
 
+  sourceSets {
+    val sharedTestDir = "src/sharedTest/java"
+    getByName("test").java.srcDir(sharedTestDir)
+    getByName("androidTest").java.srcDir(sharedTestDir)
+  }
+
   lintOptions {
     isWarningsAsErrors = false
     isAbortOnError = true
@@ -78,6 +84,7 @@ dependencies {
   implementation(SupportLibs.ANDROIDX_APPCOMPAT)
   implementation(SupportLibs.ANDROIDX_CORE_KTX)
   implementation(ThirdParty.EALVALOG)
+  implementation(ThirdParty.EALVALOG_CORE)
   implementation(ThirdParty.FASTUTIL)
   implementation(ThirdParty.COROUTINE_CORE)
   implementation(ThirdParty.COROUTINE_ANDROID)
@@ -85,8 +92,12 @@ dependencies {
   // unsure exactly why receiving a warning for not including this testAnnotationProcessor
   testAnnotationProcessor("com.google.auto.service:auto-service:1.0-rc7")
   testImplementation(TestingLib.JUNIT)
-  testImplementation(AndroidTestingLib.ANDROIDX_TEST_CORE)
-  testImplementation(AndroidTestingLib.ANDROIDX_TEST_RULES)
+  testImplementation(AndroidTestingLib.ANDROIDX_TEST_CORE) {
+    exclude("junit", "junit")
+  }
+  testImplementation(AndroidTestingLib.ANDROIDX_TEST_RULES) {
+    exclude("junit", "junit")
+  }
   testImplementation(TestingLib.EXPECT)
   testImplementation(TestingLib.ROBOLECTRIC)
   testImplementation(TestingLib.COROUTINE_TEST)
@@ -94,8 +105,13 @@ dependencies {
   testImplementation(ThirdParty.EALVALOG_CORE)
   testImplementation(ThirdParty.EALVALOG_ANDROID)
 
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER)
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT)
+  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(TestingLib.JUNIT)
   androidTestImplementation(TestingLib.EXPECT)
   androidTestImplementation(TestingLib.COROUTINE_TEST)
   androidTestImplementation(ThirdParty.EALVALOG)

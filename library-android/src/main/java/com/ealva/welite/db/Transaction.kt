@@ -20,6 +20,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.ealva.ealvalog.e
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.WeLiteMarker
 
@@ -86,7 +87,7 @@ interface Transaction : TransactionInProgress, AutoCloseable {
   }
 }
 
-private val LOG by lazyLogger(Transaction::class)
+private val LOG by lazyLogger(Transaction::class, WeLiteLog.marker)
 private const val TXN_NOT_MARKED =
   "<<==Warning==>> Closing a txn without it being marked successful or rolled back. %s"
 

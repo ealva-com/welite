@@ -70,10 +70,4 @@ dependencies {
 
   implementation(ThirdParty.KOIN)
   implementation(ThirdParty.KOIN_ANDROID)
-
-  testImplementation(TestingLib.JUNIT)
-
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT)
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RULES)
-  androidTestImplementation(AndroidTestingLib.ESPRESSO_CORE)
 }

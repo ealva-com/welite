@@ -93,9 +93,10 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
   private fun asJoinCondition(
     onColumn: Expression<*>?,
     otherColumn: Expression<*>?
-  ): List<JoinCondition> {
-    if (onColumn == null || otherColumn == null) return emptyList()
-    return listOf(JoinCondition(onColumn, otherColumn))
+  ): List<JoinCondition> = if (onColumn == null || otherColumn == null) {
+    emptyList()
+  } else {
+    listOf(JoinCondition(onColumn, otherColumn))
   }
 
   override fun join(

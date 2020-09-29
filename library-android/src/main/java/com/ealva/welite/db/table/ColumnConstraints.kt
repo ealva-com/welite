@@ -137,8 +137,9 @@ class ConflictConstraint(private val onConflict: OnConflict) : ColumnConstraint(
   override fun mayAppearFirst(persistentType: PersistentType<*>) = notAllowed { mustFollow }
 
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
-    val constraint = others.find { it is ConflictConstraint }
-    if (constraint != null) notAllowed { "$constraint already defined, cannot add $this" }
+    others.find { it is ConflictConstraint }?.let { constraint ->
+      notAllowed { "$constraint already defined, cannot add $this" }
+    }
     val hasRequired = others.find {
       when (it) {
         is PrimaryKeyConstraint,

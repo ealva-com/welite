@@ -77,8 +77,6 @@ interface Query {
   val seed: QuerySeed
 
   companion object {
-    var logQueryPlans: Boolean = false
-
     /**
      * Create a reusable [Query] from [queryBuilder]
      */

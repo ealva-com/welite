@@ -27,6 +27,7 @@ import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.Database
+import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.weliteapp.appdb.dbModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -43,7 +44,7 @@ private val levelToNameMap: SparseArray<String> = SparseArray<String>().apply {
 
 @Suppress("unused") // ?? warning yet search yields uses
 class App : Application() {
-  private val logger by lazyLogger()
+  private val logger by lazyLogger(WeLiteLog.marker)
 
   override fun onCreate() {
     super.onCreate()
