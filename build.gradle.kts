@@ -63,6 +63,7 @@ tasks.withType<KotlinCompile> {
 tasks.register("clean", Delete::class.java) {
   delete(rootProject.buildDir)
 }
+
 buildscript {
   dependencies {
     "classpath"("com.android.tools.build:gradle:4.0.1")
@@ -73,6 +74,7 @@ tasks.withType<DependencyUpdatesTask> {
   rejectVersionIf {
     isNonStable(candidate.version)
   }
+  checkForGradleUpdate = true
 }
 
 fun isNonStable(version: String) = "^[0-9,.v-]+(-r)?$".toRegex().matches(version).not()

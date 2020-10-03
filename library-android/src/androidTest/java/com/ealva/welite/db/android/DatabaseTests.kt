@@ -20,11 +20,15 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ealva.welite.db.DatabaseConfiguration
+import com.ealva.welite.db.NeitherSuccessNorRollbackException
+import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.test.shared.CoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.hamcrest.CoreMatchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 import org.junit.runner.RunWith
 import com.ealva.welite.test.db.CommonDatabaseTests as Common
 
@@ -32,6 +36,9 @@ import com.ealva.welite.test.db.CommonDatabaseTests as Common
 @RunWith(AndroidJUnit4::class)
 class DatabaseTests {
   @get:Rule var coroutineRule = CoroutineRule()
+
+  @Suppress("DEPRECATION")
+  @get:Rule var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
   private var config: DatabaseConfiguration? = null
@@ -97,4 +104,55 @@ class DatabaseTests {
   fun testCreateAndDropIndex() = coroutineRule.runBlockingTest {
     Common.testCreateAndDropIndex(appCtx, coroutineRule.testDispatcher)
   }
+
+  @Test
+  fun testCreateAndRollback() = coroutineRule.runBlockingTest {
+    Common.testCreateAndRollback(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
+  fun testTxnToString() = coroutineRule.runBlockingTest {
+    Common.testTxnToString(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
+  fun testClientCloseTxnWithoutMarkingSuccessOrRollback() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testClientCloseTxnWithoutMarkingSuccessOrRollback(appCtx, coroutineRule.testDispatcher)
+    }
+
+  @Test
+  fun testNoAutoCommitTxnWithoutMarkingSuccessOrRollback() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testNoAutoCommitTxnWithoutMarkingSuccessOrRollback(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
+    }
+
+  @Test
+  fun testAttemptToRollbackAfterClosed() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testAttemptToRollbackAfterClosed(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
+    }
+
+  @Test
+  fun testAttemptToMarkSuccessfulAfterClosed() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testAttemptToMarkSuccessfulAfterClosed(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
+    }
 }

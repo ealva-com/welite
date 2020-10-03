@@ -22,17 +22,17 @@ import com.ealva.welite.db.OpenParams
 import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.test.db.trigger.DeleteAlbumTrigger
+import com.ealva.welite.test.db.trigger.DeleteArtistTrigger
+import com.ealva.welite.test.db.trigger.DeleteMediaTrigger
+import com.ealva.welite.test.db.trigger.InsertMediaTrigger
+import com.ealva.welite.test.db.view.FullMediaView
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
 import com.ealva.welite.test.shared.MediaFileTable
 import com.ealva.welite.test.shared.SqlExecutorSpy
 import com.ealva.welite.test.shared.withTestDatabase
-import com.ealva.welite.test.db.trigger.DeleteAlbumTrigger
-import com.ealva.welite.test.db.trigger.DeleteArtistTrigger
-import com.ealva.welite.test.db.trigger.DeleteMediaTrigger
-import com.ealva.welite.test.db.trigger.InsertMediaTrigger
-import com.ealva.welite.test.db.view.FullMediaView
 import com.nhaarman.expect.ListMatcher
 import com.nhaarman.expect.StringMatcher
 import com.nhaarman.expect.expect
@@ -403,6 +403,141 @@ object CommonDatabaseTests {
       query {
         expect(index.exists).toBe(false)
         expect(aTable.indices).toNotContain(index)
+      }
+    }
+  }
+
+  suspend fun testCreateAndRollback(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      query {
+        expect(MediaFileTable.exists).toBe(true)
+        expect(AlbumTable.exists).toBe(true)
+        expect(ArtistTable.exists).toBe(true)
+        expect(ArtistAlbumTable.exists).toBe(true)
+      }
+      transaction {
+        FullMediaView.create()
+        rollback()
+      }
+      query { expect(FullMediaView.exists).toBe(false) }
+
+      transaction { FullMediaView.create() }
+      query { expect(FullMediaView.exists).toBe(true) }
+    }
+  }
+
+  suspend fun testTxnToString(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      query {
+        expect(MediaFileTable.exists).toBe(true)
+        expect(AlbumTable.exists).toBe(true)
+        expect(ArtistTable.exists).toBe(true)
+        expect(ArtistAlbumTable.exists).toBe(true)
+      }
+      val unitOfWork = "Create FullMediaView"
+      transaction(unitOfWork = unitOfWork) {
+        FullMediaView.create()
+        rollback()
+        expect(toString()).toContain("'$unitOfWork'")
+        expect(toString()).toContain("exclusive=false")
+        expect(toString()).toContain("closed=false")
+        expect(toString()).toContain("success=false")
+        expect(toString()).toContain("rolledBack=true")
+      }
+      val nextUnit = "Next Unit"
+      transaction(exclusive = true, unitOfWork = nextUnit) {
+        FullMediaView.create()
+        setSuccessful()
+        expect(toString()).toContain("'$nextUnit'")
+        expect(toString()).toContain("exclusive=true")
+        expect(toString()).toContain("closed=false")
+        expect(toString()).toContain("success=true")
+        expect(toString()).toContain("rolledBack=false")
+      }
+      transaction {
+        rollback()
+        close() // typically not directly called, will be called at end of transaction{} block
+        expect(toString()).toContain("closed=true")
+        expect(toString()).toContain("rolledBack=true")
+      }
+    }
+  }
+
+  suspend fun testClientCloseTxnWithoutMarkingSuccessOrRollback(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      transaction {
+        close() // not marked successful or rolled back, will throw
+        fail("Close with no autoCommit and no success or rollback should throw")
+      }
+    }
+  }
+
+  suspend fun testNoAutoCommitTxnWithoutMarkingSuccessOrRollback(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      transaction(autoCommit = false) {
+      }
+      fail("No autoCommit txn block ends and no success or rollback should throw")
+    }
+  }
+
+  suspend fun testAttemptToRollbackAfterClosed(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      transaction {
+        close()
+        rollback()
+        fail("Rollback after close should throw")
+      }
+    }
+  }
+
+  suspend fun testAttemptToMarkSuccessfulAfterClosed(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
+    withTestDatabase(
+      context = appCtx,
+      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher = testDispatcher,
+      enableForeignKeyConstraints = true
+    ) {
+      transaction {
+        close()
+        setSuccessful()
+        fail("Setting success after close should throw")
       }
     }
   }

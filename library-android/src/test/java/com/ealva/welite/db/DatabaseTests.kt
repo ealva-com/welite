@@ -19,8 +19,8 @@ package com.ealva.welite.db
 import android.content.Context
 import android.os.Build.VERSION_CODES.LOLLIPOP
 import androidx.test.core.app.ApplicationProvider
-import com.ealva.welite.test.shared.CoroutineRule
 import com.ealva.welite.test.db.SomeMediaTable
+import com.ealva.welite.test.shared.CoroutineRule
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.Dispatchers
@@ -110,6 +110,57 @@ class DatabaseTests {
   fun `test create and drop Index`() = coroutineRule.runBlockingTest {
     Common.testCreateAndDropIndex(appCtx, coroutineRule.testDispatcher)
   }
+
+  @Test
+  fun `test create and rollback`() = coroutineRule.runBlockingTest {
+    Common.testCreateAndRollback(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
+  fun `test txn toString`() = coroutineRule.runBlockingTest {
+    Common.testTxnToString(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
+  fun `test client close txn without marking success or rollback`() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testClientCloseTxnWithoutMarkingSuccessOrRollback(appCtx, coroutineRule.testDispatcher)
+    }
+
+  @Test
+  fun `test no auto commit txn without marking success or rollback`() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testNoAutoCommitTxnWithoutMarkingSuccessOrRollback(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
+    }
+
+  @Test
+  fun `test attempt to rollback after closed`() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testAttemptToRollbackAfterClosed(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
+    }
+
+  @Test
+  fun `test attempt to mark successful after closed`() =
+    coroutineRule.runBlockingTest {
+      thrown.expect(WeLiteException::class.java)
+      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
+      Common.testAttemptToMarkSuccessfulAfterClosed(
+        appCtx,
+        coroutineRule.testDispatcher
+      )
+    }
 
   @Test
   fun `test isUiThread`() {

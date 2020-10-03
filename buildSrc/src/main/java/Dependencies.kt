@@ -23,10 +23,10 @@ object Sdk {
 object Versions {
   const val ANDROIDX_TEST_EXT = "1.1.2"
   const val ANDROIDX_TEST = "1.3.0"
-  const val APPCOMPAT = "1.1.0"
+  const val APPCOMPAT = "1.2.0"
   const val LIFECYCLE = "2.2.0"
-  const val CONSTRAINT_LAYOUT = "1.1.3"
-  const val CORE_KTX = "1.3.0"
+  const val CONSTRAINT_LAYOUT = "2.0.1"
+  const val CORE_KTX = "1.3.2"
   const val ESPRESSO_CORE = "3.2.0"
   const val JUNIT = "4.13"
   const val EALVALOG = "0.5.1-SNAPSHOT"
@@ -35,15 +35,15 @@ object Versions {
   const val FASTUTIL = "7.2.1"
   const val COROUTINES = "1.3.9"
   const val COROUTINES_TEST = "1.3.9"
-  const val KOIN = "2.1.4"
+  const val KOIN = "2.1.6"
   const val DESUGAR = "1.0.10"
 }
 
 object BuildPluginsVersion {
   const val AGP = "4.0.1"
-  const val DETEKT = "1.8.0"
+  const val DETEKT = "1.14.1"
   const val KOTLIN = "1.4.10"
-  const val VERSIONS_PLUGIN = "0.29.0"
+  const val VERSIONS_PLUGIN = "0.33.0"
 }
 
 object SupportLibs {
