@@ -37,18 +37,14 @@ import com.ealva.welite.test.db.table.Person
 import com.ealva.welite.test.db.table.Place
 import com.ealva.welite.test.db.table.Review
 import com.ealva.welite.test.db.table.withPlaceTestDatabase
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 import java.io.File
 
 object CommonDeleteTests {
   suspend fun testDelete(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       val (_, _, mediaId) = transaction {
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         insertData("Dy'er Mak'er", "Led Zeppelin", "Houses of the Holy", uri).also {

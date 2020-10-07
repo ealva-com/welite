@@ -20,11 +20,9 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ealva.welite.db.DatabaseConfiguration
-import com.ealva.welite.db.NeitherSuccessNorRollbackException
-import com.ealva.welite.db.WeLiteException
+import com.ealva.welite.db.UnmarkedTransactionException
 import com.ealva.welite.test.shared.CoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.hamcrest.CoreMatchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -116,41 +114,10 @@ class DatabaseTests {
   }
 
   @Test
-  fun testClientCloseTxnWithoutMarkingSuccessOrRollback() =
-    coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
-      Common.testClientCloseTxnWithoutMarkingSuccessOrRollback(appCtx, coroutineRule.testDispatcher)
-    }
-
-  @Test
   fun testNoAutoCommitTxnWithoutMarkingSuccessOrRollback() =
     coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
+      thrown.expect(UnmarkedTransactionException::class.java)
       Common.testNoAutoCommitTxnWithoutMarkingSuccessOrRollback(
-        appCtx,
-        coroutineRule.testDispatcher
-      )
-    }
-
-  @Test
-  fun testAttemptToRollbackAfterClosed() =
-    coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
-      Common.testAttemptToRollbackAfterClosed(
-        appCtx,
-        coroutineRule.testDispatcher
-      )
-    }
-
-  @Test
-  fun testAttemptToMarkSuccessfulAfterClosed() =
-    coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(CoreMatchers.isA(NeitherSuccessNorRollbackException::class.java))
-      Common.testAttemptToMarkSuccessfulAfterClosed(
         appCtx,
         coroutineRule.testDispatcher
       )

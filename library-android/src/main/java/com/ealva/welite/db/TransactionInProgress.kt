@@ -162,7 +162,7 @@ private class TransactionInProgressImpl(
   private val db: SQLiteDatabase = dbConfig.db
 
   init {
-    require(db.inTransaction()) { "Transaction must be in progress" }
+    check(db.inTransaction()) { "Transaction must be in progress" }
   }
 
   override fun Query.forEach(bind: (ArgBindings) -> Unit, action: (Cursor) -> Unit) {

@@ -30,8 +30,10 @@ import com.ealva.welite.test.db.view.FullMediaView
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.MediaFileTable
 import com.ealva.welite.test.shared.SqlExecutorSpy
+import com.ealva.welite.test.shared.expectMediaTablesExist
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.ListMatcher
 import com.nhaarman.expect.StringMatcher
@@ -41,12 +43,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 object CommonDatabaseTests {
   suspend fun testInTransaction(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(SomeMediaTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
       var visitedOngoing = false
       expect(inTransaction).toBe(false)
       transaction {
@@ -66,12 +63,7 @@ object CommonDatabaseTests {
   }
 
   suspend fun testSqliteVersion(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(SomeMediaTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
       query {
         // supports "n.nn.nn"  nn is 1 or 2 numbers
         expect(sqliteVersion).matches(Regex("""[3-9]\.[0-9]{1,2}\.[0-9]{1,2}"""))
@@ -115,12 +107,7 @@ object CommonDatabaseTests {
   }
 
   suspend fun createTableTest(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(SomeMediaTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
       query {
         expect(SomeMediaTable.exists).toBe(true)
         val description = SomeMediaTable.description
@@ -184,46 +171,39 @@ object CommonDatabaseTests {
     }
   }
 
+  /**
+   * Test that a table on which another table is dependent occurs earlier in the list of tables.
+   * eg. Table A depends on Table B, Table B must occur somewhere earlier in the list than Table A.
+   */
   suspend fun testCreateTablesRearrangeOrderForCreate(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
     withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
+      appCtx,
+      listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      testDispatcher
     ) {
+      expectMediaTablesExist()
       query {
-        expect(MediaFileTable.exists).toBe(true)
-        expect(AlbumTable.exists).toBe(true)
-        expect(ArtistTable.exists).toBe(true)
-        expect(ArtistAlbumTable.exists).toBe(true)
-
-        // This is coupled too tightly to the algorithm
-        // We only care about table A before table B relationships, not specific ordering
-        val tables = this@withTestDatabase.tables
-        expect(tables[0]).toBe(ArtistTable)
-        expect(tables[1]).toBe(AlbumTable)
-        expect(tables[2]).toBe(ArtistAlbumTable)
-        expect(tables[3]).toBe(MediaFileTable)
+        this@withTestDatabase.tables.let { list ->
+          expectOrderOf(list, before = ArtistTable, after = ArtistAlbumTable)
+          expectOrderOf(list, before = AlbumTable, after = ArtistAlbumTable)
+          expectOrderOf(list, before = ArtistTable, after = MediaFileTable)
+          expectOrderOf(list, before = AlbumTable, after = MediaFileTable)
+        }
       }
     }
   }
 
-  suspend fun testIntegritySunnyDay(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      query {
-        expect(MediaFileTable.exists).toBe(true)
-        expect(AlbumTable.exists).toBe(true)
-        expect(ArtistTable.exists).toBe(true)
-        expect(ArtistAlbumTable.exists).toBe(true)
+  private fun expectOrderOf(tables: List<Table>, before: Table, after: Table) {
+    expect(tables.indexOf(before)).toBeSmallerThan(tables.indexOf(after))
+  }
 
+  suspend fun testIntegritySunnyDay(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+      expectMediaTablesExist()
+      query {
         val tegridy = tegridyCheck()
         expect(tegridy).toHaveSize(1)
         expect(tegridy[0]).toBe("ok")
@@ -235,18 +215,9 @@ object CommonDatabaseTests {
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+      expectMediaTablesExist()
       query {
-        expect(MediaFileTable.exists).toBe(true)
-        expect(AlbumTable.exists).toBe(true)
-        expect(ArtistTable.exists).toBe(true)
-        expect(ArtistAlbumTable.exists).toBe(true)
-
         ArtistTable.sql.let { artistSql ->
           expect(artistSql.table).toHaveSize(1)
           expect(artistSql.table[0]).toBe(
@@ -309,12 +280,7 @@ object CommonDatabaseTests {
   }
 
   suspend fun testCreateAndDropTable(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = emptyList(),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, emptyList(), testDispatcher) {
       transaction { MediaFileTable.create() }
       query { expect(MediaFileTable.exists).toBe(true) }
       transaction { MediaFileTable.drop() }
@@ -323,18 +289,8 @@ object CommonDatabaseTests {
   }
 
   suspend fun testCreateAndDropView(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      query {
-        expect(MediaFileTable.exists).toBe(true)
-        expect(AlbumTable.exists).toBe(true)
-        expect(ArtistTable.exists).toBe(true)
-        expect(ArtistAlbumTable.exists).toBe(true)
-      }
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+      expectMediaTablesExist()
       transaction { FullMediaView.create() }
       query { expect(FullMediaView.exists).toBe(true) }
       transaction { FullMediaView.drop() }
@@ -343,18 +299,8 @@ object CommonDatabaseTests {
   }
 
   suspend fun testCreateAndDropTrigger(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      query {
-        expect(MediaFileTable.exists).toBe(true)
-        expect(AlbumTable.exists).toBe(true)
-        expect(ArtistTable.exists).toBe(true)
-        expect(ArtistAlbumTable.exists).toBe(true)
-      }
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+      expectMediaTablesExist()
       transaction {
         DeleteArtistTrigger.create()
         DeleteAlbumTrigger.create()
@@ -387,12 +333,7 @@ object CommonDatabaseTests {
       @Suppress("unused") val id = long("_id") { primaryKey() }
       val artistName = text("ArtistName") { collateNoCase() }
     }
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(aTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, listOf(aTable), testDispatcher) {
       query { expect(aTable.exists).toBe(true) }
       val index = transaction { aTable.index(aTable.artistName).also { index -> index.create() } }
       query {
@@ -408,18 +349,8 @@ object CommonDatabaseTests {
   }
 
   suspend fun testCreateAndRollback(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      query {
-        expect(MediaFileTable.exists).toBe(true)
-        expect(AlbumTable.exists).toBe(true)
-        expect(ArtistTable.exists).toBe(true)
-        expect(ArtistAlbumTable.exists).toBe(true)
-      }
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+      expectMediaTablesExist()
       transaction {
         FullMediaView.create()
         rollback()
@@ -432,18 +363,8 @@ object CommonDatabaseTests {
   }
 
   suspend fun testTxnToString(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      query {
-        expect(MediaFileTable.exists).toBe(true)
-        expect(AlbumTable.exists).toBe(true)
-        expect(ArtistTable.exists).toBe(true)
-        expect(ArtistAlbumTable.exists).toBe(true)
-      }
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+      expectMediaTablesExist()
       val unitOfWork = "Create FullMediaView"
       transaction(unitOfWork = unitOfWork) {
         FullMediaView.create()
@@ -466,26 +387,7 @@ object CommonDatabaseTests {
       }
       transaction {
         rollback()
-        close() // typically not directly called, will be called at end of transaction{} block
-        expect(toString()).toContain("closed=true")
         expect(toString()).toContain("rolledBack=true")
-      }
-    }
-  }
-
-  suspend fun testClientCloseTxnWithoutMarkingSuccessOrRollback(
-    appCtx: Context,
-    testDispatcher: CoroutineDispatcher
-  ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      transaction {
-        close() // not marked successful or rolled back, will throw
-        fail("Close with no autoCommit and no success or rollback should throw")
       }
     }
   }
@@ -494,51 +396,10 @@ object CommonDatabaseTests {
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       transaction(autoCommit = false) {
       }
       fail("No autoCommit txn block ends and no success or rollback should throw")
-    }
-  }
-
-  suspend fun testAttemptToRollbackAfterClosed(
-    appCtx: Context,
-    testDispatcher: CoroutineDispatcher
-  ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      transaction {
-        close()
-        rollback()
-        fail("Rollback after close should throw")
-      }
-    }
-  }
-
-  suspend fun testAttemptToMarkSuccessfulAfterClosed(
-    appCtx: Context,
-    testDispatcher: CoroutineDispatcher
-  ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
-      transaction {
-        close()
-        setSuccessful()
-        fail("Setting success after close should throw")
-      }
     }
   }
 }

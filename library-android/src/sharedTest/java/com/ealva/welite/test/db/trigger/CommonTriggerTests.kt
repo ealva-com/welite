@@ -38,6 +38,7 @@ import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
 import com.ealva.welite.test.shared.MediaFileTable
 import com.ealva.welite.test.shared.SqlExecutorSpy
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -103,7 +104,7 @@ object CommonTriggerTests {
   suspend fun testExecDeleteArtistTrigger(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(
       context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
+      tables = MEDIA_TABLES,
       testDispatcher = testDispatcher,
       enableForeignKeyConstraints = false
     ) {
@@ -133,12 +134,7 @@ object CommonTriggerTests {
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = false
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher, enableForeignKeyConstraints = false) {
       transaction {
         DeleteAlbumTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
@@ -165,12 +161,7 @@ object CommonTriggerTests {
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = false
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       transaction {
         InsertMediaTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
@@ -188,12 +179,7 @@ object CommonTriggerTests {
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = false
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       transaction {
         InsertMediaTrigger.create()
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
@@ -213,12 +199,7 @@ object CommonTriggerTests {
   }
 
   suspend fun testDeleteMediaTrigger(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = false
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher, enableForeignKeyConstraints = false) {
       var ids: IdTriple? = null
       transaction {
         DeleteMediaTrigger.create()
@@ -248,12 +229,7 @@ object CommonTriggerTests {
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = false
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       var ids: IdTriple? = null
       transaction {
         DeleteAlbumTrigger.create()
@@ -342,7 +318,7 @@ val InsertMediaTrigger = MediaFileTable.trigger(
 ) {
   select(
     case().caseWhen(
-      new(MediaFileTable.mediaUri) notLike "file:%",  // must start with "file:"
+      new(MediaFileTable.mediaUri) notLike "file:%", // must start with "file:"
       raiseAbort("Abort, not URI")
     )
   ).where(null)

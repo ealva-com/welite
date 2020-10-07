@@ -203,8 +203,6 @@ object CommonJoinTests {
             it[foo2] = fooId
             it[baz] = 5 // fk violation
           }
-
-          setSuccessful()
         }
 
         fail("insert should have failed with an foreign key violation")

@@ -35,7 +35,7 @@ import com.ealva.welite.db.table.WeLiteMarker
  * The commit/rollback occurs at the end of the [use] block when the txn is closed.
  */
 @WeLiteMarker
-interface Transaction : TransactionInProgress, AutoCloseable {
+interface Transaction : TransactionInProgress {
   val isClosed: Boolean
   val successful: Boolean
   val rolledBack: Boolean
@@ -53,14 +53,9 @@ interface Transaction : TransactionInProgress, AutoCloseable {
    * @throws IllegalStateException if the txn is already closed
    */
   fun rollback()
+}
 
-  /**
-   * Close is idempotent. This means you could call it before the txn leaves [use] block, but
-   * the expected design is control flow that "immediately" leaves the [use]
-   * block after either [setSuccessful] or [rollback]. Close happens exiting the [use] scope
-   */
-  override fun close()
-
+internal interface CloseableTransaction : Transaction, AutoCloseable {
   companion object {
     /**
      * Start a transaction and return the Transaction object which is [AutoCloseable] and
@@ -73,7 +68,7 @@ interface Transaction : TransactionInProgress, AutoCloseable {
       exclusiveLock: Boolean,
       unitOfWork: String,
       throwIfNoChoice: Boolean
-    ): Transaction {
+    ): CloseableTransaction {
       val db = dbConfig.db
       if (exclusiveLock) db.beginTransaction() else db.beginTransactionNonExclusive()
       return TransactionImpl(
@@ -89,7 +84,7 @@ interface Transaction : TransactionInProgress, AutoCloseable {
 
 private val LOG by lazyLogger(Transaction::class, WeLiteLog.marker)
 private const val TXN_NOT_MARKED =
-  "<<==Warning==>> Closing a txn without it being marked successful or rolled back. %s"
+  "Txn '%s' closing without it being marked successful or rolled back."
 
 private class TransactionImpl(
   private val db: SQLiteDatabase,
@@ -97,7 +92,7 @@ private class TransactionImpl(
   private val unitOfWork: String,
   private val throwIfNoChoice: Boolean,
   private val transactionInProgress: TransactionInProgress
-) : TransactionInProgress by transactionInProgress, Transaction {
+) : TransactionInProgress by transactionInProgress, CloseableTransaction {
   override var successful = false
     private set
   override var rolledBack = false
@@ -106,8 +101,8 @@ private class TransactionImpl(
     private set
 
   override fun setSuccessful() {
-    check(!isClosed) { "Txn $unitOfWork already closed" }
-    check(!rolledBack) { "Txn $unitOfWork rolled back, cannot be marked successful" }
+    check(!isClosed) { "Txn '$unitOfWork' already closed" }
+    check(!rolledBack) { "Txn '$unitOfWork' rolled back, cannot be marked successful" }
     if (!successful) {
       db.setTransactionSuccessful()
       successful = true
@@ -115,7 +110,7 @@ private class TransactionImpl(
   }
 
   override fun rollback() {
-    check(!isClosed) { "Txn $unitOfWork already closed" }
+    check(!isClosed) { "Txn '$unitOfWork' already closed" }
     if (!rolledBack) {
       successful = false
       rolledBack = true
@@ -127,7 +122,7 @@ private class TransactionImpl(
       try {
         isClosed = true
         if (!successful && !rolledBack) {
-          val ex = NeitherSuccessNorRollbackException(unitOfWork)
+          val ex = UnmarkedTransactionException(unitOfWork)
           LOG.e(ex) { it(TXN_NOT_MARKED, unitOfWork) }
           if (throwIfNoChoice) throw ex
         }

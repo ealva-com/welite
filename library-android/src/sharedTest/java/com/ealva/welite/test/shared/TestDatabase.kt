@@ -26,7 +26,7 @@ suspend fun withTestDatabase(
   context: Context,
   tables: List<Table>,
   testDispatcher: CoroutineDispatcher,
-  enableForeignKeyConstraints: Boolean,
+  enableForeignKeyConstraints: Boolean = true,
   block: suspend Database.() -> Unit
 ) {
   val db = TestDatabase(context, tables, testDispatcher, enableForeignKeyConstraints)

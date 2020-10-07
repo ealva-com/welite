@@ -122,41 +122,10 @@ class DatabaseTests {
   }
 
   @Test
-  fun `test client close txn without marking success or rollback`() =
-    coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
-      Common.testClientCloseTxnWithoutMarkingSuccessOrRollback(appCtx, coroutineRule.testDispatcher)
-    }
-
-  @Test
   fun `test no auto commit txn without marking success or rollback`() =
     coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
+      thrown.expect(UnmarkedTransactionException::class.java)
       Common.testNoAutoCommitTxnWithoutMarkingSuccessOrRollback(
-        appCtx,
-        coroutineRule.testDispatcher
-      )
-    }
-
-  @Test
-  fun `test attempt to rollback after closed`() =
-    coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
-      Common.testAttemptToRollbackAfterClosed(
-        appCtx,
-        coroutineRule.testDispatcher
-      )
-    }
-
-  @Test
-  fun `test attempt to mark successful after closed`() =
-    coroutineRule.runBlockingTest {
-      thrown.expect(WeLiteException::class.java)
-      thrown.expectCause(isA(NeitherSuccessNorRollbackException::class.java))
-      Common.testAttemptToMarkSuccessfulAfterClosed(
         appCtx,
         coroutineRule.testDispatcher
       )
@@ -195,7 +164,7 @@ class DatabaseTests {
 
   @Test
   fun `test transaction on UI thread throws`() = coroutineRule.runBlockingTest {
-    thrown.expectCause(isA(IllegalStateException::class.java))
+    thrown.expect(WeLiteException::class.java)
     val db = Database(
       context = appCtx,
       version = 1,

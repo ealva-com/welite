@@ -16,7 +16,9 @@
 
 package com.ealva.welite.test.shared
 
+import com.ealva.welite.db.Database
 import com.ealva.welite.db.table.Table
+import com.nhaarman.expect.expect
 
 object MediaFileTable : Table() {
   val id = long("_id") { primaryKey() }
@@ -50,5 +52,16 @@ object ArtistAlbumTable : Table() {
     index(artistId)
     index(albumId)
     uniqueIndex(artistId, albumId)
+  }
+}
+
+val MEDIA_TABLES = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable)
+
+suspend fun Database.expectMediaTablesExist() {
+  query {
+    expect(MediaFileTable.exists).toBe(true)
+    expect(AlbumTable.exists).toBe(true)
+    expect(ArtistTable.exists).toBe(true)
+    expect(ArtistAlbumTable.exists).toBe(true)
   }
 }

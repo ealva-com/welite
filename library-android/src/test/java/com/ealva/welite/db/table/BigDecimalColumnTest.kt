@@ -20,6 +20,7 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.WeLiteException
+import com.ealva.welite.db.WeLiteUncaughtException
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.BigTable.bigD
@@ -114,7 +115,7 @@ class BigDecimalColumnTest {
 
   @Test
   fun `test bind other than BigDecimal`() = coroutineRule.runBlockingTest {
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -140,7 +141,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -159,8 +160,9 @@ class BigDecimalColumnTest {
 
   @Test
   fun `test bind malformed BigDecimal string`() = coroutineRule.runBlockingTest {
+    thrown.expect(WeLiteUncaughtException::class.java)
     thrown.expectCause(isA(NumberFormatException::class.java))
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -169,18 +171,17 @@ class BigDecimalColumnTest {
         }
         bigTableInsert.insert {
           it[0] = BigDecimal.ONE
-          it[1] = "23GGZ"  // bad BigDecimal
+          it[1] = "23GGZ" // bad BigDecimal
         }
-        setSuccessful()
       }
-      fail("bind of null should be exceptional")
+      fail("bind of malformed BigDecimal should be exceptional")
     }
   }
 
   @Test
   fun `test bind bad type`() = coroutineRule.runBlockingTest {
     thrown.expectCause(isA(NumberFormatException::class.java))
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -200,7 +201,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test opt reference`() = coroutineRule.runBlockingTest {
     expect(HasBigTableRef.ref.descriptionDdl()).toBe(""""ref" INTEGER""")
-    withTestDatabase(appCtx, listOf(BigTable, HasBigTableRef), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(BigTable, HasBigTableRef), coroutineRule.testDispatcher) {
       query {
         HasBigTableRef.foreignKeyList.let { list ->
           expect(list).toHaveSize(1)

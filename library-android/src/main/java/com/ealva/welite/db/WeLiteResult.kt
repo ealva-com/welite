@@ -17,22 +17,19 @@
 package com.ealva.welite.db
 
 /**
- * Result of various calls to [Database]
+ * Used internally in [Database.transaction] and [Database.query] as return values
+ * from coroutine calls.
  */
-sealed class WeResult<out R> {
+internal sealed class WeLiteResult<out R> {
 
   /** Call was successful and contains the [value] */
-  data class Success<R>(val value: R) : WeResult<R>()
+  data class Success<R>(val value: R) : WeLiteResult<R>()
 
   /** Call did not complete successfully and an exception was thrown */
-  data class Unsuccessful(val exception: WeLiteException) : WeResult<Nothing>() {
+  data class Unsuccessful(val exception: Exception) : WeLiteResult<Nothing>() {
     companion object {
-      fun make(message: String, cause: Throwable? = null): Unsuccessful {
-        return when (cause) {
-          null -> Unsuccessful(WeLiteException(message))
-          is WeLiteException -> Unsuccessful(cause)
-          else -> Unsuccessful(WeLiteException(message, cause))
-        }
+      fun makeUncaught(message: String, cause: Throwable): Unsuccessful {
+        return Unsuccessful(WeLiteUncaughtException(message, cause))
       }
     }
   }
@@ -40,3 +37,6 @@ sealed class WeResult<out R> {
 
 open class WeLiteException(message: String, cause: Throwable? = null) :
   RuntimeException(message, cause)
+
+class WeLiteUncaughtException(message: String, cause: Throwable? = null) :
+  WeLiteException(message, cause)

@@ -35,6 +35,7 @@ import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
 import com.ealva.welite.test.shared.CoroutineRule
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.MediaFileTable
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
@@ -62,12 +63,7 @@ class UpdateTests {
 
   @Test
   fun `test update`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
       val badName = "Led Zepelin"
       val goodName = "Led Zeppelin"
       transaction {

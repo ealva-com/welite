@@ -20,15 +20,14 @@ import android.content.Context
 import android.database.DatabaseErrorHandler
 import android.database.DefaultDatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteOpenHelper
 import android.os.Build
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
-import com.ealva.welite.db.WeResult.Success
-import com.ealva.welite.db.WeResult.Unsuccessful
+import com.ealva.welite.db.WeLiteResult.Success
+import com.ealva.welite.db.WeLiteResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.DbConfig
@@ -54,7 +53,7 @@ import java.util.Locale
  * the PRIMARY KEY or UNIQUE constraints) the sql field is NULL.
  */
 data class TableSql(
-  /** The table name as in sqlite_master.tbl_name */
+  /** The table name as it appears in sqlite_master.tbl_name */
   val tableName: String,
   /** List of create statements to create the Table [tableName] */
   val table: List<String>,
@@ -84,48 +83,51 @@ interface Database {
 
   /**
    * Begin a [Transaction] named [unitOfWork] and call [work] with the transaction as the receiver.
-   * Whatever type [R] is returned from the [work] function is returned from this function.
-   * WeLite attempts to require an explicit transaction be started for all DB access (otherwise
-   * SQLite will start an implicit txn). By default [exclusive] is false and the transaction runs in
-   * IMMEDIATE mode. All db work should be completed within the [work] block and the txn must be
-   * marked as either successful, [Transaction.setSuccessful], or rolled back,
-   * [Transaction.rollback].
+   * [R] is returned from the [work] function is returned from this function. WeLite attempts to
+   * require an explicit transaction be started for all DB access (otherwise SQLite will start an
+   * implicit txn). By default [exclusive] is false and the transaction runs in IMMEDIATE mode. All
+   * db work should be completed within the [work] block and the txn must be marked as either
+   * successful, [Transaction.setSuccessful], or rolled back, [Transaction.rollback].
    *
    * If [autoCommit] is true, which is the default, and [Transaction.rollback] is not invoked,
    * [Transaction.setSuccessful] is automatically called for the client. If [autoCommit] is false
    * the client must invoke setSuccessful() or rollback().
    *
    * When the txn closes, if neither success nor rollback has been called an error will be logged.
-   * If [throwIfNoChoice] is true, which is the default, a [NeitherSuccessNorRollbackException] will
-   * be thrown. If [throwIfNoChoice] is false, execution continues but the txn will not be
-   * committed.
+   * If [throwIfNoChoice] is true, which is the default, an [UnmarkedTransactionException] will be
+   * thrown. If [throwIfNoChoice] is false, execution continues but the txn will not be committed.
    *
-   * If [exclusive] is false, which is the default, a reserved lock is acquired. While
-   * holding a reserved lock, this session is allowed to read or write but other sessions are only
-   * allowed to read.
+   * If [exclusive] is false, which is the default, a reserved lock is acquired. While holding a
+   * reserved lock, this session is allowed to read or write but other sessions are only allowed to
+   * read.
    *
-   * If [exclusive] is true, an exclusive lock is acquired. While holding an exclusive
-   * lock, this session is allowed to read or write but no other sessions are allowed to
-   * access the database.
+   * If [exclusive] is true, an exclusive lock is acquired. While holding an exclusive lock, this
+   * session is allowed to read or write but no other sessions are allowed to access the database.
    *
    * The work function will be executed on the underlying CoroutineDispatcher which is typically
    * either Dispatchers.IO or a custom dispatcher just for DB work.
    *
-   * [SQLite docs](https://www.sqlite.org/lang_transaction.html): No reads or writes occur
-   * except within a transaction. Any command that accesses the database (basically, any SQL
-   * command, except a few PRAGMA statements) will automatically start a transaction if one is not
-   * already in effect. Automatically started transactions are committed when the last SQL statement
-   * finishes.
+   * Query functions are also available within a txn as the [work] receiver [Transaction] is also a
+   * [Queryable]
+   *
+   * [SQLite docs](https://www.sqlite.org/lang_transaction.html): No reads or writes occur except
+   * within a transaction. Any command that accesses the database (basically, any SQL command,
+   * except a few PRAGMA statements) will automatically start a transaction if one is not already in
+   * effect. Automatically started transactions are committed when the last SQL statement finishes.
    *
    * @see query
    * @throws IllegalStateException if the database has been closed
-   * @throws WeLiteException if an exception is thrown from [work]. The [WeLiteException.cause]
-   * is set to the underlying exception. If an underlying dispatcher executes on the UI thread
-   * an IllegalStateException is thrown, which is caught, and wrapped in a WeLiteException
+   * @throws WeLiteException if an exception is thrown in the coroutine code, but not in the [work]
+   * function. For example, if [work] is illegally dispatched on the main UI thread an
+   * [IllegalStateException] is thrown which is in turn wrapped in a [WeLiteException].
+   * @throws UnmarkedTransactionException if [autoCommit] is false and a txn is not marked as
+   * successful or rolled back, this exception will be thrown
+   * @throws WeLiteUncaughtException if an exception is thrown from [work]. The
+   * [WeLiteException.cause] is set to the underlying exception.
    */
   suspend fun <R> transaction(
     exclusive: Boolean = false,
-    unitOfWork: String = "Unnamed Txn",
+    unitOfWork: String = UNNAMED_TXN,
     autoCommit: Boolean = true,
     throwIfNoChoice: Boolean = true,
     work: suspend Transaction.() -> R
@@ -133,33 +135,21 @@ interface Database {
 
   /**
    * Called to do queries and no other CRUD operation. This is the same as starting a [transaction]
-   * and only doing queries. Whatever type [R] is returned from the [work] function is returned
-   * from this function.
+   * and only doing queries. [R] is returned from the [work] function and is returned from
+   * this function.
    *
-   * WeLite attempts to require an explicit transaction be started for all DB access (otherwise
-   * SQLite will start an implicit txn). This function is fundamentally the same as [transaction],
-   * except the client is indicating no other CRUD operations will be performed.
-   * [Transaction.setSuccessful] is always called on the underlying transaction as queries don't
-   * require commit/rollback
+   * The primary difference between this function and [transaction] is no table updating is to
+   * occur and the client does not have [Transaction] functions available since [Queryable] is the
+   * [work] function receiver. [query] is basically [transaction] with autoCommit set to true, but
+   * indicates only queries will be performed in the [work] function.
    *
-   * The [work] function will be executed on the underlying CoroutineDispatcher which is typically
-   * either Dispatchers.IO or a custom dispatcher just for DB work.
+   * Possible exceptions are the same as the [transaction] function.
    *
-   * [SQLite docs](https://www.sqlite.org/lang_transaction.html): No reads or writes occur
-   * except within a transaction. Any command that accesses the database (basically, any SQL
-   * command, except a few PRAGMA statements) will automatically start a transaction if one is not
-   * already in effect. Automatically started transactions are committed when the last SQL statement
-   * finishes.
-   *
-   * @see transaction
-   * @throws IllegalStateException if the database has been closed
-   * @throws WeLiteException if an exception is thrown from [work]. The [WeLiteException.cause]
-   * is set to the underlying exception. If an underlying dispatcher executes on the UI thread
-   * an IllegalStateException is thrown, which is caught, and wrapped in a WeLiteException
+   * @see [transaction]
    */
   suspend fun <R> query(
     exclusive: Boolean = false,
-    unitOfWork: String = "Unnamed Txn",
+    unitOfWork: String = UNNAMED_TXN,
     work: suspend Queryable.() -> R
   ): R
 
@@ -170,15 +160,15 @@ interface Database {
 
   /**
    * Provides the interface to an ongoing transaction. Client is not concerned with commit/rollback
-   * which is handled at another level
+   * which is handled at some other level.
    *
    * The [work] function is executed on the current thread, unlike [transaction] and [query], which
    * will use coroutines to execute off the main thread.
    *
-   * @throws IllegalStateException if the current thread is not in a transaction, the database has
-   * been closed, or the caller is on the UI thread
-   * @throws WeLiteException if an exception is thrown from [work]. The [WeLiteException.cause]
-   * is set to the underlying exception.
+   * @throws IllegalStateException if the caller illegally invokes this function from the UI thread,
+   * the database has been closed, or  the current thread is not in a transaction
+   * @throws WeLiteUncaughtException if an exception is thrown from [work]. The
+   * [WeLiteException.cause] is set to the underlying exception.
    * @see inTransaction
    */
   fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R
@@ -205,6 +195,8 @@ interface Database {
   val isInMemoryDatabase: Boolean
 
   companion object {
+    const val UNNAMED_TXN = "Unnamed Txn"
+
     /**
      * Attempts to release memory that SQLite holds but does not require to operate properly.
      * Typically this memory will come from the page cache. This function may be called when
@@ -303,6 +295,10 @@ interface Database {
 
 private val LOG by lazyLogger(Database::class, WeLiteLog.marker)
 
+private fun Exception.asUncaught(errorMessage: () -> String): Unsuccessful {
+  return Unsuccessful.makeUncaught(errorMessage(), this)
+}
+
 private class WeLiteDatabase(
   context: Context,
   fileName: String?,
@@ -346,13 +342,9 @@ private class WeLiteDatabase(
   override val isInMemoryDatabase: Boolean
     get() = ":memory:" == path
 
-  fun Exception.asUnsuccessful(errorMessage: () -> String): Unsuccessful {
-    return Unsuccessful.make(errorMessage(), this)
-  }
-
   /**
    * Note: The client may not use the transaction return value (could be of type Unit) so we don't
-   * return WeResult<R> and instead rethrow exceptions occurring in work coroutine.
+   * return WeResult<R> and instead rethrow exceptions wrapped in WeResult
    */
   override suspend fun <R> transaction(
     exclusive: Boolean,
@@ -360,67 +352,83 @@ private class WeLiteDatabase(
     autoCommit: Boolean,
     throwIfNoChoice: Boolean,
     work: suspend Transaction.() -> R
-  ): R {
-    check(!closed) { "Database has been closed" }
-    val result = withContext(dispatcher) {
-      try {
-        assertNotUiThread() // client can set dispatcher, need to check
-        Success(
-          beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { txn ->
-            txn.work().also { if (autoCommit && !txn.rolledBack) txn.setSuccessful() }
-          }
-        )
-      } catch (e: Exception) {
-        e.asUnsuccessful { "Exception during transaction" }
-      }
-    }
-    return when (result) {
-      is Success -> result.value
-      is Unsuccessful -> throw result.exception
-    }
-  }
+  ): R = workInTxn(exclusive, unitOfWork, autoCommit, throwIfNoChoice, work)
 
   /**
-   * Note: The client may not use query return value (could be of type Unit) so we don't
-   * return WeResult<R> and instead rethrow exceptions occurring in work coroutine.
+   * This function sets autoCommit to true which results in the txn being marked as successful,
+   * which is not technically necessary as only reads (select) are performed. However, this keeps
+   * the code simpler and consistent. In SQLite END TRANSACTION is an alias for COMMIT.
    */
   override suspend fun <R> query(
     exclusive: Boolean,
     unitOfWork: String,
     work: suspend Queryable.() -> R
+  ): R = workInTxn(exclusive, unitOfWork, autoCommit = true, throwIfNoChoice = false, work = work)
+
+  /**
+   * Dispatch work on a coroutine inside of a transaction and handle marking the txn as required.
+   * Converts the returned [WeLiteResult] to the value returned from [work] if successful, else
+   * converts to an exception which is then thrown. The [WeLiteResult] is not returned as many times
+   * the return value is not checked, which would allow exceptions to be ignored.
+   */
+  private suspend fun <R> workInTxn(
+    exclusive: Boolean,
+    unitOfWork: String,
+    autoCommit: Boolean,
+    throwIfNoChoice: Boolean,
+    work: suspend Transaction.() -> R
   ): R {
     check(!closed) { "Database has been closed" }
-    val result = withContext(dispatcher) {
+    withContext(dispatcher) {
       try {
         assertNotUiThread() // client can set dispatcher, need to check
-        beginTransaction(exclusive, unitOfWork, true).use { txn ->
-          Success(txn.work().also { txn.setSuccessful() })
+        beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { txn ->
+          txn.doWork(unitOfWork, work).also { result -> txn.closeIfNecessary(result, autoCommit) }
         }
       } catch (e: Exception) {
-        e.asUnsuccessful { "Exception during query" }
+        Unsuccessful(e.asWeLiteException("Exception on coroutine '$unitOfWork'"))
       }
-    }
-    return when (result) {
-      is Success -> result.value
-      is Unsuccessful -> throw result.exception
+    }.let { result ->
+      when (result) {
+        is Success -> return result.value
+        is Unsuccessful -> throw result.exception
+      }
     }
   }
 
+  private fun <R> Transaction.closeIfNecessary(result: WeLiteResult<R>, autoCommit: Boolean) {
+    if (!isClosed) {
+      if (result is Success) {
+        if (autoCommit && !rolledBack) setSuccessful()
+      } else {
+        rollback()
+      }
+    }
+  }
+
+  private suspend fun <R> Transaction.doWork(
+    unitOfWork: String,
+    work: suspend Transaction.() -> R
+  ): WeLiteResult<R> = try {
+    Success(work())
+  } catch (e: Exception) {
+    e.asUncaught { "Exception during transaction '$unitOfWork'" }
+  }
+
   /**
-   * Provides the interface to an ongoing transaction. At this point the client is not concerned
-   * with commit/rollback, which is expected to be handled at another level, and just needs
-   * read/write access.
-   *
-   * Can't invoke this during SQLite/OpenHelper startup (onConfigure->onOpen) as it will call
+   * Note: Can't invoke this during SQLite/OpenHelper startup (onConfigure->onOpen) as it will call
    * [SQLiteOpenHelper.getWritableDatabase] which will result in an
    * ```IllegalStateException("getDatabase called recursively")```
    */
-  override fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R = try {
-    assertNotUiThread() // client can set dispatcher, need to check
+  override fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R {
+    assertNotUiThread()
     check(!closed) { "Database has been closed" }
-    TransactionInProgress(this).work()
-  } catch (e: Exception) {
-    throw WeLiteException("Exception during ongoingTransaction", e)
+    val txn = TransactionInProgress(this)
+    try {
+      return txn.work()
+    } catch (e: Exception) {
+      throw WeLiteUncaughtException("Exception during ongoingTransaction", e)
+    }
   }
 
   /**
@@ -433,10 +441,17 @@ private class WeLiteDatabase(
     exclusive: Boolean,
     unitOfWork: String,
     throwIfNoChoice: Boolean
-  ): Transaction = Transaction(this, exclusive, unitOfWork, throwIfNoChoice)
+  ): CloseableTransaction = CloseableTransaction(this, exclusive, unitOfWork, throwIfNoChoice)
 
   private fun assertNotUiThread() =
     check(allowWorkOnUiThread || isNotUiThread) { "Cannot access the Database on the UI thread." }
+}
+
+private fun Exception.asWeLiteException(msg: String): WeLiteException {
+  return when (this) {
+    is WeLiteException -> this
+    else -> WeLiteException(msg, this)
+  }
 }
 
 private class ErrorHandler(private val database: Database) : DatabaseErrorHandler {
@@ -676,5 +691,5 @@ private class ConfigurationImpl(private val db: SQLiteDatabase) : DatabaseConfig
   }
 }
 
-class NeitherSuccessNorRollbackException(unitOfWork: String) :
-  SQLiteException("Txn '$unitOfWork' was not set as successful nor rolled back")
+class UnmarkedTransactionException(unitOfWork: String) :
+  WeLiteException("Txn '$unitOfWork' was not set as successful nor rolled back")

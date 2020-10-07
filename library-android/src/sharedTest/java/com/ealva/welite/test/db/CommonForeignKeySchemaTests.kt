@@ -25,7 +25,9 @@ import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.MediaFileTable
+import com.ealva.welite.test.shared.expectMediaTablesExist
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -33,12 +35,7 @@ import java.io.File
 
 object CommonForeignKeySchemaTests {
   suspend fun testForeignKeyList(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = false
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher, enableForeignKeyConstraints = false) {
       createTablesWithFKViolations()
 
       query {
@@ -72,12 +69,8 @@ object CommonForeignKeySchemaTests {
   }
 
   private suspend fun Database.createTablesWithFKViolations() {
+    expectMediaTablesExist()
     transaction {
-      expect(MediaFileTable.exists).toBe(true)
-      expect(AlbumTable.exists).toBe(true)
-      expect(ArtistTable.exists).toBe(true)
-      expect(ArtistAlbumTable.exists).toBe(true)
-
       MediaFileTable.insert {
         it[mediaTitle] = "A Title"
         it[mediaUri] = File("/dir/Music/File.mpg").toUri().toString()
@@ -101,12 +94,7 @@ object CommonForeignKeySchemaTests {
   }
 
   suspend fun testForeignKeyIntegrity(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = false
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher, enableForeignKeyConstraints = false) {
       createTablesWithFKViolations()
 
       query {

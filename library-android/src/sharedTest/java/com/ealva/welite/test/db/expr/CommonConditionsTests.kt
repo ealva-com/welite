@@ -35,7 +35,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 object CommonConditionsTests {
   suspend fun testOpsTRUEAndFALSE(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(CondTable), testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(CondTable), testDispatcher) {
       transaction {
         expect(CondTable.exists).toBe(true)
         CondTable.insert { it[data] = 10 }
@@ -52,7 +52,7 @@ object CommonConditionsTests {
   }
 
   suspend fun testSelectingSameColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(CondTable), testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(CondTable), testDispatcher) {
       transaction {
         expect(CondTable.exists).toBe(true)
         CondTable.insert { it[data] = 10 }
@@ -77,10 +77,10 @@ object CommonConditionsTests {
     val table = object : Table("foo") {
       val c1 = integer("c1")
       val c2 = optInteger("c2")
-      val c3 = optInteger("c3")  // will always be null
+      val c3 = optInteger("c3") // will always be null
     }
 
-    withTestDatabase(appCtx, listOf(table), testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(table), testDispatcher) {
       transaction {
         table.insert { it[c1] = 0; it[c2] = 0 }
         table.insert { it[c1] = 1; it[c2] = 2 }

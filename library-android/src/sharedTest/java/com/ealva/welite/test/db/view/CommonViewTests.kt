@@ -33,6 +33,7 @@ import com.ealva.welite.db.view.View
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.MediaFileTable
 import com.ealva.welite.test.shared.SqlExecutorSpy
 import com.ealva.welite.test.shared.withTestDatabase
@@ -98,12 +99,7 @@ object CommonViewTests {
   }
 
   suspend fun testQueryView(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       val tomorrow = Triple(
         "Tomorrow Never Knows",
         "The Beatles",

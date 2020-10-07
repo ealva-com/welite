@@ -35,7 +35,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 object CommonFunctionTests {
   suspend fun testSumColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10 }
@@ -58,7 +58,7 @@ object CommonFunctionTests {
   }
 
   suspend fun testAvgMinMaxColumns(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10 }
@@ -76,7 +76,7 @@ object CommonFunctionTests {
   }
 
   suspend fun testSubstring(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10; it[name] = "ZabY" }
@@ -102,7 +102,7 @@ object CommonFunctionTests {
   }
 
   suspend fun testLowercaseAndUppercase(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher, true) {
+    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10; it[name] = "Bob" }

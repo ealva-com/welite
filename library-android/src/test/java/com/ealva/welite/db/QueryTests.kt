@@ -33,6 +33,7 @@ import com.ealva.welite.test.shared.AlbumTable.albumName
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
 import com.ealva.welite.test.shared.CoroutineRule
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.MediaFileTable
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
@@ -65,12 +66,7 @@ class QueryTests {
 
   @Test
   fun `test simple query`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
       val uri = "/Music/Song.mp3"
       val (_, _, mediaId) = transaction {
         insertData("Led Zeppelin", "Houses of the Holy", uri).also { setSuccessful() }
@@ -99,12 +95,7 @@ class QueryTests {
 
   @Test
   fun `test simple query with bindable`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
       val uri = "/Music/Song.mp3"
       val (_, _, mediaId) = transaction {
         insertData("Led Zeppelin", "Houses of the Holy", uri).also { setSuccessful() }
@@ -135,12 +126,7 @@ class QueryTests {
   fun `test simple query with unbound bindable`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
     thrown.expectCause(isA(IllegalStateException::class.java))
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
       val uri = "/Music/Song.mp3"
       val (_, _, mediaId) = transaction {
         insertData("Led Zeppelin", "Houses of the Holy", uri).also { setSuccessful() }
@@ -170,12 +156,7 @@ class QueryTests {
   @Suppress("UNUSED_VARIABLE")
   @Test
   fun `test query id greater than zero`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
       transaction {
         val song1Path = "/Music/Song1.mp3"
         val song2Path = "/Music/Song2.mp3"
@@ -219,12 +200,7 @@ class QueryTests {
   @Suppress("UNUSED_VARIABLE")
   @Test
   fun `test count`() = coroutineRule.runBlockingTest {
-    withTestDatabase(
-      context = appCtx,
-      tables = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable),
-      testDispatcher = coroutineRule.testDispatcher,
-      enableForeignKeyConstraints = true
-    ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
       transaction {
         val song1Path = "/Music/Song1.mp3"
         val song2Path = "/Music/Song2.mp3"
