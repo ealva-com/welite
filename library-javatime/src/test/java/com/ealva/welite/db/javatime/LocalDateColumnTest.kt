@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress(
+  "NO_EXPLICIT_VISIBILITY_IN_API_MODE_WARNING",
+  "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING"
+)
+
 package com.ealva.welite.db.javatime
 
 import android.content.Context
@@ -202,7 +207,7 @@ class LocalDateColumnTest {
         }
         visitInsert.insert {
           it[0] = LocalDate.now()
-          it[1] = "20071203"  // bad date format
+          it[1] = "20071203" // bad date format
         }
         setSuccessful()
       }
@@ -223,7 +228,7 @@ class LocalDateColumnTest {
         }
         visitInsert.insert {
           it[0] = LocalDate.now()
-          it[1] = Date()  // doesn't accept
+          it[1] = Date() // doesn't accept
         }
         setSuccessful()
       }

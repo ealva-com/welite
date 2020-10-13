@@ -34,29 +34,29 @@ import java.util.Comparator
  * what is stored in the database. To be stored in the DB some types may be converted to
  * a String, stored in a Blob, stored as a wider numerical type, etc.
  */
-interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
-  val name: String
+public interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
+  public val name: String
 
-  val table: Table
+  public val table: Table
 
-  val tableIdentity: Identity
+  public val tableIdentity: Identity
 
-  val isAutoInc: Boolean
+  public val isAutoInc: Boolean
 
-  var dbDefaultValue: Expression<T>?
+  public var dbDefaultValue: Expression<T>?
 
-  val refersTo: Column<*>?
+  public val refersTo: Column<*>?
 
 //  fun <S : T> refersTo(): Column<S>? {
 //    @Suppress("UNCHECKED_CAST")
 //    return refersTo as? Column<S>
 //  }
 
-  var indexInPK: Int?
+  public var indexInPK: Int?
 
-  var foreignKey: ForeignKeyConstraint?
+  public var foreignKey: ForeignKeyConstraint?
 
-  fun identity(): Identity
+  public fun identity(): Identity
 
   /**
    * Create an alias for this column with [tableAlias] as the table name. If [tableAlias] is
@@ -64,42 +64,42 @@ interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
    * column's [name] appended, eg. pseudocode:
    * ```tableAlias="${column.table.name}_${column.name}"```
    */
-  fun makeAlias(tableAlias: String? = null): Column<T>
+  public fun makeAlias(tableAlias: String? = null): Column<T>
 
   /**
    * True if null may be assigned to this column because either it's set nullable or
    * represents the row id (INTEGER PRIMARY KEY) without DESC
    */
-  val nullable: Boolean
+  public val nullable: Boolean
 
   /**
    * True if the column constraints for this column include primary key
    */
-  val definesPrimaryKey: Boolean
+  public val definesPrimaryKey: Boolean
 
-  fun isOneColumnPK(): Boolean
+  public fun isOneColumnPK(): Boolean
 
   /**
    * Return the sql for this column as will be found in the CREATE TABLE statement
    */
-  fun descriptionDdl(): String
+  public fun descriptionDdl(): String
 
   /**
    * Mark this column as part of the primary key
    */
-  fun markPrimaryKey()
+  public fun markPrimaryKey()
 
   /**
    * Create a Bindable argument for this column to represent that the actual value will be bound
    * into the statement/query when executed.
    */
-  fun bindArg() = BindExpression(persistentType)
+  public fun bindArg(): BindExpression<T> = BindExpression(persistentType)
 
-  companion object {
+  public companion object {
     /**
      * Create a column implementation using syntax similar to a constructor
      */
-    operator fun <T> invoke(
+    public operator fun <T> invoke(
       table: Table,
       name: String,
       persistentType: PersistentType<T>,
@@ -279,4 +279,4 @@ private val columnComparator: Comparator<Column<*>> =
   compareBy({ column -> column.tableIdentity.value }, { column -> column.name })
 
 @Suppress("unused")
-fun Column<*>.countDistinct(): Count = Count(this, true)
+public fun Column<*>.countDistinct(): Count = Count(this, true)

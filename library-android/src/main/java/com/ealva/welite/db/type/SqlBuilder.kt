@@ -19,37 +19,37 @@ package com.ealva.welite.db.type
 import java.util.Queue
 import java.util.concurrent.LinkedBlockingQueue
 
-interface AppendsToSqlBuilder {
-  fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
+public interface AppendsToSqlBuilder {
+  public fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
 }
 
-interface SqlBuilder : Appendable {
-  val types: List<PersistentType<*>>
-  fun <T> Iterable<T>.appendEach(
+public interface SqlBuilder : Appendable {
+  public val types: List<PersistentType<*>>
+  public fun <T> Iterable<T>.appendEach(
     separator: CharSequence = ", ",
     prefix: CharSequence = "",
     postfix: CharSequence = "",
     append: SqlBuilder.(T) -> Unit
   )
 
-  fun append(value: String): SqlBuilder
-  fun append(value: Long): SqlBuilder
-  fun append(value: AppendsToSqlBuilder): SqlBuilder
-  fun append(identity: Identity): SqlBuilder
-  fun <T> registerBindable(sqlType: PersistentType<T>)
-  fun <T> registerArgument(sqlType: PersistentType<T>, argument: T)
-  fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>)
+  public fun append(value: String): SqlBuilder
+  public fun append(value: Long): SqlBuilder
+  public fun append(value: AppendsToSqlBuilder): SqlBuilder
+  public fun append(identity: Identity): SqlBuilder
+  public fun <T> registerBindable(sqlType: PersistentType<T>)
+  public fun <T> registerArgument(sqlType: PersistentType<T>, argument: T)
+  public fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>)
 
   /** for test */
-  val length: Int
+  public val length: Int
 
   /** for test */
-  val capacity: Int
+  public val capacity: Int
 
-  companion object {
-    const val minimumBuilderCapacity = MIN_BUILDER_CAPACITY
-    fun getCacheStats(): SqlBuilderCacheStats = SqlBuilderCache.getStats()
-    fun resetCache() = SqlBuilderCache.resetCache()
+  public companion object {
+    public const val minimumBuilderCapacity: Int = MIN_BUILDER_CAPACITY
+    public fun getCacheStats(): SqlBuilderCacheStats = SqlBuilderCache.getStats()
+    public fun resetCache(): Unit = SqlBuilderCache.resetCache()
   }
 }
 
@@ -136,24 +136,24 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
 }
 
 /** test only */
-interface SqlBuilderCacheStats {
+public interface SqlBuilderCacheStats {
   /** Current maximum number of items in the cache */
-  val maxEntries: Int
+  public val maxEntries: Int
 
   /** Current maximum builder capacity */
-  val maxBuilderCapacity: Int
+  public val maxBuilderCapacity: Int
 
   /** Number of times a builder used more than [DEFAULT_BUILDER_CAPACITY] */
-  val exceededCapacity: Int
+  public val exceededCapacity: Int
 
   /** The number of SqlBuilders requested */
-  val gets: Int
+  public val gets: Int
 
   /**
    * The number of SqlBuilders returned to the pool. [gets] - [puts] = number of SqlBuilders
    * requested that were not returned to the cache. Happens when requesting more than [maxEntries]
    */
-  val puts: Int
+  public val puts: Int
 }
 
 private const val DEFAULT_MAX_CACHE_ENTRIES = 4
@@ -222,7 +222,7 @@ private object SqlBuilderCache {
  * Set the maximum number of entries allowed in the cache. The current cache will be abandoned if
  * maxEntries is modified
  */
-fun setSqlBuilderCacheCapacity(maxEntries: Int) {
+public fun setSqlBuilderCacheCapacity(maxEntries: Int) {
   SqlBuilderCache.maxEntries = maxEntries
 }
 
@@ -234,7 +234,7 @@ fun setSqlBuilderCacheCapacity(maxEntries: Int) {
  * Capacity defaults to [DEFAULT_BUILDER_CAPACITY] which is currently 2048. Capacity cannot be set
  * smaller than [MIN_BUILDER_CAPACITY] which is currently 1024
  */
-fun setSqlBuilderCapacity(defaultCapacity: Int) {
+public fun setSqlBuilderCapacity(defaultCapacity: Int) {
   SqlBuilderCache.builderCapacity = maxOf(MIN_BUILDER_CAPACITY, defaultCapacity)
 }
 
@@ -242,7 +242,7 @@ fun setSqlBuilderCapacity(defaultCapacity: Int) {
  * The base data for all Statements and Query, contains a list of types representing each
  * parameter which much be bound (which may be empty) and the statement/query sql
  */
-data class StatementSeed(
+public data class StatementSeed(
   /**
    * The list of the types of arguments which need to be bound for each statement execution. This is
    * each place a "?" appears in [sql]. The [PersistentType] is responsible for accepting
@@ -255,11 +255,11 @@ data class StatementSeed(
   val sql: String,
 )
 
-fun SqlBuilder.append(seed: StatementSeed): SqlBuilder = apply {
+public fun SqlBuilder.append(seed: StatementSeed): SqlBuilder = apply {
   append(seed.sql)
 }
 
-fun buildSql(builderAction: SqlBuilder.() -> Unit): StatementSeed {
+public fun buildSql(builderAction: SqlBuilder.() -> Unit): StatementSeed {
   val builder = SqlBuilderCache.get()
   val sql = builder.apply(builderAction).toString()
   val types = builder.types
@@ -267,7 +267,7 @@ fun buildSql(builderAction: SqlBuilder.() -> Unit): StatementSeed {
   return StatementSeed(types, sql)
 }
 
-fun buildStr(builderAction: SqlBuilder.() -> Unit): String {
+public fun buildStr(builderAction: SqlBuilder.() -> Unit): String {
   val builder = SqlBuilderCache.get()
   return builder.apply(builderAction).toString().also { SqlBuilderCache.put(builder) }
 }

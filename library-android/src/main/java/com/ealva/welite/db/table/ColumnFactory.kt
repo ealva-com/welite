@@ -27,43 +27,43 @@ import kotlin.reflect.KClass
  * The purpose of this interface is primarily (only?) support composite columns and keep these
  * methods from the public interface of Table.
  */
-interface ColumnFactory {
-  fun byte(name: String, block: SetConstraints<Byte> = {}): Column<Byte>
-  fun optByte(name: String, block: SetConstraints<Byte?> = {}): Column<Byte?>
-  fun short(name: String, block: SetConstraints<Short> = {}): Column<Short>
-  fun optShort(name: String, block: SetConstraints<Short?> = {}): Column<Short?>
-  fun integer(name: String, block: SetConstraints<Int> = {}): Column<Int>
-  fun optInteger(name: String, block: SetConstraints<Int?> = {}): Column<Int?>
-  fun long(name: String, block: SetConstraints<Long> = {}): Column<Long>
-  fun optLong(name: String, block: SetConstraints<Long?> = {}): Column<Long?>
-  fun float(name: String, block: SetConstraints<Float> = {}): Column<Float>
-  fun optFloat(name: String, block: SetConstraints<Float?> = {}): Column<Float?>
-  fun double(name: String, block: SetConstraints<Double> = {}): Column<Double>
-  fun optDouble(name: String, block: SetConstraints<Double?> = {}): Column<Double?>
-  fun text(name: String, block: SetConstraints<String> = {}): Column<String>
-  fun optText(name: String, block: SetConstraints<String?> = {}): Column<String?>
-  fun blob(name: String, block: SetConstraints<Blob> = {}): Column<Blob>
-  fun optBlob(name: String, block: SetConstraints<Blob?> = {}): Column<Blob?>
+public interface ColumnFactory {
+  public fun byte(name: String, block: SetConstraints<Byte> = {}): Column<Byte>
+  public fun optByte(name: String, block: SetConstraints<Byte?> = {}): Column<Byte?>
+  public fun short(name: String, block: SetConstraints<Short> = {}): Column<Short>
+  public fun optShort(name: String, block: SetConstraints<Short?> = {}): Column<Short?>
+  public fun integer(name: String, block: SetConstraints<Int> = {}): Column<Int>
+  public fun optInteger(name: String, block: SetConstraints<Int?> = {}): Column<Int?>
+  public fun long(name: String, block: SetConstraints<Long> = {}): Column<Long>
+  public fun optLong(name: String, block: SetConstraints<Long?> = {}): Column<Long?>
+  public fun float(name: String, block: SetConstraints<Float> = {}): Column<Float>
+  public fun optFloat(name: String, block: SetConstraints<Float?> = {}): Column<Float?>
+  public fun double(name: String, block: SetConstraints<Double> = {}): Column<Double>
+  public fun optDouble(name: String, block: SetConstraints<Double?> = {}): Column<Double?>
+  public fun text(name: String, block: SetConstraints<String> = {}): Column<String>
+  public fun optText(name: String, block: SetConstraints<String?> = {}): Column<String?>
+  public fun blob(name: String, block: SetConstraints<Blob> = {}): Column<Blob>
+  public fun optBlob(name: String, block: SetConstraints<Blob?> = {}): Column<Blob?>
   @ExperimentalUnsignedTypes
-  fun ubyte(name: String, block: SetConstraints<UByte> = {}): Column<UByte>
+  public fun ubyte(name: String, block: SetConstraints<UByte> = {}): Column<UByte>
   @ExperimentalUnsignedTypes
-  fun optUbyte(name: String, block: SetConstraints<UByte?> = {}): Column<UByte?>
+  public fun optUbyte(name: String, block: SetConstraints<UByte?> = {}): Column<UByte?>
   @ExperimentalUnsignedTypes
-  fun uShort(name: String, block: SetConstraints<UShort> = {}): Column<UShort>
+  public fun uShort(name: String, block: SetConstraints<UShort> = {}): Column<UShort>
   @ExperimentalUnsignedTypes
-  fun optUshort(name: String, block: SetConstraints<UShort?> = {}): Column<UShort?>
+  public fun optUshort(name: String, block: SetConstraints<UShort?> = {}): Column<UShort?>
   @ExperimentalUnsignedTypes
-  fun ulong(name: String, block: SetConstraints<ULong> = {}): Column<ULong>
+  public fun ulong(name: String, block: SetConstraints<ULong> = {}): Column<ULong>
   @ExperimentalUnsignedTypes
-  fun optUlong(name: String, block: SetConstraints<ULong?> = {}): Column<ULong?>
-  fun bool(name: String, block: SetConstraints<Boolean> = {}): Column<Boolean>
-  fun optBool(name: String, block: SetConstraints<Boolean?> = {}): Column<Boolean?>
-  fun <T : Enum<T>> enumeration(
+  public fun optUlong(name: String, block: SetConstraints<ULong?> = {}): Column<ULong?>
+  public fun bool(name: String, block: SetConstraints<Boolean> = {}): Column<Boolean>
+  public fun optBool(name: String, block: SetConstraints<Boolean?> = {}): Column<Boolean?>
+  public fun <T : Enum<T>> enumeration(
     name: String,
     klass: KClass<T>,
     block: SetConstraints<T> = {}
   ): Column<T>
-  fun <T : Enum<T>> enumerationByName(
+  public fun <T : Enum<T>> enumerationByName(
     name: String,
     klass: KClass<T>,
     block: SetConstraints<T> = {}

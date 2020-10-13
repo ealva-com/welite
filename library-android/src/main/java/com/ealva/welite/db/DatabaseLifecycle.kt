@@ -19,57 +19,57 @@ package com.ealva.welite.db
 import java.sql.SQLException
 import java.util.Locale
 
-interface DatabaseLifecycle {
+public interface DatabaseLifecycle {
   /**
    * After the database is open [block] is called with a [DatabaseConfiguration] to allow the
    * database connection to be configured
    */
-  fun onConfigure(block: (DatabaseConfiguration) -> Unit)
+  public fun onConfigure(block: (DatabaseConfiguration) -> Unit)
 
   /**
    * After the database has been opened, configured, all tables created, and all table post
    * processing, call [block] with the fully created Database instance. This function is called
    * if the database tables need to be created (first app run or DB file deleted)
    */
-  fun onCreate(block: (Database) -> Unit)
+  public fun onCreate(block: (Database) -> Unit)
 
   /**
    * After the database has been opened, configured, and either created or migrated, as
    * necessary, call [block] with the fully configured Database instance
    */
-  fun onOpen(block: (Database) -> Unit)
+  public fun onOpen(block: (Database) -> Unit)
 
   /**
    * Call [block] when database corruption is detected. [useDefaultHandler] indicates if default
    * error handling should occur before calling [block]. The default
    * behavior is to close the Database, if open, and delete the database file
    */
-  fun onCorruption(useDefaultHandler: Boolean, block: (Database) -> Unit = {})
+  public fun onCorruption(useDefaultHandler: Boolean, block: (Database) -> Unit = {})
 }
 
-interface PragmaExec {
+public interface PragmaExec {
   /**
    * "PRAGMA " is prepended to [statement] and then it's executed as SQL.
    * @throws SQLException if the SQL string is invalid
    */
-  fun execPragma(statement: String)
+  public fun execPragma(statement: String)
 
   /**
    * Execute the pragma as a query which returns a single row, single column, string
    */
-  fun queryPragmaString(statement: String): String
+  public fun queryPragmaString(statement: String): String
 
   /**
    * Execute the pragma as a query which returns a single row, single column, long
    */
-  fun queryPragmaLong(statement: String): Long
+  public fun queryPragmaLong(statement: String): Long
 }
 
 /**
  * If [JournalMode.UNKNOWN] is returned, an error occurred. If [JournalMode.UNKNOWN] is set an
  * IllegalArgumentException is thrown
  */
-var PragmaExec.journalMode: JournalMode
+public var PragmaExec.journalMode: JournalMode
   get() = queryPragmaString("journal_mode").toJournalMode()
   set(value) {
     require(value != JournalMode.UNKNOWN) {
@@ -82,7 +82,7 @@ var PragmaExec.journalMode: JournalMode
  * If [SynchronousMode.UNKNOWN] is returned, an error occurred. If [SynchronousMode.UNKNOWN] is
  * set an IllegalArgumentException is thrown
  */
-var PragmaExec.synchronousMode: SynchronousMode
+public var PragmaExec.synchronousMode: SynchronousMode
   get() = queryPragmaLong("synchronous").toSynchronousMode()
   set(value) {
     require(value != SynchronousMode.UNKNOWN) {
@@ -95,7 +95,7 @@ var PragmaExec.synchronousMode: SynchronousMode
  * Provides the interface to configure the database connection. Do not retain a reference to this
  * and call it's functions later.
  */
-interface DatabaseConfiguration : PragmaExec {
+public interface DatabaseConfiguration : PragmaExec {
   /**
    * Sets the locale for this database.  Does nothing if this database has
    * the {@link #NO_LOCALIZED_COLLATORS} flag set or was opened read only.
@@ -106,11 +106,11 @@ interface DatabaseConfiguration : PragmaExec {
    * for this is that there is no collator available for the locale you requested.
    * In this case the database remains unchanged.
    */
-  fun setLocale(locale: Locale)
+  public fun setLocale(locale: Locale)
 
   /**
    * the maximum size the database will grow to. The maximum size cannot
    * be set below the current size.
    */
-  var maximumSize: Long
+  public var maximumSize: Long
 }

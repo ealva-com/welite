@@ -31,8 +31,8 @@ import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonOrderByTests {
-  suspend fun testOrderByPersonId(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonOrderByTests {
+  public suspend fun testOrderByPersonId(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -58,7 +58,7 @@ object CommonOrderByTests {
     }
   }
 
-  suspend fun testOrderByPlaceIdDescThenPersonIdAsc(
+  public suspend fun testOrderByPlaceIdDescThenPersonIdAsc(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -85,7 +85,7 @@ object CommonOrderByTests {
     }
   }
 
-  suspend fun testOrderByPlaceIdDescThenPersonIdAscVararg(
+  public suspend fun testOrderByPlaceIdDescThenPersonIdAscVararg(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -111,7 +111,7 @@ object CommonOrderByTests {
     }
   }
 
-  suspend fun testOrderByOnJoinPlacePersonCountGroupBy(
+  public suspend fun testOrderByOnJoinPlacePersonCountGroupBy(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -138,7 +138,10 @@ object CommonOrderByTests {
     }
   }
 
-  suspend fun testOrderBySubstringExpression(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testOrderBySubstringExpression(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -163,7 +166,10 @@ object CommonOrderByTests {
     }
   }
 
-  suspend fun testOrderBySelectExpression(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testOrderBySelectExpression(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),

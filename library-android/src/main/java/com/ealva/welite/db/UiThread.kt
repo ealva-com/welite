@@ -19,6 +19,6 @@ package com.ealva.welite.db
 import android.os.Looper
 
 private val mainLooper: Looper = checkNotNull(Looper.getMainLooper())
-val uiThread: Thread = mainLooper.thread
-val isUiThread inline get() = uiThread === Thread.currentThread()
-val isNotUiThread inline get() = !isUiThread
+public val uiThread: Thread = mainLooper.thread
+public val isUiThread: Boolean inline get() = uiThread === Thread.currentThread()
+public val isNotUiThread: Boolean inline get() = !isUiThread

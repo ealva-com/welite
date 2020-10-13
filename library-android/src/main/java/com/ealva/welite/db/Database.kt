@@ -52,7 +52,7 @@ import java.util.Locale
  * statement that created the table or index. For automatically created indices (used to implement
  * the PRIMARY KEY or UNIQUE constraints) the sql field is NULL.
  */
-data class TableSql(
+public data class TableSql(
   /** The table name as it appears in sqlite_master.tbl_name */
   val tableName: String,
   /** List of create statements to create the Table [tableName] */
@@ -66,11 +66,11 @@ data class TableSql(
 )
 
 @WeLiteMarker
-interface Database {
+public interface Database {
   /**
    * Tables this Database instance is aware of, in creation order
    */
-  val tables: List<Table>
+  public val tables: List<Table>
 
   /**
    * If false an IllegalStateException is thrown if work is dispatched on the UI thread. Default is
@@ -79,7 +79,7 @@ interface Database {
    *
    * Initially set via [OpenParams] when a Database instance is created
    */
-  var allowWorkOnUiThread: Boolean
+  public var allowWorkOnUiThread: Boolean
 
   /**
    * Begin a [Transaction] named [unitOfWork] and call [work] with the transaction as the receiver.
@@ -125,7 +125,7 @@ interface Database {
    * @throws WeLiteUncaughtException if an exception is thrown from [work]. The
    * [WeLiteException.cause] is set to the underlying exception.
    */
-  suspend fun <R> transaction(
+  public suspend fun <R> transaction(
     exclusive: Boolean = false,
     unitOfWork: String = UNNAMED_TXN,
     autoCommit: Boolean = true,
@@ -147,7 +147,7 @@ interface Database {
    *
    * @see [transaction]
    */
-  suspend fun <R> query(
+  public suspend fun <R> query(
     exclusive: Boolean = false,
     unitOfWork: String = UNNAMED_TXN,
     work: suspend Queryable.() -> R
@@ -156,7 +156,7 @@ interface Database {
   /**
    * True if this thread is currently within a transaction, ie. a transaction is in progress.
    */
-  val inTransaction: Boolean
+  public val inTransaction: Boolean
 
   /**
    * Provides the interface to an ongoing transaction. Client is not concerned with commit/rollback
@@ -171,7 +171,7 @@ interface Database {
    * [WeLiteException.cause] is set to the underlying exception.
    * @see inTransaction
    */
-  fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R
+  public fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R
 
   /**
    * Close this Database connection. Calling other public functions after close will result in an
@@ -186,16 +186,16 @@ interface Database {
    * * Do file copying, etc.
    * * Create a new [Database] instance which will open the new DB file
    */
-  fun close()
+  public fun close()
 
   /** The path to the database file */
-  val path: String
+  public val path: String
 
   /** True if the database exists in memory. If true [path] will be ":memory:" */
-  val isInMemoryDatabase: Boolean
+  public val isInMemoryDatabase: Boolean
 
-  companion object {
-    const val UNNAMED_TXN = "Unnamed Txn"
+  public companion object {
+    public const val UNNAMED_TXN: String = "Unnamed Txn"
 
     /**
      * Attempts to release memory that SQLite holds but does not require to operate properly.
@@ -204,9 +204,7 @@ interface Database {
      * other [android.content.ComponentCallbacks2] instance. Returns the number of bytes actually
      * released.
      */
-    fun releaseMemory(): Int {
-      return SQLiteDatabase.releaseMemory()
-    }
+    public fun releaseMemory(): Int = SQLiteDatabase.releaseMemory()
 
     /**
      * Construct a Database instance with the given [fileName] and [context] used to locate the
@@ -217,7 +215,7 @@ interface Database {
      * function will be called to provide for configuring the database connection at various points
      * during creation.
      */
-    operator fun invoke(
+    public operator fun invoke(
       context: Context,
       fileName: String,
       tables: List<Table>,
@@ -248,7 +246,7 @@ interface Database {
      * function will be called to provide for configuring the database connection at various points
      * during creation.
      */
-    operator fun invoke(
+    public operator fun invoke(
       context: Context,
       tables: List<Table>,
       version: Int,
@@ -691,5 +689,5 @@ private class ConfigurationImpl(private val db: SQLiteDatabase) : DatabaseConfig
   }
 }
 
-class UnmarkedTransactionException(unitOfWork: String) :
+public class UnmarkedTransactionException(unitOfWork: String) :
   WeLiteException("Txn '$unitOfWork' was not set as successful nor rolled back")

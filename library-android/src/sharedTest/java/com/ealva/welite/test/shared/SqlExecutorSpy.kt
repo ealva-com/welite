@@ -18,8 +18,8 @@ package com.ealva.welite.test.shared
 
 import com.ealva.welite.db.table.SqlExecutor
 
-class SqlExecutorSpy : SqlExecutor {
-  val execSqlList = mutableListOf<String>()
+public class SqlExecutorSpy : SqlExecutor {
+  public val execSqlList: MutableList<String> = mutableListOf()
   override fun exec(sql: String, vararg bindArgs: Any) { execSqlList += sql }
   override fun exec(sql: List<String>) { execSqlList += sql }
 }

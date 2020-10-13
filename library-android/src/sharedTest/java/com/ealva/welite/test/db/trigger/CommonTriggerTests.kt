@@ -36,27 +36,27 @@ import com.ealva.welite.db.trigger.trigger
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
+import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.MediaFileTable
 import com.ealva.welite.test.shared.SqlExecutorSpy
-import com.ealva.welite.test.shared.MEDIA_TABLES
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 import java.io.File
 
-typealias IdTriple = Triple<Long, Long, Long>
+public typealias IdTriple = Triple<Long, Long, Long>
 
-val IdTriple.artistId: Long
+public val IdTriple.artistId: Long
   get() = first
 
-val IdTriple.albumId: Long
+public val IdTriple.albumId: Long
   get() = second
 
-val IdTriple.mediaId: Long
+public val IdTriple.mediaId: Long
   get() = third
 
-object CommonTriggerTests {
-  fun testCreateTrigger() {
+public object CommonTriggerTests {
+  public fun testCreateTrigger() {
     SqlExecutorSpy().let { spy ->
       DeleteArtistTrigger.create(spy)
       val execSqlList = spy.execSqlList
@@ -101,7 +101,10 @@ object CommonTriggerTests {
     }
   }
 
-  suspend fun testExecDeleteArtistTrigger(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testExecDeleteArtistTrigger(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withTestDatabase(
       context = appCtx,
       tables = MEDIA_TABLES,
@@ -130,7 +133,7 @@ object CommonTriggerTests {
     }
   }
 
-  suspend fun testExecDeleteAlbumTrigger(
+  public suspend fun testExecDeleteAlbumTrigger(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -157,7 +160,7 @@ object CommonTriggerTests {
     }
   }
 
-  suspend fun testInsertTriggerValidUri(
+  public suspend fun testInsertTriggerValidUri(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -175,7 +178,7 @@ object CommonTriggerTests {
     }
   }
 
-  suspend fun testInsertTriggerInvalidUriCausesAbor(
+  public suspend fun testInsertTriggerInvalidUriCausesAbor(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -198,7 +201,7 @@ object CommonTriggerTests {
     }
   }
 
-  suspend fun testDeleteMediaTrigger(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testDeleteMediaTrigger(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher, enableForeignKeyConstraints = false) {
       var ids: IdTriple? = null
       transaction {
@@ -225,7 +228,7 @@ object CommonTriggerTests {
     }
   }
 
-  suspend fun testDeleteMediaAndTriggersCascade(
+  public suspend fun testDeleteMediaAndTriggersCascade(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -295,7 +298,7 @@ object CommonTriggerTests {
   }
 }
 
-val DeleteArtistTrigger = ArtistTable.trigger(
+public val DeleteArtistTrigger: Trigger<ArtistTable> = ArtistTable.trigger(
   name = "DeleteArtistTrigger",
   beforeAfter = Trigger.BeforeAfter.BEFORE,
   event = Trigger.Event.DELETE
@@ -303,7 +306,7 @@ val DeleteArtistTrigger = ArtistTable.trigger(
   ArtistAlbumTable.delete { ArtistAlbumTable.artistId eq old(ArtistTable.id) }
 }
 
-val DeleteAlbumTrigger = AlbumTable.trigger(
+public val DeleteAlbumTrigger: Trigger<AlbumTable> = AlbumTable.trigger(
   name = "DeleteAlbumTrigger",
   beforeAfter = Trigger.BeforeAfter.BEFORE,
   event = Trigger.Event.DELETE
@@ -311,7 +314,7 @@ val DeleteAlbumTrigger = AlbumTable.trigger(
   ArtistAlbumTable.delete { ArtistAlbumTable.albumId eq old(AlbumTable.id) }
 }
 
-val InsertMediaTrigger = MediaFileTable.trigger(
+public val InsertMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.trigger(
   name = "InsertMediaTrigger",
   beforeAfter = Trigger.BeforeAfter.BEFORE,
   event = Trigger.Event.INSERT
@@ -324,7 +327,7 @@ val InsertMediaTrigger = MediaFileTable.trigger(
   ).where(null)
 }
 
-val DeleteMediaTrigger = MediaFileTable.trigger(
+public val DeleteMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.trigger(
   name = "DeleteMediaTrigger",
   beforeAfter = Trigger.BeforeAfter.AFTER,
   event = Trigger.Event.DELETE

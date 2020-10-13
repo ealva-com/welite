@@ -22,12 +22,12 @@ import com.ealva.welite.db.expr.Op
 /**
  * NOT READY - DON'T USE
  */
-interface CompositeColumn<T> : Expression<T> {
-  val columns: List<Column<*>>
+public interface CompositeColumn<T> : Expression<T> {
+  public val columns: List<Column<*>>
 
-  fun descriptionDdl(): List<String>
+  public fun descriptionDdl(): List<String>
 
-  infix fun eq(t: T): Op<Boolean>
+  public infix fun eq(t: T): Op<Boolean>
 }
 
-abstract class BaseCompositeColumn<T> : CompositeColumn<T>
+public abstract class BaseCompositeColumn<T> : CompositeColumn<T>

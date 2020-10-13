@@ -19,14 +19,14 @@ package com.ealva.welite.db.type
 /**
  * Represents a row in a query result
  */
-interface Row {
-  fun getBlob(columnIndex: Int): ByteArray
-  fun getString(columnIndex: Int): String
-  fun getShort(columnIndex: Int): Short
-  fun getInt(columnIndex: Int): Int
-  fun getLong(columnIndex: Int): Long
-  fun getFloat(columnIndex: Int): Float
-  fun getDouble(columnIndex: Int): Double
-  fun isNull(columnIndex: Int): Boolean
-  fun columnName(columnIndex: Int): String
+public interface Row {
+  public fun getBlob(columnIndex: Int): ByteArray
+  public fun getString(columnIndex: Int): String
+  public fun getShort(columnIndex: Int): Short
+  public fun getInt(columnIndex: Int): Int
+  public fun getLong(columnIndex: Int): Long
+  public fun getFloat(columnIndex: Int): Float
+  public fun getDouble(columnIndex: Int): Double
+  public fun isNull(columnIndex: Int): Boolean
+  public fun columnName(columnIndex: Int): String
 }

@@ -26,13 +26,13 @@ import java.util.ArrayList
 import java.util.HashMap
 import java.util.TreeMap
 
-interface Migration {
-  val startVersion: Int
-  val endVersion: Int
-  fun execute(db: Database)
+public interface Migration {
+  public val startVersion: Int
+  public val endVersion: Int
+  public fun execute(db: Database)
 }
 
-abstract class BaseMigration(
+public abstract class BaseMigration(
   override val startVersion: Int,
   override val endVersion: Int
 ) : Migration {
@@ -60,7 +60,7 @@ private val LOG by lazyLogger(Migration::class, WeLiteLog.marker)
  * if a migration path cannot be found.
  */
 @Suppress("ReturnCount") // detekt
-fun List<Migration>.findMigrationPath(startVersion: Int, endVersion: Int): List<Migration>? {
+public fun List<Migration>.findMigrationPath(startVersion: Int, endVersion: Int): List<Migration>? {
   val migrationMap: StartToEndMigrationMap = StartToEndMigrationMap().apply {
     this@findMigrationPath.forEach { migration ->
       val targetMap: EndMigrationMap = getOrPut(migration.startVersion) { EndMigrationMap() }

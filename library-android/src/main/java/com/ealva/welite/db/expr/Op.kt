@@ -34,25 +34,25 @@ import com.ealva.welite.db.type.ULongPersistentType
 import com.ealva.welite.db.type.UShortPersistentType
 import com.ealva.welite.db.type.toStatementString
 
-abstract class Op<T> : BaseExpression<T>() {
-  object TRUE : Op<Boolean>() {
+public abstract class Op<T> : BaseExpression<T>() {
+  public object TRUE : Op<Boolean>() {
     override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
       append(true.toStatementString())
     }
   }
 
-  object FALSE : Op<Boolean>() {
+  public object FALSE : Op<Boolean>() {
     override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
       append(false.toStatementString())
     }
   }
 
-  companion object {
-    inline fun <T> build(op: () -> Op<T>): Op<T> = op()
+  public companion object {
+    public inline fun <T> build(op: () -> Op<T>): Op<T> = op()
   }
 }
 
-class NotOp<T>(private val expr: Expression<T>) : Op<Boolean>() {
+public class NotOp<T>(private val expr: Expression<T>) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("NOT (")
     append(expr)
@@ -60,7 +60,7 @@ class NotOp<T>(private val expr: Expression<T>) : Op<Boolean>() {
   }
 }
 
-abstract class CompoundBooleanOp<T : CompoundBooleanOp<T>>(
+public abstract class CompoundBooleanOp<T : CompoundBooleanOp<T>>(
   private val operator: String,
   internal val expressions: List<Expression<Boolean>>
 ) : Op<Boolean>() {
@@ -69,12 +69,15 @@ abstract class CompoundBooleanOp<T : CompoundBooleanOp<T>>(
   }
 }
 
-class AndOp(expressions: List<Expression<Boolean>>) : CompoundBooleanOp<AndOp>(" AND ", expressions)
-class OrOp(expressions: List<Expression<Boolean>>) : CompoundBooleanOp<AndOp>(" OR ", expressions)
+public class AndOp(expressions: List<Expression<Boolean>>) :
+  CompoundBooleanOp<AndOp>(" AND ", expressions)
 
-fun not(op: Expression<Boolean>): Op<Boolean> = NotOp(op)
+public class OrOp(expressions: List<Expression<Boolean>>) :
+  CompoundBooleanOp<AndOp>(" OR ", expressions)
 
-infix fun Expression<Boolean>.and(op: Expression<Boolean>): Op<Boolean> = when {
+public fun not(op: Expression<Boolean>): Op<Boolean> = NotOp(op)
+
+public infix fun Expression<Boolean>.and(op: Expression<Boolean>): Op<Boolean> = when {
   this is AndOp && op is AndOp -> AndOp(expressions + op.expressions)
   this is AndOp -> AndOp(expressions + op)
   op is AndOp -> AndOp(
@@ -86,7 +89,7 @@ infix fun Expression<Boolean>.and(op: Expression<Boolean>): Op<Boolean> = when {
   else -> AndOp(listOf(this, op))
 }
 
-infix fun Expression<Boolean>.or(op: Expression<Boolean>): Op<Boolean> = when {
+public infix fun Expression<Boolean>.or(op: Expression<Boolean>): Op<Boolean> = when {
   this is OrOp && op is OrOp -> OrOp(expressions + op.expressions)
   this is OrOp -> OrOp(expressions + op)
   op is OrOp -> OrOp(
@@ -98,10 +101,10 @@ infix fun Expression<Boolean>.or(op: Expression<Boolean>): Op<Boolean> = when {
   else -> OrOp(listOf(this, op))
 }
 
-fun List<Op<Boolean>>.compoundAnd(): Op<Boolean> = reduce(Op<Boolean>::and)
-fun List<Op<Boolean>>.compoundOr(): Op<Boolean> = reduce(Op<Boolean>::or)
+public fun List<Op<Boolean>>.compoundAnd(): Op<Boolean> = reduce(Op<Boolean>::and)
+public fun List<Op<Boolean>>.compoundOr(): Op<Boolean> = reduce(Op<Boolean>::or)
 
-abstract class ComparisonOp(
+public abstract class ComparisonOp(
   private val lhs: Expression<*>,
   private val rhs: Expression<*>,
   private val opSign: String
@@ -115,75 +118,89 @@ abstract class ComparisonOp(
   }
 }
 
-class EqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "=")
-class NeqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<>")
-class LessOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<")
-class LessEqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<=")
-class GreaterOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, ">")
-class GreaterEqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, ">=")
+public class EqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "=")
+public class NeqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<>")
+public class LessOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<")
+public class LessEqOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, "<=")
+public class GreaterOp(expr1: Expression<*>, expr2: Expression<*>) : ComparisonOp(expr1, expr2, ">")
+public class GreaterEqOp(expr1: Expression<*>, expr2: Expression<*>) :
+  ComparisonOp(expr1, expr2, ">=")
 
-class IsNullOp(private val expr: Expression<*>) : Op<Boolean>() {
+public class IsNullOp(private val expr: Expression<*>) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(expr)
     append(" IS NULL")
   }
 }
 
-class IsNotNullOp(private val expr: Expression<*>) : Op<Boolean>() {
+public class IsNotNullOp(private val expr: Expression<*>) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(expr)
     append(" IS NOT NULL")
   }
 }
 
-class LikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "LIKE")
-class NotLikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "NOT LIKE")
+public class LikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "LIKE")
+public class NotLikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "NOT LIKE")
 
-fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, BytePersistentType())
-fun shortParam(value: Short): Expression<Short> = QueryParameter(value, ShortPersistentType())
-fun intParam(value: Int): QueryParameter<Int> = QueryParameter(value, IntegerPersistentType())
-fun longParam(value: Long): Expression<Long> = QueryParameter(value, LongPersistentType())
-fun floatParam(value: Float): Expression<Float> = QueryParameter(value, FloatPersistentType())
-fun doubleParam(value: Double): Expression<Double> = QueryParameter(value, DoublePersistentType())
-fun stringParam(value: String): Expression<String> = QueryParameter(value, StringPersistentType())
+public fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, BytePersistentType())
+public fun shortParam(value: Short): Expression<Short> =
+  QueryParameter(value, ShortPersistentType())
 
-fun booleanParam(value: Boolean): Expression<Boolean> =
+public fun intParam(value: Int): QueryParameter<Int> =
+  QueryParameter(value, IntegerPersistentType())
+
+public fun longParam(value: Long): Expression<Long> = QueryParameter(value, LongPersistentType())
+public fun floatParam(value: Float): Expression<Float> =
+  QueryParameter(value, FloatPersistentType())
+
+public fun doubleParam(value: Double): Expression<Double> =
+  QueryParameter(value, DoublePersistentType())
+
+public fun stringParam(value: String): Expression<String> =
+  QueryParameter(value, StringPersistentType())
+
+public fun booleanParam(value: Boolean): Expression<Boolean> =
   QueryParameter(value, BooleanPersistentType())
 
 @ExperimentalUnsignedTypes
-fun ubyteParam(value: UByte): Expression<UByte> =
+public fun ubyteParam(value: UByte): Expression<UByte> =
   QueryParameter(value, UBytePersistentType())
 
 @ExperimentalUnsignedTypes
-fun ushortParam(value: UShort): Expression<UShort> =
+public fun ushortParam(value: UShort): Expression<UShort> =
   QueryParameter(value, UShortPersistentType())
 
 @ExperimentalUnsignedTypes
-fun uintParam(value: UInt): Expression<UInt> =
+public fun uintParam(value: UInt): Expression<UInt> =
   QueryParameter(value, UIntegerPersistentType())
 
 @ExperimentalUnsignedTypes
-fun ulongParam(value: ULong): Expression<ULong> =
+public fun ulongParam(value: ULong): Expression<ULong> =
   QueryParameter(value, ULongPersistentType())
 
-fun bindByte() = BindExpression(BytePersistentType<Byte>())
-fun bindShort()  = BindExpression(ShortPersistentType<Short>())
-fun bindInt() = BindExpression(IntegerPersistentType<Int>())
-fun bindLong() = BindExpression(LongPersistentType<Long>())
-fun bindFloat() = BindExpression(FloatPersistentType<Float>())
-fun bindDouble() = BindExpression(DoublePersistentType<Double>())
-fun bindString() = BindExpression(StringPersistentType<String>())
-fun bindBoolean() = BindExpression(BooleanPersistentType<Boolean>())
-@ExperimentalUnsignedTypes
-fun bindUbyte() = BindExpression(UBytePersistentType<UByte>())
-@ExperimentalUnsignedTypes
-fun bindUshort() = BindExpression(UShortPersistentType<UShort>())
-@ExperimentalUnsignedTypes
-fun bindUint() = BindExpression(UIntegerPersistentType<UInt>())
-@ExperimentalUnsignedTypes
-fun bindUlong() = BindExpression(ULongPersistentType<ULong>())
+public fun bindByte(): BindExpression<Byte> = BindExpression(BytePersistentType())
+public fun bindShort(): BindExpression<Short> = BindExpression(ShortPersistentType())
+public fun bindInt(): BindExpression<Int> = BindExpression(IntegerPersistentType())
+public fun bindLong(): BindExpression<Long> = BindExpression(LongPersistentType())
+public fun bindFloat(): BindExpression<Float> = BindExpression(FloatPersistentType())
+public fun bindDouble(): BindExpression<Double> = BindExpression(DoublePersistentType())
+public fun bindString(): BindExpression<String> = BindExpression(StringPersistentType())
+public fun bindBoolean(): BindExpression<Boolean> = BindExpression(BooleanPersistentType())
 
-class BindExpression<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
+@ExperimentalUnsignedTypes
+public fun bindUbyte(): BindExpression<UByte> = BindExpression(UBytePersistentType())
+
+@ExperimentalUnsignedTypes
+public fun bindUshort(): BindExpression<UShort> = BindExpression(UShortPersistentType())
+
+@ExperimentalUnsignedTypes
+public fun bindUint(): BindExpression<UInt> = BindExpression(UIntegerPersistentType())
+
+@ExperimentalUnsignedTypes
+public fun bindUlong(): BindExpression<ULong> = BindExpression(ULongPersistentType())
+
+public class BindExpression<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder.apply { registerBindable(sqlType) }
 }
@@ -196,7 +213,7 @@ private fun SqlBuilder.appendExpression(expr: Expression<*>) {
   } else append(expr)
 }
 
-class QueryParameter<T>(
+public class QueryParameter<T>(
   private val value: T,
   private val sqlType: PersistentType<T>
 ) : BaseExpression<T>() {

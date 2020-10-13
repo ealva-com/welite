@@ -28,11 +28,11 @@ import com.ealva.welite.db.type.PersistentType
 
 private val LOG by lazyLogger(Statement::class, WeLiteLog.marker)
 
-interface Statement {
-  fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
+public interface Statement {
+  public fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
 }
 
-abstract class BaseStatement : Statement {
+public abstract class BaseStatement : Statement {
   protected abstract val sql: String
   protected abstract val types: List<PersistentType<*>>
 

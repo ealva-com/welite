@@ -59,7 +59,7 @@ private const val CREATE_TEMP_TABLE = "CREATE TEMP TABLE IF NOT EXISTS "
 private const val IGNORED_CONSTRAINT_WITH_SAME_NAME =
   "A CHECK constraint with name '%s' was ignored because there is already one with that name"
 
-typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
+public typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
 
 /**
  * Table base class typically instantiated as a singleton in the style:
@@ -76,8 +76,11 @@ typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
  *
  * @param name optional table name, defaulting to the class name with any "Table" suffix removed.
  */
-abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSet, Creatable {
-  open val tableName: String = (if (name.isNotEmpty()) name else nameFromClass()).apply {
+public abstract class Table(
+  name: String = "",
+  systemTable: Boolean = false
+) : ColumnSet, Creatable {
+  public open val tableName: String = (if (name.isNotEmpty()) name else nameFromClass()).apply {
     require(systemTable || !startsWith(RESERVED_PREFIX)) {
       "Invalid Table name '$this', must not start with $RESERVED_PREFIX"
     }
@@ -96,12 +99,12 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   /**
    * Index list exposed for testing
    */
-  val indices: List<Index>
+  public val indices: List<Index>
     get() = _indices.toList()
 
   private val checkConstraints = mutableListOf<Pair<String, Op<Boolean>>>()
 
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.apply { append(identity) }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply { append(identity) }
 
   override fun join(
     joinTo: ColumnSet,
@@ -116,14 +119,14 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
   override infix fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
 
-  inner class PrimaryKey(
+  public inner class PrimaryKey(
     firstColumn: Column<*>,
     vararg remainingColumns: Column<*>,
-    val name: String = "pk_$tableName"
+    public val name: String = "pk_$tableName"
   ) {
-    fun identity() = name.asIdentity()
+    public fun identity(): Identity = name.asIdentity()
 
-    val columns: List<Column<*>> = remainingColumns.toMutableList().apply {
+    public val columns: List<Column<*>> = remainingColumns.toMutableList().apply {
       add(0, firstColumn)
       checkMultipleDeclaration()
       forEach { column -> column.markPrimaryKey() }
@@ -138,7 +141,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   internal val columnDefiningPrimaryKey: Column<*>?
     get() = columns.find { it.definesPrimaryKey }
 
-  open val primaryKey: PrimaryKey? = null
+  public open val primaryKey: PrimaryKey? = null
 
 //  private fun getPrimaryKeyColumns(): List<Column<*>>? = columns
 //    .filter { it.indexInPK != null }
@@ -318,7 +321,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
       addTo = ::addColumn
     ) { references(refColumn, onDelete, onUpdate, fkName) }
 
-  fun <T> registerColumn(
+  public fun <T> registerColumn(
     name: String,
     type: PersistentType<T>,
     block: SetConstraints<T>
@@ -333,7 +336,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     )
   }
 
-  fun <T> registerOptColumn(
+  public fun <T> registerOptColumn(
     name: String,
     type: PersistentType<T?>,
     block: SetConstraints<T?>
@@ -351,7 +354,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     _columns.addColumn(column)
   }
 
-  fun <T, C : CompositeColumn<T>> makeComposite(builder: (ColumnFactory) -> C): C {
+  public fun <T, C : CompositeColumn<T>> makeComposite(builder: (ColumnFactory) -> C): C {
     return builder(columnFactory)
   }
 
@@ -371,25 +374,28 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   /**
    * Returned Index is exposed for testing.
    */
-  fun index(customName: String, firstColumn: Column<*>, vararg columns: Column<*>): Index =
+  public fun index(customName: String, firstColumn: Column<*>, vararg columns: Column<*>): Index =
     makeIndex(customName, false, firstColumn, columns.toList())
 
   /**
    * Returned Index is exposed for testing.
    */
-  fun index(firstColumn: Column<*>, vararg columns: Column<*>): Index =
+  public fun index(firstColumn: Column<*>, vararg columns: Column<*>): Index =
     makeIndex(null, false, firstColumn, columns.toList())
 
   /**
    * Returned Index is exposed for testing.
    */
-  fun uniqueIndex(customName: String, firstColumn: Column<*>, vararg columns: Column<*>): Index =
-    makeIndex(customName, true, firstColumn, columns.toList())
+  public fun uniqueIndex(
+    customName: String,
+    firstColumn: Column<*>,
+    vararg columns: Column<*>
+  ): Index = makeIndex(customName, true, firstColumn, columns.toList())
 
   /**
    * Returned Index is exposed for testing.
    */
-  fun uniqueIndex(firstColumn: Column<*>, vararg columns: Column<*>): Index =
+  public fun uniqueIndex(firstColumn: Column<*>, vararg columns: Column<*>): Index =
     makeIndex(null, true, firstColumn, columns.toList())
 
   private fun makeIndex(
@@ -412,7 +418,7 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
   }
 
   @ExperimentalUnsignedTypes
-  fun check(name: String = "", op: () -> Op<Boolean>) {
+  public fun check(name: String = "", op: () -> Op<Boolean>) {
     if (name.isEmpty() || checkConstraints.none { it.first.equals(name, true) }) {
       checkConstraints.add(name to op())
     } else LOG.w { it(IGNORED_CONSTRAINT_WITH_SAME_NAME, name) }
@@ -659,8 +665,8 @@ abstract class Table(name: String = "", systemTable: Boolean = false) : ColumnSe
     ): Column<T> = table.enumByName(name, klass, block)
   }
 
-  companion object {
-    const val RESERVED_PREFIX = "sqlite_"
+  public companion object {
+    public const val RESERVED_PREFIX: String = "sqlite_"
   }
 }
 
@@ -669,5 +675,5 @@ private fun Table.nameFromClass() = javaClass.simpleName.removeSuffix("Table")
 /**
  * Thrown when attempting to create multiple columns with the same name in the same ColumnSet
  */
-class DuplicateColumnException(columnName: String, columnSet: String) :
+public class DuplicateColumnException(columnName: String, columnSet: String) :
   SQLiteException("Duplicate column name \"$columnName\" in ColumnSet \"$columnSet\"")

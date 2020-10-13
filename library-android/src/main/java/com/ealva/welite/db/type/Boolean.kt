@@ -16,5 +16,5 @@
 
 package com.ealva.welite.db.type
 
-fun Boolean.toStatementString(): String = if (this) "1" else "0"
-fun Boolean.toLong(): Long = if (this) 1 else 0
+public fun Boolean.toStatementString(): String = if (this) "1" else "0"
+public fun Boolean.toLong(): Long = if (this) 1 else 0

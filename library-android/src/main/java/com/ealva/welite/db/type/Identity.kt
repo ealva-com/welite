@@ -37,27 +37,30 @@ import com.ealva.welite.db.type.Identity.Companion.quoteChar
  * [SQLite Keywords](https://www.sqlite.org/lang_keywords.html)
  */
 @Suppress("EXPERIMENTAL_FEATURE_WARNING")
-inline class Identity(val value: String) {
+public inline class Identity(public val value: String) {
   /**
    * For use where quotes aren't needed or are incorrect - such as an string literal, which uses
    * single quotes.
    */
-  val unquoted: String
+  public val unquoted: String
     get() = value.trim(quoteChar)
 
-  companion object {
+  public companion object {
     @Suppress("MemberVisibilityCanBePrivate")
-    const val DEFAULT_QUOTE_CHAR = '"'
+    public const val DEFAULT_QUOTE_CHAR: Char = '"'
 
     @Suppress("MemberVisibilityCanBePrivate")
-    const val DEFAULT_QUOTE_ALL = true
+    public const val DEFAULT_QUOTE_ALL: Boolean = true
 
-    var quoteChar: Char =
+    public var quoteChar: Char =
       DEFAULT_QUOTE_CHAR
-    var quoteAll: Boolean =
+    public var quoteAll: Boolean =
       DEFAULT_QUOTE_ALL
 
-    fun make(identity: String, forceQuote: Boolean = false) = if (quoteAll || forceQuote) {
+    public fun make(
+      identity: String,
+      forceQuote: Boolean = false
+    ): Identity = if (quoteAll || forceQuote) {
       Identity(
         buildStr {
           append(quoteChar)
@@ -71,7 +74,8 @@ inline class Identity(val value: String) {
   }
 }
 
-fun SqlBuilder.appendIdentity(identity: Identity) = append(identity.value)
+public fun SqlBuilder.appendIdentity(identity: Identity): SqlBuilder = append(identity.value)
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun String.asIdentity(forceQuote: Boolean = false) = Identity.make(this, forceQuote)
+public inline fun String.asIdentity(forceQuote: Boolean = false): Identity =
+  Identity.make(this, forceQuote)

@@ -33,8 +33,8 @@ import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 import java.io.File
 
-object CommonForeignKeySchemaTests {
-  suspend fun testForeignKeyList(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonForeignKeySchemaTests {
+  public suspend fun testForeignKeyList(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher, enableForeignKeyConstraints = false) {
       createTablesWithFKViolations()
 
@@ -93,7 +93,7 @@ object CommonForeignKeySchemaTests {
     }
   }
 
-  suspend fun testForeignKeyIntegrity(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testForeignKeyIntegrity(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher, enableForeignKeyConstraints = false) {
       createTablesWithFKViolations()
 

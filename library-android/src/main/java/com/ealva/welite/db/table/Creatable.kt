@@ -21,20 +21,20 @@ import com.ealva.welite.db.type.Identity
 /**
  * Denotes implementations can be created and dropped. Creates are always IF NOT EXISTS
  */
-interface Creatable {
+public interface Creatable {
   /**
    * Ask this object to create itself in the database. This may result in multiple statements
    * being executed. If [temporary] is not supported, such as with Index, it is ignored.
    */
-  fun create(executor: SqlExecutor, temporary: Boolean = false)
+  public fun create(executor: SqlExecutor, temporary: Boolean = false)
 
   /**
    * Ask this object to drop itself from the database. This may result in multiple statements
    * being executed (typically a single DROP)
    */
-  fun drop(executor: SqlExecutor)
+  public fun drop(executor: SqlExecutor)
 
-  val masterType: MasterType
+  public val masterType: MasterType
 
-  val identity: Identity
+  public val identity: Identity
 }

@@ -29,8 +29,8 @@ import com.ealva.welite.test.shared.expect
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonGroupByTests {
-  suspend fun testGroupByPlaceNameWithCountAndCountAlias(
+public object CommonGroupByTests {
+  public suspend fun testGroupByPlaceNameWithCountAndCountAlias(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -59,7 +59,7 @@ object CommonGroupByTests {
     }
   }
 
-  suspend fun testGroupByHaving(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testGroupByHaving(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -80,7 +80,10 @@ object CommonGroupByTests {
     }
   }
 
-  suspend fun testGroupByHavingOrderBy(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testGroupByHavingOrderBy(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -108,7 +111,7 @@ object CommonGroupByTests {
     }
   }
 
-  suspend fun testGroupConcat(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testGroupConcat(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),

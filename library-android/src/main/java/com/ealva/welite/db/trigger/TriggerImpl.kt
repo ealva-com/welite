@@ -41,13 +41,13 @@ import com.ealva.welite.db.type.buildStr
 private const val CREATE_TRIGGER = "CREATE TRIGGER IF NOT EXISTS "
 private const val CREATE_TEMP_TRIGGER = "CREATE TEMP TRIGGER IF NOT EXISTS "
 
-interface Trigger<T : Table> : Creatable {
-  enum class BeforeAfter(val value: String) {
+public interface Trigger<T : Table> : Creatable {
+  public enum class BeforeAfter(public val value: String) {
     BEFORE(" BEFORE"),
     AFTER(" AFTER")
   }
 
-  enum class Event(val value: String) {
+  public enum class Event(public val value: String) {
     INSERT(" INSERT"),
     UPDATE(" UPDATE"),
     DELETE(" DELETE")
@@ -119,7 +119,7 @@ private class TriggerImpl<T : Table>(
   }
 }
 
-enum class NewOrOld(val value: String) {
+public enum class NewOrOld(public val value: String) {
   NEW("NEW."),
   OLD("OLD.");
 
@@ -135,48 +135,49 @@ private class NewOrOldColumn<T>(original: Column<T>, newOrOld: NewOrOld) : Colum
   }
 }
 
-interface TriggerUpdate<T : Table> {
-  fun addWhere(where: T.() -> Op<Boolean>)
+public interface TriggerUpdate<T : Table> {
+  public fun addWhere(where: T.() -> Op<Boolean>)
 }
 
 @WeLiteMarker
-interface TriggerStatements {
-  val statements: List<StatementSeed>
+public interface TriggerStatements {
+  public val statements: List<StatementSeed>
 
-  fun <T : Table> T.insert(
+  public fun <T : Table> T.insert(
     onConflict: OnConflict = OnConflict.Unspecified,
     assignColumns: T.(ColumnValues) -> Unit
   )
 
-  fun <T : Table> T.delete(where: () -> Op<Boolean>)
+  public fun <T : Table> T.delete(where: () -> Op<Boolean>)
 
-  fun <T : Table> T.update(
+  public fun <T : Table> T.update(
     onConflict: OnConflict = OnConflict.Unspecified,
     assignColumns: T.(ColumnValues) -> Unit
   ): TriggerUpdate<T>
 
-  fun <T : Table> TriggerUpdate<T>.where(where: T.() -> Op<Boolean>)
+  public fun <T : Table> TriggerUpdate<T>.where(where: T.() -> Op<Boolean>)
 
-  fun select(vararg columns: Expression<*>): SelectFrom = SelectFrom(columns.distinct(), null)
+  public fun select(vararg columns: Expression<*>): SelectFrom =
+    SelectFrom(columns.distinct(), null)
 
-  fun SelectFrom.where(where: Op<Boolean>?)
+  public fun SelectFrom.where(where: Op<Boolean>?)
 
   /**
    * Refer to a column as "NEW.columnName" in a trigger
    */
-  fun <T> new(column: Column<T>): Column<T>
+  public fun <T> new(column: Column<T>): Column<T>
 
   /**
    * Refer to a column as "OLD.columnName" in a trigger
    */
-  fun <T> old(column: Column<T>): Column<T>
+  public fun <T> old(column: Column<T>): Column<T>
 
-  companion object {
+  public companion object {
     /**
      * Create a [TriggerStatements], from [table] specifying the [event] causing the execution of
      * the Trigger, which will contain the statements to execute when the [Trigger] is fired.
      */
-    operator fun invoke(table: Table, event: Trigger.Event): TriggerStatements {
+    public operator fun invoke(table: Table, event: Trigger.Event): TriggerStatements {
       return TriggerStatementsImpl(table, event)
     }
   }
@@ -244,7 +245,7 @@ private class TriggerStatementsImpl(
  * Make a [Trigger] with [name] for table [T] to be executed [beforeAfter] the given [event] and
  * call [addStatements] to add all the statements to be executed when the trigger fires.
  */
-fun <T : Table> T.trigger(
+public fun <T : Table> T.trigger(
   name: String,
   beforeAfter: Trigger.BeforeAfter,
   event: Trigger.Event,

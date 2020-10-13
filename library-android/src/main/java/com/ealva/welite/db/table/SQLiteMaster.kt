@@ -16,24 +16,24 @@
 
 package com.ealva.welite.db.table
 
-sealed class MasterType(val value: String) {
-  object Table : MasterType("table")
-  object Index : MasterType("index")
-  object View : MasterType("view")
-  object Trigger : MasterType("trigger")
-  class Unknown(value: String) : MasterType(value)
+public sealed class MasterType(public val value: String) {
+  public object Table : MasterType("table")
+  public object Index : MasterType("index")
+  public object View : MasterType("view")
+  public object Trigger : MasterType("trigger")
+  public class Unknown(value: String) : MasterType(value)
 
-  override fun toString() = value
+  override fun toString(): String = value
 
-  companion object
+  public companion object
 }
 
 private val KNOWN_TYPES =
   listOf(MasterType.Table, MasterType.Index, MasterType.View, MasterType.Trigger)
-val MasterType.Companion.knownTypes
+public val MasterType.Companion.knownTypes: List<MasterType>
   get() = KNOWN_TYPES
 
-fun String?.asMasterType(): MasterType {
+public fun String?.asMasterType(): MasterType {
   return KNOWN_TYPES.firstOrNull { type -> type.value.equals(this, ignoreCase = true) }
     ?: MasterType.Unknown(this ?: "NULL")
 }
@@ -44,13 +44,13 @@ fun String?.asMasterType(): MasterType {
  * The sqlite_master table contains entries for internal schema objects in addition to application-
  * and programmer-defined objects.
  */
-object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
+public object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
   /**
    * The sqlite_master.type column will be one of the following text strings: 'table', 'index',
    * 'view', or 'trigger' according to the type of object defined. The 'table' string is used for
    * both ordinary and virtual tables.
    */
-  val type = text("type")
+  public val type: Column<String> = text("type")
 
   /**
    * The sqlite_master.name column will hold the name of the object. UNIQUE and PRIMARY KEY
@@ -63,7 +63,7 @@ object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
    * The "sqlite_autoindex_TABLE_N" name is never allocated for an INTEGER PRIMARY KEY, either in
    * rowid tables or WITHOUT ROWID tables.
    */
-  val name = text("name")
+  public val name: Column<String> = text("name")
 
   /**
    * The sqlite_master.tbl_name column holds the name of a table or view that the object is
@@ -71,7 +71,7 @@ object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
    * index, the tbl_name is the name of the table that is indexed. For a trigger, the tbl_name
    * column stores the name of the table or view that causes the trigger to fire.
    */
-  val tbl_name = text("tbl_name")
+  public val tbl_name: Column<String> = text("tbl_name")
 
   /**
    * The sqlite_master.rootpage column stores the page number of the root b-tree page for tables and
@@ -79,7 +79,7 @@ object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
    * NULL.
    */
   @Suppress("unused")
-  val rootpage = integer("rootpage")
+  public val rootpage: Column<Int> = integer("rootpage")
 
   /**
    * The sqlite_master.sql column stores SQL text that describes the object. This SQL text is a
@@ -101,7 +101,7 @@ object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
    * TABLE statements. The sqlite_master.sql is NULL for the internal indexes that are automatically
    * created by UNIQUE or PRIMARY KEY constraints.
    */
-  val sql = text("sql")
+  public val sql: Column<String> = text("sql")
 
   override fun preCreate() {
     error(

@@ -26,6 +26,7 @@ import com.ealva.welite.db.expr.rem
 import com.ealva.welite.db.expr.substring
 import com.ealva.welite.db.expr.sum
 import com.ealva.welite.db.expr.upperCase
+import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.select
@@ -33,8 +34,8 @@ import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonFunctionTests {
-  suspend fun testSumColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonFunctionTests {
+  public suspend fun testSumColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
@@ -57,7 +58,7 @@ object CommonFunctionTests {
     }
   }
 
-  suspend fun testAvgMinMaxColumns(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testAvgMinMaxColumns(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
@@ -75,7 +76,7 @@ object CommonFunctionTests {
     }
   }
 
-  suspend fun testSubstring(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testSubstring(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
@@ -101,7 +102,10 @@ object CommonFunctionTests {
     }
   }
 
-  suspend fun testLowercaseAndUppercase(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testLowercaseAndUppercase(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
@@ -140,8 +144,8 @@ object CommonFunctionTests {
   }
 }
 
-object DataTable : Table() {
-  val id = long("_id") { primaryKey() }
-  val data = integer("data")
-  val name = text("name") { default("") }
+public object DataTable : Table() {
+  public val id: Column<Long> = long("_id") { primaryKey() }
+  public val data: Column<Int> = integer("data")
+  public val name: Column<String> = text("name") { default("") }
 }

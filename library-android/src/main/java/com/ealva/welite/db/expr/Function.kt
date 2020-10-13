@@ -23,13 +23,13 @@ import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StringPersistentType
 
-typealias ExprList = List<Expression<*>>
+public typealias ExprList = List<Expression<*>>
 
-abstract class Function<T>(
+public abstract class Function<T>(
   override val persistentType: PersistentType<T>
 ) : BaseSqlTypeExpression<T>()
 
-class CustomFunction<T>(
+public class CustomFunction<T>(
   private val functionName: String,
   persistentType: PersistentType<T>,
   private val exprList: ExprList
@@ -41,7 +41,7 @@ class CustomFunction<T>(
   }
 }
 
-open class CustomOperator<T>(
+public open class CustomOperator<T>(
   private val operatorName: String,
   persistentType: PersistentType<T>,
   private val expr1: Expression<*>,
@@ -58,12 +58,13 @@ open class CustomOperator<T>(
   }
 }
 
-class Random : Function<Long>(LongPersistentType()) {
+public class Random : Function<Long>(LongPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
     sqlBuilder.apply { append("RANDOM()") }
 }
 
-class LowerCase(private val expr: Expression<String>) : Function<String>(StringPersistentType()) {
+public class LowerCase(private val expr: Expression<String>) :
+  Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("LOWER(")
     append(expr)
@@ -71,7 +72,8 @@ class LowerCase(private val expr: Expression<String>) : Function<String>(StringP
   }
 }
 
-class UpperCase(private val expr: Expression<String>) : Function<String>(StringPersistentType()) {
+public class UpperCase(private val expr: Expression<String>) :
+  Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("UPPER(")
     append(expr)
@@ -79,7 +81,7 @@ class UpperCase(private val expr: Expression<String>) : Function<String>(StringP
   }
 }
 
-class Concat(
+public class Concat(
   private val separator: String,
   private val exprList: List<Expression<String>>
 ) : Function<String>(StringPersistentType()) {
@@ -97,7 +99,7 @@ class Concat(
   }
 }
 
-class GroupConcat<T : String?>(
+public class GroupConcat<T : String?>(
   private val expr: Expression<T>,
   private val separator: String?
 ) : Function<String>(StringPersistentType()) {
@@ -114,7 +116,7 @@ class GroupConcat<T : String?>(
   }
 }
 
-class Substring(
+public class Substring(
   private val expr: Expression<String>,
   private val start: Expression<Int>,
   private val subLength: Expression<Int>
@@ -131,7 +133,7 @@ class Substring(
   }
 }
 
-class Trim(
+public class Trim(
   private val expr: Expression<String>
 ) : Function<String>(StringPersistentType()) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
@@ -141,7 +143,7 @@ class Trim(
   }
 }
 
-class Min<T : Comparable<T>>(
+public class Min<T : Comparable<T>>(
   private val expr: Expression<in T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
@@ -152,7 +154,7 @@ class Min<T : Comparable<T>>(
   }
 }
 
-class Max<T : Comparable<T>>(
+public class Max<T : Comparable<T>>(
   private val expr: Expression<T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
@@ -163,7 +165,7 @@ class Max<T : Comparable<T>>(
   }
 }
 
-class Avg<T : Comparable<T>>(
+public class Avg<T : Comparable<T>>(
   private val expr: Expression<in T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
@@ -174,7 +176,7 @@ class Avg<T : Comparable<T>>(
   }
 }
 
-class Sum<T>(
+public class Sum<T>(
   private val expr: Expression<T>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {
@@ -185,7 +187,7 @@ class Sum<T>(
   }
 }
 
-class Count(
+public class Count(
   private val expr: Expression<*>,
   private val distinct: Boolean = false
 ) : Function<Long>(LongPersistentType()) {
@@ -199,23 +201,23 @@ class Count(
   }
 }
 
-class Case(private val caseExpression: Expression<*>? = null) {
+public class Case(private val caseExpression: Expression<*>? = null) {
   @Suppress("FunctionName")
-  fun <T> caseWhen(cond: Expression<Boolean>, result: Expression<T>): CaseWhen<T> =
+  public fun <T> caseWhen(cond: Expression<Boolean>, result: Expression<T>): CaseWhen<T> =
     CaseWhen<T>(caseExpression).caseWhen(cond, result)
 }
 
-class CaseWhen<T>(private val caseExpression: Expression<*>?) : BaseExpression<T>() {
-  val cases: MutableList<Pair<Expression<Boolean>, Expression<out T>>> = mutableListOf()
+public class CaseWhen<T>(private val caseExpression: Expression<*>?) : BaseExpression<T>() {
+  public val cases: MutableList<Pair<Expression<Boolean>, Expression<out T>>> = mutableListOf()
 
   @Suppress("UNCHECKED_CAST", "FunctionName")
-  fun <R : T> caseWhen(cond: Expression<Boolean>, result: Expression<R>): CaseWhen<R> {
+  public fun <R : T> caseWhen(cond: Expression<Boolean>, result: Expression<R>): CaseWhen<R> {
     cases.add(cond to result)
     return this as CaseWhen<R>
   }
 
   @Suppress("FunctionName")
-  fun <R : T> caseElse(e: Expression<R>): Expression<R> = CaseWhenElse(this, e)
+  public fun <R : T> caseElse(e: Expression<R>): Expression<R> = CaseWhenElse(this, e)
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("CASE ")
@@ -236,7 +238,7 @@ class CaseWhen<T>(private val caseExpression: Expression<*>?) : BaseExpression<T
   }
 }
 
-class CaseWhenElse<T, R : T>(
+public class CaseWhenElse<T, R : T>(
   private val caseWhen: CaseWhen<T>,
   private val elseResult: Expression<R>
 ) : BaseExpression<R>() {
@@ -248,10 +250,10 @@ class CaseWhenElse<T, R : T>(
   }
 }
 
-fun raiseIgnore(): BaseExpression<String> = Raise(Raise.RaiseType.IGNORE)
-fun raiseRollback(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.ROLLBACK, msg)
-fun raiseAbort(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.ABORT, msg)
-fun raiseFail(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.FAIL, msg)
+public fun raiseIgnore(): BaseExpression<String> = Raise(Raise.RaiseType.IGNORE)
+public fun raiseRollback(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.ROLLBACK, msg)
+public fun raiseAbort(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.ABORT, msg)
+public fun raiseFail(msg: String): BaseExpression<String> = Raise(Raise.RaiseType.FAIL, msg)
 
 private class Raise private constructor(
   private val raiseType: RaiseType,
@@ -290,7 +292,7 @@ private class Raise private constructor(
   }
 }
 
-class Cast<T>(
+public class Cast<T>(
   private val expr: Expression<*>,
   persistentType: PersistentType<T>
 ) : Function<T>(persistentType) {

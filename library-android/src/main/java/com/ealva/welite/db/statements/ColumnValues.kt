@@ -17,16 +17,16 @@
 package com.ealva.welite.db.statements
 
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.type.DefaultValueMarker
+import com.ealva.welite.db.type.SqlBuilder
 
 /**
  * Denotes a column whose value will be bound as the statement/query is executed. This is used
  * so that statements/queries may be reused (no need to form and compile the SQL again).
  */
-interface BindArgument {
-  fun bindArg()
+public interface BindArgument {
+  public fun bindArg()
 }
 
 /**
@@ -40,20 +40,20 @@ interface BindArgument {
  * }
  * ```
  */
-interface ColumnValues {
-  val columnValueList: MutableList<ColumnValue<*>>
+public interface ColumnValues {
+  public val columnValueList: MutableList<ColumnValue<*>>
 
-  operator fun <T> set(column: Column<T>, value: T)
+  public operator fun <T> set(column: Column<T>, value: T)
 
-  operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E)
+  public operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E)
 
-  operator fun <T> get(column: Column<T>): BindArgument
+  public operator fun <T> get(column: Column<T>): BindArgument
 
-  companion object {
+  public companion object {
     /**
      * Make a ColumnValues instance which contains columns and their respective value/expression.
      */
-    operator fun invoke(): ColumnValues = ColumnValuesImpl()
+    public operator fun invoke(): ColumnValues = ColumnValuesImpl()
   }
 }
 
@@ -77,14 +77,17 @@ private class ColumnValuesImpl : ColumnValues {
   }
 }
 
-interface ColumnValue<S> {
-  val column: Column<S>
-  fun appendColumnTo(builder: SqlBuilder) = builder.append(column.identity().value)
-  fun appendValueTo(builder: SqlBuilder)
-  fun appendColumnEqValueTo(builder: SqlBuilder) {
+public interface ColumnValue<S> {
+  public val column: Column<S>
+  public fun appendColumnTo(builder: SqlBuilder): SqlBuilder =
+    builder.append(column.identity().value)
+
+  public fun appendValueTo(builder: SqlBuilder): SqlBuilder
+  public fun appendColumnEqValueTo(builder: SqlBuilder): SqlBuilder {
     appendColumnTo(builder)
     builder.append("=")
     appendValueTo(builder)
+    return builder
   }
 }
 
@@ -96,24 +99,29 @@ private fun <T> SqlBuilder.registerArgument(column: Column<T>, argument: T) {
   }
 }
 
-class ColumnValueWithValue<S>(
+public class ColumnValueWithValue<S>(
   override val column: Column<S>,
   private val value: S
 ) : ColumnValue<S> {
-  override fun appendValueTo(builder: SqlBuilder) {
-    builder.registerArgument(column, value)
+  override fun appendValueTo(builder: SqlBuilder): SqlBuilder = builder.apply {
+    registerArgument(column, value)
   }
 }
 
-class ColumnValueWithExpression<S>(
+public class ColumnValueWithExpression<S>(
   override val column: Column<S>,
   private val expression: Expression<S>
 ) : ColumnValue<S> {
-  override fun appendValueTo(builder: SqlBuilder) {
-    builder.append(expression)
+  override fun appendValueTo(builder: SqlBuilder): SqlBuilder = builder.apply {
+    append(expression)
   }
 }
 
-fun SqlBuilder.append(columnValue: ColumnValue<*>) = columnValue.appendColumnEqValueTo(this)
-fun SqlBuilder.appendName(columnValue: ColumnValue<*>) = columnValue.appendColumnTo(this)
-fun SqlBuilder.appendValue(columnValue: ColumnValue<*>) = columnValue.appendValueTo(this)
+public fun SqlBuilder.append(columnValue: ColumnValue<*>): SqlBuilder =
+  columnValue.appendColumnEqValueTo(this)
+
+public fun SqlBuilder.appendName(columnValue: ColumnValue<*>): SqlBuilder =
+  columnValue.appendColumnTo(this)
+
+public fun SqlBuilder.appendValue(columnValue: ColumnValue<*>): SqlBuilder =
+  columnValue.appendValueTo(this)

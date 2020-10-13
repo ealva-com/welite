@@ -35,24 +35,24 @@ import com.ealva.welite.db.table.WeLiteMarker
  * The commit/rollback occurs at the end of the [use] block when the txn is closed.
  */
 @WeLiteMarker
-interface Transaction : TransactionInProgress {
-  val isClosed: Boolean
-  val successful: Boolean
-  val rolledBack: Boolean
+public interface Transaction : TransactionInProgress {
+  public val isClosed: Boolean
+  public val successful: Boolean
+  public val rolledBack: Boolean
 
   /**
    * Marks this txn as successful and will commit on close. No more database work should be done
    * between this call and closing the txn
    * @throws IllegalStateException if the txn is already closed or rolled back
    */
-  fun setSuccessful()
+  public fun setSuccessful()
 
   /**
    * Mark this txn rolled back and txn ends during close. No more database work should be done
    * between this call and closing the txn
    * @throws IllegalStateException if the txn is already closed
    */
-  fun rollback()
+  public fun rollback()
 }
 
 internal interface CloseableTransaction : Transaction, AutoCloseable {

@@ -23,25 +23,25 @@ import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
 
-object Place : Table() {
-  val id: Column<Long> = long("place_id") { autoIncrement() }
-  val name: Column<String> = text("name")
+public object Place : Table() {
+  public val id: Column<Long> = long("place_id") { autoIncrement() }
+  public val name: Column<String> = text("name")
 }
 
-object Person : Table() {
-  val id: Column<String> = text("id")
-  val name: Column<String> = text("name")
-  val cityId: Column<Long?> = optReference("place_id", Place.id)
-  override val primaryKey = PrimaryKey(id)
+public object Person : Table() {
+  public val id: Column<String> = text("id")
+  public val name: Column<String> = text("name")
+  public val cityId: Column<Long?> = optReference("place_id", Place.id)
+  override val primaryKey: PrimaryKey = PrimaryKey(id)
 }
 
-object Review : Table() {
-  val userId: Column<String> = reference("person_id", Person.id)
-  val post: Column<String> = text("post")
-  val value: Column<Int> = integer("value")
+public object Review : Table() {
+  public val userId: Column<String> = reference("person_id", Person.id)
+  public val post: Column<String> = text("post")
+  public val value: Column<Int> = integer("value")
 }
 
-suspend fun withPlaceTestDatabase(
+public suspend fun withPlaceTestDatabase(
   context: Context,
   tables: List<Table>,
   testDispatcher: CoroutineDispatcher,
@@ -131,7 +131,7 @@ suspend fun withPlaceTestDatabase(
  * Make in-memory database
  */
 @Suppress("TestFunctionName")
-fun TestDatabase(
+public fun TestDatabase(
   context: Context,
   tables: List<Table>,
   testDispatcher: CoroutineDispatcher,

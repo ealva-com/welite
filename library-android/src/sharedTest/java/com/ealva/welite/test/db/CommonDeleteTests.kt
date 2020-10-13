@@ -28,22 +28,22 @@ import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.where
-import com.ealva.welite.test.shared.AlbumTable
-import com.ealva.welite.test.shared.ArtistAlbumTable
-import com.ealva.welite.test.shared.ArtistTable
-import com.ealva.welite.test.shared.MediaFileTable
-import com.ealva.welite.test.shared.withTestDatabase
 import com.ealva.welite.test.db.table.Person
 import com.ealva.welite.test.db.table.Place
 import com.ealva.welite.test.db.table.Review
 import com.ealva.welite.test.db.table.withPlaceTestDatabase
+import com.ealva.welite.test.shared.AlbumTable
+import com.ealva.welite.test.shared.ArtistAlbumTable
+import com.ealva.welite.test.shared.ArtistTable
 import com.ealva.welite.test.shared.MEDIA_TABLES
+import com.ealva.welite.test.shared.MediaFileTable
+import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 import java.io.File
 
-object CommonDeleteTests {
-  suspend fun testDelete(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonDeleteTests {
+  public suspend fun testDelete(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       val (_, _, mediaId) = transaction {
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
@@ -62,7 +62,7 @@ object CommonDeleteTests {
     }
   }
 
-  suspend fun testDeleteAllAndDelete(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testDeleteAllAndDelete(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -80,7 +80,7 @@ object CommonDeleteTests {
     }
   }
 
-  suspend fun testDeleteWhere(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testDeleteWhere(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),

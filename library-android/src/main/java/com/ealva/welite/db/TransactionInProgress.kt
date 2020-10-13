@@ -74,20 +74,20 @@ private const val NULL_SQL_FOUND = "Null sql table:%s type=%s position:%d"
  * level.
  */
 @WeLiteMarker
-interface TransactionInProgress : Queryable {
+public interface TransactionInProgress : Queryable {
   /**
    * Execute this InsertStatement: clears the bindings,
    * provides for new bound parameters via [bindArgs], and executes the insert, returning the
    * row ID of the row inserted if successful else -1
    */
-  fun InsertStatement.insert(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun InsertStatement.insert(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * Does a single insert into the table. Builds an [InsertStatement] and invokes
    * [InsertStatement.insert]. The InsertStatement is single use and not exposed to the client
    * for reuse.
    */
-  fun <T : Table> T.insert(
+  public fun <T : Table> T.insert(
     onConflict: OnConflict = Unspecified,
     bindArgs: (ArgBindings) -> Unit = NO_ARGS,
     assignColumns: T.(ColumnValues) -> Unit
@@ -97,43 +97,43 @@ interface TransactionInProgress : Queryable {
    * Binds arguments to this DeleteStatement and perform a DELETE, returning the number of
    * rows removed.
    */
-  fun DeleteStatement.delete(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun DeleteStatement.delete(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * Does a single delete on the table. Builds a [DeleteStatement] and calls
    * [DeleteStatement.delete]. The DeleteStatement is single use and not exposed to the client.
    */
-  fun <T : Table> T.delete(
+  public fun <T : Table> T.delete(
     bindArgs: (ArgBindings) -> Unit = NO_ARGS,
     where: () -> Op<Boolean>
   ): Long = DeleteStatement(this, where()).delete(bindArgs)
 
-  fun <T : Table> T.deleteAll(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long =
+  public fun <T : Table> T.deleteAll(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long =
     DeleteStatement(this, null).delete(bindArgs)
 
   /**
    * Clears bindings, binds arguments to this UpdateStatement, and execute the statement
    * returning the number of rows updated.
    */
-  fun UpdateStatement.update(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun UpdateStatement.update(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * Create a Creatable database entity (Table, Index, View, ...)
    */
-  fun Creatable.create(temporary: Boolean = false)
+  public fun Creatable.create(temporary: Boolean = false)
 
   /**
    * Drop a Creatable database entity (Table, Index, View, ...)
    */
-  fun Creatable.drop()
+  public fun Creatable.drop()
 
   /**
    * The [VACUUM](https://www.sqlite.org/lang_vacuum.html) command rebuilds the database file,
    * repacking it into a minimal amount of disk space.
    */
-  fun vacuum()
+  public fun vacuum()
 
-  companion object {
+  public companion object {
     /**
      * Create a TransactionInProgress using [dbConfig]
      */

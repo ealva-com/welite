@@ -31,20 +31,20 @@ import com.ealva.welite.db.type.buildSql
  * a row binding any necessary arguments during execution.
  */
 @WeLiteMarker
-interface InsertStatement : Statement {
+public interface InsertStatement : Statement {
 
-  companion object {
+  public companion object {
     /**
      * Make an InsertStatement for the given [Table]. The statement may be saved and reused for
      * multiple inserts.
      */
-    operator fun <T : Table> invoke(
+    public operator fun <T : Table> invoke(
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       assignColumns: T.(ColumnValues) -> Unit
     ): InsertStatement = InsertStatementImpl(statementSeed(table, onConflict, assignColumns))
 
-    fun <T : Table> statementSeed(
+    public fun <T : Table> statementSeed(
       table: T,
       onConflict: OnConflict,
       assignColumns: T.(ColumnValues) -> Unit
@@ -87,7 +87,7 @@ interface InsertStatement : Statement {
  * [SQLite INSERT](https://sqlite.org/lang_insert.html)
  * @see InsertStatement
  */
-fun <T : Table> T.insertValues(
+public fun <T : Table> T.insertValues(
   onConflict: OnConflict = OnConflict.Unspecified,
   assignColumns: T.(ColumnValues) -> Unit
 ): InsertStatement {

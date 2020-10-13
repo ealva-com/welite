@@ -26,8 +26,8 @@ import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 @ExperimentalCoroutinesApi
-class CoroutineRule(
-  val testDispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()
+public class CoroutineRule(
+  public val testDispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()
 ) : TestWatcher() {
 
   override fun starting(description: Description?) {
@@ -42,7 +42,7 @@ class CoroutineRule(
   }
 
   @ExperimentalCoroutinesApi
-  fun runBlockingTest(block: suspend () -> Unit) = testDispatcher.runBlockingTest {
+  public fun runBlockingTest(block: suspend () -> Unit): Unit = testDispatcher.runBlockingTest {
     block()
   }
 }

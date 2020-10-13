@@ -27,12 +27,12 @@ import com.ealva.welite.db.type.StringPersistentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-fun Table.localDateTimeText(
+public fun Table.localDateTimeText(
   name: String,
   block: SetConstraints<LocalDateTime> = {}
 ): Column<LocalDateTime> = registerColumn(name, LocalDateTimeAsTextType(), block)
 
-fun Table.optLocalDateTimeText(
+public fun Table.optLocalDateTimeText(
   name: String,
   block: SetConstraints<LocalDateTime?> = {}
 ): Column<LocalDateTime?> = registerOptColumn(name, LocalDateTimeAsTextType(), block)
@@ -49,7 +49,7 @@ private fun Any.valueToLocalDateTime(): LocalDateTime = when (this) {
 /**
  * Text form nicely compares in the database
  */
-class LocalDateTimeAsTextType<T : LocalDateTime?>(
+public class LocalDateTimeAsTextType<T : LocalDateTime?>(
   private val textColumn: StringPersistentType<String?>
 ) : BasePersistentType<T>(textColumn.sqlType) {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -57,7 +57,7 @@ class LocalDateTimeAsTextType<T : LocalDateTime?>(
   }
 
   @Suppress("UNCHECKED_CAST")
-  override fun Row.readColumnValue(index: Int) = LocalDateTime.parse(getString(index)) as T
+  override fun Row.readColumnValue(index: Int): T = LocalDateTime.parse(getString(index)) as T
 
   override fun notNullValueToDB(value: Any): Any {
     return value.valueToLocalDateTime()
@@ -65,8 +65,8 @@ class LocalDateTimeAsTextType<T : LocalDateTime?>(
 
   override fun nonNullValueToString(value: Any): String = "'${value.valueToLocalDateTime()}'"
 
-  companion object {
-    operator fun <T : LocalDateTime?> invoke(): LocalDateTimeAsTextType<T> =
+  public companion object {
+    public operator fun <T : LocalDateTime?> invoke(): LocalDateTimeAsTextType<T> =
       LocalDateTimeAsTextType(StringPersistentType())
   }
 

@@ -41,7 +41,11 @@ package com.ealva.welite.db.table
  * [SQLite ON CONFLICT](https://sqlite.org/lang_conflict.html)
  */
 @Suppress("unused")
-enum class OnConflict(private val onConflict: String, val insertOr: String, val updateOr: String) {
+public enum class OnConflict(
+  private val onConflict: String,
+  public val insertOr: String,
+  public val updateOr: String
+) {
   /**
    * When an applicable constraint violation occurs, the ROLLBACK resolution algorithm aborts the
    * current SQL statement with an SQLITE_CONSTRAINT error and rolls back the current transaction.
@@ -107,5 +111,5 @@ enum class OnConflict(private val onConflict: String, val insertOr: String, val 
    */
   Unspecified("", "INSERT", "UPDATE ");
 
-  override fun toString() = onConflict
+  override fun toString(): String = onConflict
 }

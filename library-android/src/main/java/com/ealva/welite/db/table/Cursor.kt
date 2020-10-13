@@ -18,34 +18,34 @@ package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.SqlTypeExpression
 
-interface Cursor {
+public interface Cursor {
   /**
    * Total number of rows returned
    */
-  val count: Int
+  public val count: Int
 
   /**
    * Current position of the cursor
    */
-  val position: Int
+  public val position: Int
 
   /**
    * Number of columns in a row
    */
-  val columnCount: Int
+  public val columnCount: Int
 
   /**
    * Get value [T] of the column [expression] at the current cursor [position]. Typically accessed
    * as ```cursor[Table.column]```. Throws IllegalStateException if the value in the DB is null
    */
-  operator fun <T> get(expression: SqlTypeExpression<T>): T
+  public operator fun <T> get(expression: SqlTypeExpression<T>): T
 
   /**
    * Get value [T] of the column [expression] at the current cursor [position] or return
    * [defaultValue] if the value in the DB is null. Typically accessed
    * as ```cursor[Table.column, valueIfNull]```
    */
-  operator fun <T> get(expression: SqlTypeExpression<T>, defaultValue: T): T =
+  public operator fun <T> get(expression: SqlTypeExpression<T>, defaultValue: T): T =
     getOptional(expression) ?: defaultValue
 
   /**
@@ -53,5 +53,5 @@ interface Cursor {
    * cursor [position]. Prefer [get] with a default value for easier syntax of
    * ```cursor[Table.column, valueIfNull]``` and avoiding null.
    */
-  fun <T> getOptional(expression: SqlTypeExpression<T>): T?
+  public fun <T> getOptional(expression: SqlTypeExpression<T>): T?
 }

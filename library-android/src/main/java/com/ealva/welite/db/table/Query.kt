@@ -23,35 +23,35 @@ import com.ealva.welite.db.type.StatementSeed
 /**
  * QuerySeed contains all the info to build a Query
  */
-interface QuerySeed {
+public interface QuerySeed {
   /**
    * The list of the types of arguments which need to be bound for each query execution. This is
    * each place a "?" appears in the [sql]. The [PersistentType] is responsible for accepting
    * an argument from the client, converting if necessary, and binding it into query args.
    */
-  val types: List<PersistentType<*>>
+  public val types: List<PersistentType<*>>
 
   /**
    * The full sql of the query
    */
-  val sql: String
+  public val sql: String
 
   /**
    * The list of columns selected in the query. Used when reading the query results.
    */
-  val columns: ExprList
+  public val columns: ExprList
 
   /**
    * Make a copy but update the sql
    */
-  fun copy(sql: String): QuerySeed
+  public fun copy(sql: String): QuerySeed
 
-  companion object {
+  public companion object {
     /**
      * Create a QuerySeed from the [StatementSeed] [seed] and the [columns] to be read from the
      * query result
      */
-    operator fun invoke(seed: StatementSeed, columns: ExprList): QuerySeed {
+    public operator fun invoke(seed: StatementSeed, columns: ExprList): QuerySeed {
       class QuerySeedImpl(
         private val statementSeed: StatementSeed,
         override val columns: ExprList
@@ -71,16 +71,16 @@ interface QuerySeed {
   }
 }
 
-fun QueryBuilder.toQuery(): Query = Query(build())
+public fun QueryBuilder.toQuery(): Query = Query(build())
 
-interface Query {
-  val seed: QuerySeed
+public interface Query {
+  public val seed: QuerySeed
 
-  companion object {
+  public companion object {
     /**
      * Create a reusable [Query] from [queryBuilder]
      */
-    operator fun invoke(queryBuilder: QueryBuilder): Query = queryBuilder.toQuery()
+    public operator fun invoke(queryBuilder: QueryBuilder): Query = queryBuilder.toQuery()
 
     /**
      * Make a Query instance. eg.

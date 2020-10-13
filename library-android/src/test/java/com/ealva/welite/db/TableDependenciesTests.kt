@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-@file:Suppress("unused")
+@file:Suppress(
+  "NO_EXPLICIT_VISIBILITY_IN_API_MODE_WARNING",
+  "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING"
+)
 
 package com.ealva.welite.db
 
 import android.os.Build.VERSION_CODES.LOLLIPOP
-import com.ealva.welite.db.table.TableDependencies
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.TableDependencies
 import com.nhaarman.expect.expect
 import org.junit.Test
 import org.junit.runner.RunWith

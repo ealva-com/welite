@@ -23,7 +23,7 @@ package com.ealva.welite.db.table
  * If [tablesAreCyclic] is true it indicates one or more cycles in Table dependencies, eg. TableA ->
  * TableB -> TableC -> TableA
  */
-class TableDependencies(private val tables: List<Table>) {
+public class TableDependencies(private val tables: List<Table>) {
   private val setOfAllTables: Set<Table>
     get() {
       return mutableSetOf<Table>().apply {
@@ -44,7 +44,7 @@ class TableDependencies(private val tables: List<Table>) {
     }.toMap()
   }
 
-  val sortedTableList: List<Table> = ArrayList<Table>(tables.size).apply {
+  public val sortedTableList: List<Table> = ArrayList<Table>(tables.size).apply {
     val visited = mutableSetOf<Table>()
 
     fun traverse(tableToTravers: Table) {
@@ -64,7 +64,7 @@ class TableDependencies(private val tables: List<Table>) {
   /**
    * Returns true if there is a cyclic dependency between tables
    */
-  fun tablesAreCyclic(): Boolean {
+  public fun tablesAreCyclic(): Boolean {
     val visited = mutableSetOf<Table>()
     val recursion = mutableSetOf<Table>()
 

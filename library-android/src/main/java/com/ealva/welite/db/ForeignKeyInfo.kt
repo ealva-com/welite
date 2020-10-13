@@ -18,7 +18,7 @@ package com.ealva.welite.db
 
 import com.ealva.welite.db.table.ForeignKeyAction
 
-data class ForeignKeyInfo(
+public data class ForeignKeyInfo(
   val id: Long,
   val seq: Long,
   val table: String,
@@ -32,7 +32,7 @@ data class ForeignKeyInfo(
 /**
  * Returned from [Transaction.foreignKeyCheck]
  */
-data class ForeignKeyViolation(
+public data class ForeignKeyViolation(
   /** The name of the table that contains the REFERENCES clause */
   val tableName: String,
   /**

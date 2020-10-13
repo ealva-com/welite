@@ -20,7 +20,12 @@ plugins {
   id("com.android.library")
   kotlin("android")
   id("kotlin-android-extensions")
-  id("maven-publish")
+  id("org.jetbrains.dokka")
+  id("com.vanniktech.maven.publish")
+}
+
+kotlin {
+  explicitApi()
 }
 
 android {
@@ -43,12 +48,12 @@ android {
   }
 
   buildTypes {
+    getByName("debug") {
+      isTestCoverageEnabled = false
+    }
+
     getByName("release") {
       isMinifyEnabled = false
-      proguardFiles(
-        getDefaultProguardFile("proguard-android-optimize.txt"),
-        "proguard-rules.pro"
-      )
     }
   }
 
@@ -76,6 +81,12 @@ android {
 
   kotlinOptions {
     jvmTarget = "1.8"
+    suppressWarnings = false
+    verbose = true
+    freeCompilerArgs = freeCompilerArgs + "-XXLanguage:+InlineClasses"
+    freeCompilerArgs = freeCompilerArgs + "-Xinline-classes"
+    freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.RequiresOptIn"
+    freeCompilerArgs = freeCompilerArgs + "-Xexplicit-api=warning"
   }
 }
 
@@ -115,14 +126,4 @@ dependencies {
   androidTestImplementation(ThirdParty.EALVALOG)
   androidTestImplementation(ThirdParty.EALVALOG_CORE)
   androidTestImplementation(ThirdParty.EALVALOG_ANDROID)
-}
-
-afterEvaluate {
-  publishing {
-    publications {
-      create<MavenPublication>("release") {
-        from(components["release"])
-      }
-    }
-  }
 }

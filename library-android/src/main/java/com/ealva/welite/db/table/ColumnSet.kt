@@ -16,8 +16,8 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.ExprList
+import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.Identity
@@ -27,9 +27,9 @@ import com.ealva.welite.db.type.SqlBuilder
  * Represents a set of columns. Conceptually a [ColumnSet] is the ```FROM``` part of a query, eg.
  * Table, Join, Alias,...
  */
-interface ColumnSet {
-  val columns: List<Column<*>>
-  val identity: Identity
+public interface ColumnSet {
+  public val columns: List<Column<*>>
+  public val identity: Identity
 
   /**
    * Appends the ```FROM``` clause, without the "FROM", of this ColumnSet to
@@ -40,9 +40,9 @@ interface ColumnSet {
    *    ( K_FROM ( table_or_subquery ( ',' table_or_subquery )* | join_clause ) )?
    * ```
    */
-  fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
+  public fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
 
-  fun join(
+  public fun join(
     joinTo: ColumnSet,
     joinType: JoinType,
     thisColumn: Expression<*>? = null,
@@ -50,76 +50,76 @@ interface ColumnSet {
     additionalConstraint: (() -> Op<Boolean>)? = null
   ): Join
 
-  fun innerJoin(joinTo: ColumnSet): Join
-  fun leftJoin(joinTo: ColumnSet): Join
-  fun crossJoin(joinTo: ColumnSet): Join
-  fun naturalJoin(joinTo: ColumnSet): Join
+  public fun innerJoin(joinTo: ColumnSet): Join
+  public fun leftJoin(joinTo: ColumnSet): Join
+  public fun crossJoin(joinTo: ColumnSet): Join
+  public fun naturalJoin(joinTo: ColumnSet): Join
 }
 
 /**
  * Start select by selecting all [columns]
  */
-fun ColumnSet.select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
+public fun ColumnSet.select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
 
 /**
  * Start select with [columns] which defaults to all columns of this [ColumnSet]
  */
-fun ColumnSet.select(columns: ExprList = this.columns): SelectFrom =
+public fun ColumnSet.select(columns: ExprList = this.columns): SelectFrom =
   SelectFrom(columns.distinct(), this)
 
 /**
  * Select COUNT(*) (no columns) using [where]
  */
-fun ColumnSet.selectCount(where: () -> Op<Boolean>): QueryBuilder =
+public fun ColumnSet.selectCount(where: () -> Op<Boolean>): QueryBuilder =
   QueryBuilder(set = select(emptyList()), where = where(), count = true)
 
 /**
  * Select all columns [where]
  */
-fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
+public fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
 
 /**
  * Select all columns and all rows
  */
-fun ColumnSet.selectAll(): QueryBuilder = QueryBuilder(SelectFrom(columns, this), null)
+public fun ColumnSet.selectAll(): QueryBuilder = QueryBuilder(SelectFrom(columns, this), null)
 
 /**
  * Select all columns of this [ColumnSet] and call [where] to make the where expression
  */
-fun ColumnSet.selectWhere(where: () -> Op<Boolean>): QueryBuilder = selectWhere(where())
+public fun ColumnSet.selectWhere(where: () -> Op<Boolean>): QueryBuilder = selectWhere(where())
 
 /**
  * SelectFrom is a subset of columns from a ColumnSet, plus any added expressions which appear as
  * a result column, which are the fields to be read in a query. The columns know how to read
  * themselves from the underlying DB layer. Also contains the ```FROM``` part of a query.
  */
-interface SelectFrom {
-  fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder
+public interface SelectFrom {
+  public fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder
 
-  fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder
+  public fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder
 
-  fun sourceSetColumnsInResult(): List<Column<*>>
+  public fun sourceSetColumnsInResult(): List<Column<*>>
 
-  fun <T> findSourceSetOriginal(original: Column<T>): Column<*>?
-
-  /** Take a subset of the result columns  */
-  fun subset(vararg columns: Expression<*>): SelectFrom
+  public fun <T> findSourceSetOriginal(original: Column<T>): Column<*>?
 
   /** Take a subset of the result columns  */
-  fun subset(columns: ExprList): SelectFrom
+  public fun subset(vararg columns: Expression<*>): SelectFrom
 
-  fun <T> findResultColumnExpressionAlias(
+  /** Take a subset of the result columns  */
+  public fun subset(columns: ExprList): SelectFrom
+
+  public fun <T> findResultColumnExpressionAlias(
     original: SqlTypeExpression<T>
   ): SqlTypeExpressionAlias<T>?
 
   /** Result columns as they appear in a Select */
-  val resultColumns: ExprList
+  public val resultColumns: ExprList
 
-  companion object {
+  public companion object {
     /**
      * Make a SelectFrom from [resultColumns] and an optional [sourceSet] ColumnSet
      */
-    operator fun invoke(
+    public operator fun invoke(
       resultColumns: ExprList,
       sourceSet: ColumnSet?
     ): SelectFrom = SelectFromImpl(resultColumns, sourceSet)
@@ -165,13 +165,13 @@ private data class SelectFromImpl(
     get() = columns.toList()
 }
 
-fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(this, where)
+public fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(this, where)
 
 /**
  * Calls [where] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
  * and the where clause.
  */
-fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
+public fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
 
 /** All rows will be returned */
-fun SelectFrom.all() = where(null)
+public fun SelectFrom.all(): QueryBuilder = where(null)

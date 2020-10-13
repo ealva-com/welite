@@ -33,8 +33,8 @@ import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonAliasTests {
-  suspend fun testJoinQueryWithExpressionAlias(
+public object CommonAliasTests {
+  public suspend fun testJoinQueryWithExpressionAlias(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -61,7 +61,7 @@ object CommonAliasTests {
     }
   }
 
-  suspend fun testJoinQuerySubqueryAliasExprAliasQuery(
+  public suspend fun testJoinQuerySubqueryAliasExprAliasQuery(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -87,7 +87,7 @@ object CommonAliasTests {
     }
   }
 
-  suspend fun testQueryTableAlias(
+  public suspend fun testQueryTableAlias(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {

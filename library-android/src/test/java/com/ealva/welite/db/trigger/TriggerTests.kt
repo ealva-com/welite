@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress(
+  "NO_EXPLICIT_VISIBILITY_IN_API_MODE_WARNING",
+  "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING"
+)
+
 package com.ealva.welite.db.trigger
 
 import android.content.Context
@@ -33,15 +38,16 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.ealva.welite.test.db.trigger.CommonTriggerTests as Common
 
-typealias IdTriple = Triple<Long, Long, Long>
+public typealias IdTriple = Triple<Long, Long, Long>
 
-val IdTriple.artistId: Long
+public val IdTriple.artistId: Long
   get() = first
 
-val IdTriple.albumId: Long
+public val IdTriple.albumId: Long
   get() = second
 
-val IdTriple.mediaId: Long
+@Suppress("unused")
+public val IdTriple.mediaId: Long
   get() = third
 
 @ExperimentalUnsignedTypes

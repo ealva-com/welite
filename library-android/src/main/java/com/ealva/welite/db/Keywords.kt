@@ -16,7 +16,7 @@
 
 package com.ealva.welite.db
 
-val ANSI_SQL_2003_KEYWORDS: Set<String> by lazy {
+public val ANSI_SQL_2003_KEYWORDS: Set<String> by lazy {
   setOf(
     "A",
     "ABS",
@@ -517,7 +517,7 @@ val ANSI_SQL_2003_KEYWORDS: Set<String> by lazy {
   )
 }
 
-val SQLITE_KEYWORDS: Set<String> by lazy {
+public val SQLITE_KEYWORDS: Set<String> by lazy {
   setOf(
     "ABORT",
     "ACTION",
@@ -668,4 +668,6 @@ val SQLITE_KEYWORDS: Set<String> by lazy {
 }
 
 @Suppress("unused")
-val ANSI_SQL_AND_SQLITE_KEYWORDS by lazy { ANSI_SQL_2003_KEYWORDS + SQLITE_KEYWORDS }
+public val ANSI_SQL_AND_SQLITE_KEYWORDS: Set<String> by lazy {
+  ANSI_SQL_2003_KEYWORDS + SQLITE_KEYWORDS
+}

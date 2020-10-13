@@ -31,11 +31,11 @@ import com.ealva.welite.db.type.UIntegerPersistentType
 import com.ealva.welite.db.type.ULongPersistentType
 import com.ealva.welite.db.type.UShortPersistentType
 
-class LiteralOp<T>(
+public class LiteralOp<T>(
   override val persistentType: PersistentType<T>,
-  val value: T
+  public val value: T
 ) : BaseSqlTypeExpression<T>() {
-  override fun asDefaultValue() = toString()
+  override fun asDefaultValue(): String = toString()
 
   override fun appendTo(
     sqlBuilder: SqlBuilder
@@ -44,28 +44,34 @@ class LiteralOp<T>(
   }
 }
 
-fun booleanLiteral(value: Boolean): LiteralOp<Boolean> = LiteralOp(BooleanPersistentType(), value)
-fun byteLiteral(value: Byte): LiteralOp<Byte> = LiteralOp(BytePersistentType(), value)
-fun shortLiteral(value: Short): LiteralOp<Short> = LiteralOp(ShortPersistentType(), value)
-fun intLiteral(value: Int): LiteralOp<Int> = LiteralOp(IntegerPersistentType(), value)
-fun longLiteral(value: Long): LiteralOp<Long> = LiteralOp(LongPersistentType(), value)
-fun floatLiteral(value: Float): LiteralOp<Float> = LiteralOp(FloatPersistentType(), value)
-fun doubleLiteral(value: Double): LiteralOp<Double> = LiteralOp(DoublePersistentType(), value)
-fun stringLiteral(value: String): LiteralOp<String> = LiteralOp(StringPersistentType(), value)
+public fun booleanLiteral(value: Boolean): LiteralOp<Boolean> =
+  LiteralOp(BooleanPersistentType(), value)
+
+public fun byteLiteral(value: Byte): LiteralOp<Byte> = LiteralOp(BytePersistentType(), value)
+public fun shortLiteral(value: Short): LiteralOp<Short> = LiteralOp(ShortPersistentType(), value)
+public fun intLiteral(value: Int): LiteralOp<Int> = LiteralOp(IntegerPersistentType(), value)
+public fun longLiteral(value: Long): LiteralOp<Long> = LiteralOp(LongPersistentType(), value)
+public fun floatLiteral(value: Float): LiteralOp<Float> = LiteralOp(FloatPersistentType(), value)
+public fun doubleLiteral(value: Double): LiteralOp<Double> =
+  LiteralOp(DoublePersistentType(), value)
+
+public fun stringLiteral(value: String): LiteralOp<String> =
+  LiteralOp(StringPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-fun ubyteLiteral(value: UByte): LiteralOp<UByte> = LiteralOp(UBytePersistentType(), value)
+public fun ubyteLiteral(value: UByte): LiteralOp<UByte> = LiteralOp(UBytePersistentType(), value)
 
 @ExperimentalUnsignedTypes
-fun ushortLiteral(value: UShort): LiteralOp<UShort> = LiteralOp(UShortPersistentType(), value)
+public fun ushortLiteral(value: UShort): LiteralOp<UShort> =
+  LiteralOp(UShortPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-fun uintLiteral(value: UInt): LiteralOp<UInt> = LiteralOp(UIntegerPersistentType(), value)
+public fun uintLiteral(value: UInt): LiteralOp<UInt> = LiteralOp(UIntegerPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-fun ulongLiteral(value: ULong): LiteralOp<ULong> = LiteralOp(ULongPersistentType(), value)
+public fun ulongLiteral(value: ULong): LiteralOp<ULong> = LiteralOp(ULongPersistentType(), value)
 
-class ModOp<T : Number?, S : Number?>(
+public class ModOp<T : Number?, S : Number?>(
   private val lhs: Expression<T>,
   private val rhs: Expression<S>,
   override val persistentType: PersistentType<T>
@@ -80,14 +86,14 @@ class ModOp<T : Number?, S : Number?>(
 }
 
 @Suppress("unused")
-class NoOpConversion<T, S>(
+public class NoOpConversion<T, S>(
   private val expr: Expression<T>,
   override val persistentType: PersistentType<S>
 ) : BaseSqlTypeExpression<S>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply { append(expr) }
 }
 
-class InListOrNotInListOp<T>(
+public class InListOrNotInListOp<T>(
   private val expr: SqlTypeExpression<T>,
   private val list: Iterable<T>,
   private val isInList: Boolean = true
@@ -123,28 +129,31 @@ class InListOrNotInListOp<T>(
   }
 }
 
-class PlusOp<T, S : T>(lhs: Expression<T>, rhs: Expression<S>, persistentType: PersistentType<T>) :
-  CustomOperator<T>("+", persistentType, lhs, rhs)
+public class PlusOp<T, S : T>(
+  lhs: Expression<T>,
+  rhs: Expression<S>,
+  persistentType: PersistentType<T>
+) : CustomOperator<T>("+", persistentType, lhs, rhs)
 
-class MinusOp<T, S : T>(
+public class MinusOp<T, S : T>(
   lhs: Expression<T>,
   rhs: Expression<S>,
   persistentType: PersistentType<T>
 ) : CustomOperator<T>("-", persistentType, lhs, rhs)
 
-class TimesOp<T, S : T>(
+public class TimesOp<T, S : T>(
   lhs: Expression<T>,
   rhs: Expression<S>,
   persistentType: PersistentType<T>
 ) : CustomOperator<T>("*", persistentType, lhs, rhs)
 
-class DivideOp<T, S : T>(
+public class DivideOp<T, S : T>(
   rhs: Expression<T>,
   lhs: Expression<S>,
   persistentType: PersistentType<T>
 ) : CustomOperator<T>("/", persistentType, rhs, lhs)
 
-class Between(
+public class Between(
   private val expr: Expression<*>,
   private val from: LiteralOp<*>,
   private val to: LiteralOp<*>

@@ -28,7 +28,7 @@ import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
 
-fun <T : Table> T.updateColumns(
+public fun <T : Table> T.updateColumns(
   onConflict: OnConflict = OnConflict.Unspecified,
   assignColumns: T.(ColumnValues) -> Unit
 ): UpdateBuilder<T> {
@@ -36,33 +36,33 @@ fun <T : Table> T.updateColumns(
 }
 
 @Suppress("unused")
-fun <T : Table> T.updateAll(
+public fun <T : Table> T.updateAll(
   onConflict: OnConflict = OnConflict.Unspecified,
   assignColumns: T.(ColumnValues) -> Unit
 ): UpdateStatement {
   return UpdateStatement(this, onConflict, assignColumns)
 }
 
-fun Join.updateColumns(
+public fun Join.updateColumns(
   onConflict: OnConflict = OnConflict.Unspecified,
   assignColumns: Join.(ColumnValues) -> Unit
 ): UpdateBuilder<Join> {
   return UpdateBuilder(this, onConflict, assignColumns)
 }
 
-class UpdateBuilder<T : ColumnSet>(
+public class UpdateBuilder<T : ColumnSet>(
   private val table: T,
   private val onConflict: OnConflict,
   private val assignColumns: T.(ColumnValues) -> Unit
 ) {
-  fun where(where: T.() -> Op<Boolean>): UpdateStatement {
+  public fun where(where: T.() -> Op<Boolean>): UpdateStatement {
     return UpdateStatement(table, onConflict, table.where(), assignColumns)
   }
 }
 
-interface UpdateStatement : Statement {
-  companion object {
-    operator fun <T : ColumnSet> invoke(
+public interface UpdateStatement : Statement {
+  public companion object {
+    public operator fun <T : ColumnSet> invoke(
       table: T,
       onConflict: OnConflict,
       assignColumns: T.(ColumnValues) -> Unit
@@ -70,7 +70,7 @@ interface UpdateStatement : Statement {
       statementSeed(table, onConflict, null, assignColumns)
     )
 
-    operator fun <T : ColumnSet> invoke(
+    public operator fun <T : ColumnSet> invoke(
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       where: Op<Boolean>,
@@ -79,7 +79,7 @@ interface UpdateStatement : Statement {
       statementSeed(table, onConflict, where, assignColumns)
     )
 
-    fun <T : ColumnSet> statementSeed(
+    public fun <T : ColumnSet> statementSeed(
       table: T,
       onConflict: OnConflict,
       where: Op<Boolean>?,

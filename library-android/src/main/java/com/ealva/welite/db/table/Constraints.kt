@@ -32,7 +32,7 @@ private val LOG by lazyLogger("Constraints.kt", WeLiteLog.marker)
  * See [SQLite Foreign Key Support](https://sqlite.org/foreignkeys.html)
  */
 @Suppress("unused")
-enum class ForeignKeyAction(val value: String) {
+public enum class ForeignKeyAction(public val value: String) {
   /**
    * If the configured action is "SET NULL", then when a parent key is deleted (for ON DELETE SET
    * NULL) or modified (for ON UPDATE SET NULL), the child key columns of all rows in the child
@@ -65,13 +65,13 @@ enum class ForeignKeyAction(val value: String) {
    */
   NO_ACTION("NO ACTION");
 
-  override fun toString() = value
+  override fun toString(): String = value
 
-  companion object {
+  public companion object {
     private val valueInstanceMap =
       values().associateBy { foreignKeyAction -> foreignKeyAction.value }
 
-    fun fromSQLite(
+    public fun fromSQLite(
       sqliteName: String,
       defaultValue: ForeignKeyAction = NO_ACTION
     ): ForeignKeyAction = valueInstanceMap[sqliteName] ?: defaultValue
@@ -96,7 +96,7 @@ enum class ForeignKeyAction(val value: String) {
  *```
  * See [SQLite Foreign Key Support](https://sqlite.org/foreignkeys.html)
  */
-data class ForeignKeyConstraint(
+public data class ForeignKeyConstraint(
   val parentTable: Identity,
   val parent: Column<*>,
   val childTable: Identity,
@@ -145,7 +145,7 @@ data class ForeignKeyConstraint(
     }
 }
 
-class CheckConstraint private constructor(
+public class CheckConstraint private constructor(
   private val tableIdentity: Identity,
   private val checkName: Identity,
   private val checkOp: String
@@ -181,7 +181,7 @@ class CheckConstraint private constructor(
       ", checkOp='" + checkOp + "', checkPart='" + checkPart + "')"
   }
 
-  companion object {
+  public companion object {
     /**
      * Make a CheckConstraint
      */
@@ -197,7 +197,7 @@ class CheckConstraint private constructor(
 private const val CREATE_UNIQUE_INDEX = "CREATE UNIQUE INDEX IF NOT EXISTS "
 private const val CREATE_INDEX = "CREATE INDEX IF NOT EXISTS "
 
-class Index(
+public class Index(
   private val table: Table,
   private val columns: List<Column<*>>,
   private val unique: Boolean,
@@ -207,7 +207,7 @@ class Index(
     require(columns.isNotEmpty()) { "At least one column is required to create an index" }
   }
 
-  val tableIdentity: Identity = table.identity
+  public val tableIdentity: Identity = table.identity
 
   private val indexName: String
     get() = customName ?: buildStr {

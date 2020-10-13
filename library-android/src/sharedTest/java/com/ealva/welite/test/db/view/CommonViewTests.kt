@@ -30,6 +30,7 @@ import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.toQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.view.View
+import com.ealva.welite.db.view.ViewColumn
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
@@ -41,8 +42,8 @@ import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
 @ExperimentalUnsignedTypes
-object CommonViewTests {
-  fun testCreateView() {
+public object CommonViewTests {
+  public fun testCreateView() {
     val view = object : View(
       "FullMedia",
       MediaFileTable.select(MediaFileTable.id).where(MediaFileTable.id eq 1)
@@ -74,7 +75,7 @@ object CommonViewTests {
   }
 
   @ExperimentalUnsignedTypes
-  fun testViewFromExistingQuery() {
+  public fun testViewFromExistingQuery() {
     SqlExecutorSpy().let { spy ->
       FullMediaView.create(spy)
       val ddl = spy.execSqlList
@@ -98,7 +99,7 @@ object CommonViewTests {
     }
   }
 
-  suspend fun testQueryView(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testQueryView(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       val tomorrow = Triple(
         "Tomorrow Never Knows",
@@ -209,12 +210,13 @@ private val ViewTestsQuery = MediaFileTable
   .all()
   .toQuery()
 
-object FullMediaView : View(
+public object FullMediaView : View(
   "FullMedia",
   ViewTestsQuery
 ) {
-  val mediaId = column("FullMedia_MediaId", MediaFileTable.id)
-  val mediaTitle = column("FullMedia_MediaTitle", MediaFileTable.mediaTitle)
-  val albumName = column("FullMedia_AlbumName", AlbumTable.albumName)
-  val artistName = column("FullMedia_ArtistName", ArtistTable.artistName)
+  public val mediaId: ViewColumn<Long> = column("FullMedia_MediaId", MediaFileTable.id)
+  public val mediaTitle: ViewColumn<String> =
+    column("FullMedia_MediaTitle", MediaFileTable.mediaTitle)
+  public val albumName: ViewColumn<String> = column("FullMedia_AlbumName", AlbumTable.albumName)
+  public val artistName: ViewColumn<String> = column("FullMedia_ArtistName", ArtistTable.artistName)
 }

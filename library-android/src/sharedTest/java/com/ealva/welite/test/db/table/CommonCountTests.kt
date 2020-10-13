@@ -25,8 +25,8 @@ import com.ealva.welite.db.table.selectAll
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonCountTests {
-  suspend fun testCountWithDistinctAndColumnsWithSameNameInDifferentTables(
+public object CommonCountTests {
+  public suspend fun testCountWithDistinctAndColumnsWithSameNameInDifferentTables(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -41,7 +41,7 @@ object CommonCountTests {
     }
   }
 
-  suspend fun testCountWithDistinctAndColumnsWithSameNameInDifferentTablesWithAlias(
+  public suspend fun testCountWithDistinctAndColumnsWithSameNameInDifferentTablesWithAlias(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -63,7 +63,10 @@ object CommonCountTests {
     }
   }
 
-  suspend fun testCountWithGroupByQuery(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCountWithGroupByQuery(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),

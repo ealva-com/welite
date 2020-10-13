@@ -18,7 +18,7 @@ package com.ealva.welite.db.type
 
 import java.nio.charset.Charset
 
-class Blob(val bytes: ByteArray) {
+public class Blob(public val bytes: ByteArray) {
   override fun toString(): String {
     return bytes.toString(Charset.defaultCharset()) // android default is always UTF-8
   }

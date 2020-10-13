@@ -45,9 +45,9 @@ import com.ealva.welite.db.type.asIdentity
 import com.ealva.welite.db.type.buildStr
 import java.util.Comparator
 
-interface ViewColumn<T> : Column<T> {
-  companion object {
-    operator fun <T> invoke(
+public interface ViewColumn<T> : Column<T> {
+  public companion object {
+    public operator fun <T> invoke(
       view: View,
       name: String,
       column: Column<T>
@@ -173,16 +173,16 @@ private val LOG by lazyLogger(View::class, WeLiteLog.marker)
  * requested column name. Versions >= Build.VERSION_CODES.N use the column-name list syntax of the
  * CREATE VIEW statement and will use the column name parameter if it's not blank.
  */
-abstract class View(
+public abstract class View(
   name: String = "",
   private val querySeed: QuerySeed
 ) : ColumnSet, Creatable, Comparable<View> {
 
-  constructor(name: String = "", query: Query) : this(name, query.seed)
+  public constructor(name: String = "", query: Query) : this(name, query.seed)
 
-  constructor(name: String = "", builder: QueryBuilder) : this(name, builder.build())
+  public constructor(name: String = "", builder: QueryBuilder) : this(name, builder.build())
 
-  val viewName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
+  public val viewName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
     require(!startsWith(Table.RESERVED_PREFIX)) {
       "Invalid View name '$this', must not start with ${Table.RESERVED_PREFIX}"
     }
@@ -190,7 +190,7 @@ abstract class View(
 
   override val masterType: MasterType = MasterType.View
 
-  override val identity = viewName.asIdentity()
+  override val identity: Identity = viewName.asIdentity()
 
   /**
    * Create a ViewColumn from a Column that will appear in a query. If
@@ -200,7 +200,7 @@ abstract class View(
    * the original full name of [column] as the CREATE VIEW statement doesn't support
    * the column-name list that follows the view-name until SQLite 3.9.
    */
-  fun <T> column(name: String = "", column: Column<T>): ViewColumn<T> {
+  public fun <T> column(name: String = "", column: Column<T>): ViewColumn<T> {
     return _columns.addColumn(ViewColumn(this, name, column))
   }
 
@@ -213,7 +213,7 @@ abstract class View(
   override val columns: List<ViewColumn<*>>
     get() = _columns
 
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.apply { append(identity) }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply { append(identity) }
 
   override fun join(
     joinTo: ColumnSet,

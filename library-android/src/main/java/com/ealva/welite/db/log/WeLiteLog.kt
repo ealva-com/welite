@@ -24,34 +24,34 @@ import com.ealva.ealvalog.Markers
 import com.ealva.ealvalog.core.BasicMarkerFactory
 import com.ealva.ealvalog.filter.MarkerFilter
 
-object WeLiteLog {
+public object WeLiteLog {
   /**
    * If true all query plans will be logged as informational logs. This includes the SQL, the
    * query args (parameter binding), and the results of "EXPLAIN QUERY PLAN" from SQLite.
    * Other SQL logging is controlled via [logSql]
    */
-  var logQueryPlans: Boolean = false
+  public var logQueryPlans: Boolean = false
 
   /**
    * If this is true all non-query sql is logged. Query logging is controlled via [logQueryPlans].
    */
-  var logSql: Boolean = false
+  public var logSql: Boolean = false
 
-  fun configureLogging(factory: MarkerFactory = BasicMarkerFactory()) {
+  public fun configureLogging(factory: MarkerFactory = BasicMarkerFactory()) {
     Markers.setFactory(factory)
   }
 
-  const val markerName = "WeLite"
+  public const val markerName: String = "WeLite"
 
   /**
    * Loggers in WeLite use this [Marker] so all WeLite logging can be filtered.
    */
-  val marker: Marker = Markers[markerName]
+  public val marker: Marker = Markers[markerName]
 
   /**
    * Clients can use this [MarkerFilter] in a logger handler to direct associated logging where
    * desired (file, Android log, ...). See [eAlvaLog](https://github.com/ealva-com/ealvalog) for
    * information on configuring logging.
    */
-  val markerFilter: MarkerFilter = MarkerFilter(marker)
+  public val markerFilter: MarkerFilter = MarkerFilter(marker)
 }

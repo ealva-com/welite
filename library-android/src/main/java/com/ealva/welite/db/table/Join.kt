@@ -22,43 +22,44 @@ import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
 
-typealias JoinCondition = Pair<Expression<*>, Expression<*>>
+public typealias JoinCondition = Pair<Expression<*>, Expression<*>>
 
-enum class JoinType(val hasCondition: Boolean) {
+public enum class JoinType(public val hasCondition: Boolean) {
   INNER(true),
   LEFT(true),
   CROSS(false),
   NATURAL(false)
 }
 
-inline val JoinType.hasNoCondition
+public inline val JoinType.hasNoCondition: Boolean
   get() = !hasCondition
 
-fun <C1 : ColumnSet, C2 : ColumnSet> C1.innerJoin(
+public fun <C1 : ColumnSet, C2 : ColumnSet> C1.innerJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
 ): Join = join(otherTable, JoinType.INNER, onColumn(), otherTable.otherColumn())
 
-fun <C1 : ColumnSet, C2 : ColumnSet> C1.leftJoin(
+public fun <C1 : ColumnSet, C2 : ColumnSet> C1.leftJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
 ): Join = join(otherTable, JoinType.LEFT, onColumn(), otherTable.otherColumn())
 
-fun <C1 : ColumnSet, C2 : ColumnSet> C1.crossJoin(
+public fun <C1 : ColumnSet, C2 : ColumnSet> C1.crossJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
 ): Join = join(otherTable, JoinType.CROSS, onColumn(), otherTable.otherColumn())
 
-fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
+@Suppress("unused")
+public fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,
   otherColumn: C2.() -> Expression<*>
 ): Join = join(otherTable, JoinType.NATURAL, onColumn(), otherTable.otherColumn())
 
-class Join(val columnSet: ColumnSet) : ColumnSet {
+public class Join(private val columnSet: ColumnSet) : ColumnSet {
 
   override val identity: Identity = columnSet.identity
 
@@ -188,12 +189,12 @@ class Join(val columnSet: ColumnSet) : ColumnSet {
     private fun hasConditions() = conditions.isNotEmpty()
   }
 
-  companion object {
+  public companion object {
     /**
      * Make a Join from [table] to [otherTable] of type [joinType], which defaults to
      * [JoinType.INNER], from [onColumn] to [otherColumn], adding any [additionalConstraint]
      */
-    operator fun invoke(
+    public operator fun invoke(
       table: ColumnSet,
       otherTable: ColumnSet,
       joinType: JoinType = JoinType.INNER,

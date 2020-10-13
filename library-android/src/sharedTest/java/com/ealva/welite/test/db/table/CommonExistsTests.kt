@@ -26,8 +26,8 @@ import com.ealva.welite.db.table.selectWhere
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonExistsTests {
-  suspend fun testSelectExists(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonExistsTests {
+  public suspend fun testSelectExists(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -47,7 +47,7 @@ object CommonExistsTests {
     }
   }
 
-  suspend fun testSelectExistsAndOr(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testSelectExistsAndOr(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -72,7 +72,10 @@ object CommonExistsTests {
     }
   }
 
-  suspend fun testSelectExistsOrExists(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testSelectExistsOrExists(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),

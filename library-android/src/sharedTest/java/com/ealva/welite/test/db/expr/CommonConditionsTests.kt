@@ -23,6 +23,7 @@ import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.less
 import com.ealva.welite.db.expr.lessEq
+import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.select
@@ -33,8 +34,8 @@ import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonConditionsTests {
-  suspend fun testOpsTRUEAndFALSE(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonConditionsTests {
+  public suspend fun testOpsTRUEAndFALSE(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(CondTable), testDispatcher) {
       transaction {
         expect(CondTable.exists).toBe(true)
@@ -51,7 +52,7 @@ object CommonConditionsTests {
     }
   }
 
-  suspend fun testSelectingSameColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testSelectingSameColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(CondTable), testDispatcher) {
       transaction {
         expect(CondTable.exists).toBe(true)
@@ -73,7 +74,10 @@ object CommonConditionsTests {
     }
   }
 
-  suspend fun testCompareWithNullableColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCompareWithNullableColumn(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     val table = object : Table("foo") {
       val c1 = integer("c1")
       val c2 = optInteger("c2")
@@ -205,8 +209,8 @@ object CommonConditionsTests {
   }
 }
 
-object CondTable : Table() {
-  val id = long("_id") { primaryKey() }
-  val data = integer("data")
-  val name = text("name") { default("") }
+public object CondTable : Table() {
+  public val id: Column<Long> = long("_id") { primaryKey() }
+  public val data: Column<Int> = integer("data")
+  public val name: Column<String> = text("name") { default("") }
 }

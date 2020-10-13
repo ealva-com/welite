@@ -35,8 +35,8 @@ internal sealed class WeLiteResult<out R> {
   }
 }
 
-open class WeLiteException(message: String, cause: Throwable? = null) :
+public open class WeLiteException(message: String, cause: Throwable? = null) :
   RuntimeException(message, cause)
 
-class WeLiteUncaughtException(message: String, cause: Throwable? = null) :
+public class WeLiteUncaughtException(message: String, cause: Throwable? = null) :
   WeLiteException(message, cause)

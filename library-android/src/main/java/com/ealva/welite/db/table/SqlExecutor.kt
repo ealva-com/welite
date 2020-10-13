@@ -16,8 +16,8 @@
 
 package com.ealva.welite.db.table
 
-interface SqlExecutor {
-  fun exec(sql: String, vararg bindArgs: Any)
+public interface SqlExecutor {
+  public fun exec(sql: String, vararg bindArgs: Any)
 
-  fun exec(sql: List<String>)
+  public fun exec(sql: List<String>)
 }

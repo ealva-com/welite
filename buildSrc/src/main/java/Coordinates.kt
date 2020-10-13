@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-const val PUBLISHING_GROUP = "com.ealva"
-
 object AppCoordinates {
   const val APP_ID = "com.ealva.welite"
 

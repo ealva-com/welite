@@ -35,42 +35,48 @@ import kotlinx.coroutines.flow.Flow
  * transaction (with no commit/rollback concerns).
  */
 @WeLiteMarker
-interface Queryable {
+public interface Queryable {
   /**
    * Do any necessary [bind], execute the query, and invoke [action] for each row in the
    * results.
    */
-  fun Query.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
+  public fun Query.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
 
   /**
    * Same as [Query.forEach] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  fun QueryBuilder.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
+  public fun QueryBuilder.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
 
   /**
    * Creates a flow, first doing any necessary [bind], execute the query, and emit a [T]
    * created using [factory] for each row in the query results
    */
-  fun <T> Query.flow(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
+  public fun <T> Query.flow(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
 
   /**
    * Same as [Query.flow] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  fun <T> QueryBuilder.flow(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
+  public fun <T> QueryBuilder.flow(
+    bind: (ArgBindings) -> Unit = NO_ARGS,
+    factory: (Cursor) -> T
+  ): Flow<T>
 
   /**
    * After any necessary [bind] generate a [Sequence] of [T] using [factory] for each Cursor
    * row and yields a [T] into the [Sequence]
    */
-  fun <T> Query.sequence(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Sequence<T>
+  public fun <T> Query.sequence(
+    bind: (ArgBindings) -> Unit = NO_ARGS,
+    factory: (Cursor) -> T
+  ): Sequence<T>
 
   /**
    * Same as [Query.sequence] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  fun <T> QueryBuilder.sequence(
+  public fun <T> QueryBuilder.sequence(
     bind: (ArgBindings) -> Unit = NO_ARGS,
     factory: (Cursor) -> T
   ): Sequence<T>
@@ -79,58 +85,58 @@ interface Queryable {
    * Do any necessary [bind], execute the query, and return the value in the first column of the
    * first row. Especially useful for ```COUNT``` queries
    */
-  fun Query.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun Query.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * Same as [Query.longForQuery] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * Do any necessary [bind], execute the query, and return the value in the first column of the
    * first row.
    */
-  fun Query.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
+  public fun Query.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
 
   /**
    * Same as [Query.stringForQuery] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
+  public fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
 
   /**
    * Do any necessary [bind], execute the query for count similar to
    * ```COUNT(*) FROM ( $thisQuery )```, and return the value in the first column of the
    * first row
    */
-  fun Query.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun Query.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * Same as [Query.count] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  fun QueryBuilder.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun QueryBuilder.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * True if the Creatable, as known via [Creatable.identity], exists in the database, else false.
    * Creatable implementations are Table, Index, View, Trigger
    */
-  val Creatable.exists: Boolean
+  public val Creatable.exists: Boolean
 
   /**
    * The description of the table in the database
    * @throws IllegalArgumentException if this [Table] does not exist in the database
    * @see [Table.exists]
    */
-  val Table.description: TableDescription
+  public val Table.description: TableDescription
 
   /**
    * Full create sql of this [Table] as stored by SQLite. Throws [IllegalArgumentException] if
    * this [Table] does not exist in the database.
    * @see [Table.exists]
    */
-  val Table.sql: TableSql
+  public val Table.sql: TableSql
 
   /**
    * Does an integrity check of the entire database. Looks for out-of-order records, missing pages,
@@ -142,13 +148,13 @@ interface Queryable {
    * Does not find FOREIGN KEY errors. Use [foreignKeyCheck] to find errors in FOREIGN
    * KEY constraints.
    */
-  fun tegridyCheck(maxErrors: Int = 100): List<String>
+  public fun tegridyCheck(maxErrors: Int = 100): List<String>
 
   /**
    * Returns a [ForeignKeyInfo] for each foreign key constraint created by a REFERENCES clause in
    * the CREATE TABLE statement of this [Table]. Requires api [Build.VERSION_CODES.O] and higher
    */
-  val Table.foreignKeyList: List<ForeignKeyInfo>
+  public val Table.foreignKeyList: List<ForeignKeyInfo>
     @RequiresApi(Build.VERSION_CODES.O) get
 
   /**
@@ -158,10 +164,10 @@ interface Queryable {
    * statement for this [Table]. Requires api [Build.VERSION_CODES.O] and higher
    */
   @RequiresApi(Build.VERSION_CODES.O)
-  fun Table.foreignKeyCheck(): List<ForeignKeyViolation>
+  public fun Table.foreignKeyCheck(): List<ForeignKeyViolation>
 
   /**
    * Returns the version string for the SQLite library that is running
    */
-  val sqliteVersion: String
+  public val sqliteVersion: String
 }

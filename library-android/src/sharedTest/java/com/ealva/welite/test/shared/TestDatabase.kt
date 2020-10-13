@@ -22,7 +22,7 @@ import com.ealva.welite.db.OpenParams
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
 
-suspend fun withTestDatabase(
+public suspend fun withTestDatabase(
   context: Context,
   tables: List<Table>,
   testDispatcher: CoroutineDispatcher,
@@ -38,7 +38,7 @@ suspend fun withTestDatabase(
 }
 
 @Suppress("TestFunctionName")
-fun TestDatabase(
+public fun TestDatabase(
   context: Context,
   tables: List<Table>,
   testDispatcher: CoroutineDispatcher,

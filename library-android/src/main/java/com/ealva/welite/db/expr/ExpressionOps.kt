@@ -23,105 +23,118 @@ import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.StringPersistentType
 import java.math.BigDecimal
 
-infix fun <T> SqlTypeExpression<T>.eq(t: T): Op<Boolean> =
+public infix fun <T> SqlTypeExpression<T>.eq(t: T): Op<Boolean> =
   if (t == null) isNull() else EqOp(this, param(t))
 
-infix fun <T, S1 : T?, S2 : T?> Expression<in S1>.eq(other: Expression<in S2>): EqOp =
+public infix fun <T, S1 : T?, S2 : T?> Expression<in S1>.eq(other: Expression<in S2>): EqOp =
   EqOp(this, other)
 
-infix fun <T> SqlTypeExpression<T>.neq(other: T): Op<Boolean> =
+public infix fun <T> SqlTypeExpression<T>.neq(other: T): Op<Boolean> =
   if (other == null) isNotNull() else NeqOp(this, param(other))
 
-infix fun <T, S1 : T?, S2 : T?> Expression<in S1>.neq(other: Expression<in S2>): NeqOp =
+public infix fun <T, S1 : T?, S2 : T?> Expression<in S1>.neq(other: Expression<in S2>): NeqOp =
   NeqOp(this, other)
 
-infix fun <T : Comparable<T>> SqlTypeExpression<in T>.less(t: T): LessOp =
+public infix fun <T : Comparable<T>> SqlTypeExpression<in T>.less(t: T): LessOp =
   LessOp(this, param(t))
 
-infix fun <T : Comparable<T>, S : T?> Expression<in S>.less(other: Expression<in S>): LessOp =
-  LessOp(this, other)
+public infix fun <T : Comparable<T>, S : T?> Expression<in S>.less(
+  other: Expression<in S>
+): LessOp = LessOp(this, other)
 
-infix fun <T : Comparable<T>> SqlTypeExpression<in T>.lessEq(t: T): LessEqOp =
+public infix fun <T : Comparable<T>> SqlTypeExpression<in T>.lessEq(t: T): LessEqOp =
   LessEqOp(this, param(t))
 
-infix fun <T : Comparable<T>, S : T?> Expression<in S>.lessEq(other: Expression<in S>): LessEqOp =
-  LessEqOp(this, other)
+public infix fun <T : Comparable<T>, S : T?> Expression<in S>.lessEq(
+  other: Expression<in S>
+): LessEqOp = LessEqOp(this, other)
 
-infix fun <T : Comparable<T>> SqlTypeExpression<in T>.greater(t: T) = GreaterOp(this, param(t))
+public infix fun <T : Comparable<T>> SqlTypeExpression<in T>.greater(t: T): GreaterOp =
+  GreaterOp(this, param(t))
 
-infix fun <T : Comparable<T>, S : T?> Expression<in S>.greater(other: Expression<in S>) =
-  GreaterOp(this, other)
+public infix fun <T : Comparable<T>, S : T?> Expression<in S>.greater(
+  other: Expression<in S>
+): GreaterOp = GreaterOp(this, other)
 
-infix fun <T : Comparable<T>> SqlTypeExpression<in T>.greaterEq(t: T) = GreaterEqOp(this, param(t))
+public infix fun <T : Comparable<T>> SqlTypeExpression<in T>.greaterEq(t: T): GreaterEqOp =
+  GreaterEqOp(this, param(t))
 
-infix fun <T : Comparable<T>, S : T?> Expression<in S>.greaterEq(other: Expression<in S>) =
-  GreaterEqOp(this, other)
+public infix fun <T : Comparable<T>, S : T?> Expression<in S>.greaterEq(
+  other: Expression<in S>
+): GreaterEqOp = GreaterEqOp(this, other)
 
-fun <T> SqlTypeExpression<T>.between(from: T, to: T): Between =
+public fun <T> SqlTypeExpression<T>.between(from: T, to: T): Between =
   Between(this, literal(from), literal(to))
 
-fun <T> Expression<T>.isNull(): IsNullOp = IsNullOp(this)
+public fun <T> Expression<T>.isNull(): IsNullOp = IsNullOp(this)
 
-fun <T> Expression<T>.isNotNull(): IsNotNullOp = IsNotNullOp(this)
+public fun <T> Expression<T>.isNotNull(): IsNotNullOp = IsNotNullOp(this)
 
-infix operator fun <T> SqlTypeExpression<T>.plus(t: T): PlusOp<T, T> =
+public infix operator fun <T> SqlTypeExpression<T>.plus(t: T): PlusOp<T, T> =
   PlusOp(this, param(t), persistentType)
 
-infix operator fun <T, S : T> SqlTypeExpression<T>.plus(other: Expression<S>): PlusOp<T, S> =
+public infix operator fun <T, S : T> SqlTypeExpression<T>.plus(other: Expression<S>): PlusOp<T, S> =
   PlusOp(this, other, persistentType)
 
-infix operator fun <T> SqlTypeExpression<T>.minus(t: T): MinusOp<T, T> =
+public infix operator fun <T> SqlTypeExpression<T>.minus(t: T): MinusOp<T, T> =
   MinusOp(this, param(t), persistentType)
 
-infix operator fun <T, S : T> SqlTypeExpression<T>.minus(other: Expression<S>): MinusOp<T, S> =
-  MinusOp(this, other, persistentType)
+public infix operator fun <T, S : T> SqlTypeExpression<T>.minus(
+  other: Expression<S>
+): MinusOp<T, S> = MinusOp(this, other, persistentType)
 
-infix operator fun <T> SqlTypeExpression<T>.times(t: T): TimesOp<T, T> =
+public infix operator fun <T> SqlTypeExpression<T>.times(t: T): TimesOp<T, T> =
   TimesOp(this, param(t), persistentType)
 
-infix operator fun <T, S : T> SqlTypeExpression<T>.times(other: Expression<S>): TimesOp<T, S> =
-  TimesOp(this, other, persistentType)
+public infix operator fun <T, S : T> SqlTypeExpression<T>.times(
+  other: Expression<S>
+): TimesOp<T, S> = TimesOp(this, other, persistentType)
 
-infix operator fun <T> SqlTypeExpression<T>.div(t: T): DivideOp<T, T> =
+public infix operator fun <T> SqlTypeExpression<T>.div(t: T): DivideOp<T, T> =
   DivideOp(this, param(t), persistentType)
 
-infix operator fun <T, S : T> SqlTypeExpression<T>.div(other: Expression<S>): DivideOp<T, S> =
-  DivideOp(this, other, persistentType)
+public infix operator fun <T, S : T> SqlTypeExpression<T>.div(
+  other: Expression<S>
+): DivideOp<T, S> = DivideOp(this, other, persistentType)
 
-infix operator fun <T : Number?, S : T> SqlTypeExpression<T>.rem(t: S): ModOp<T, S> =
+public infix operator fun <T : Number?, S : T> SqlTypeExpression<T>.rem(t: S): ModOp<T, S> =
   ModOp(this, param(t), persistentType)
 
-infix operator fun <T : Number?, S : Number> SqlTypeExpression<T>.rem(other: Expression<S>) =
-  ModOp(this, other, persistentType)
+public infix operator fun <T : Number?, S : Number> SqlTypeExpression<T>.rem(
+  other: Expression<S>
+): ModOp<T, S> = ModOp(this, other, persistentType)
 
-infix fun <T : Number?, S : T> SqlTypeExpression<T>.mod(t: S): ModOp<T, S> = this % t
+public infix fun <T : Number?, S : T> SqlTypeExpression<T>.mod(t: S): ModOp<T, S> = this % t
 
-infix fun <T : Number?, S : Number> SqlTypeExpression<T>.mod(other: Expression<S>) = this % other
+public infix fun <T : Number?, S : Number> SqlTypeExpression<T>.mod(
+  other: Expression<S>
+): ModOp<T, S> = this % other
 
-fun concat(vararg expr: Expression<String>): Concat = Concat("", expr.toList())
+public fun concat(vararg expr: Expression<String>): Concat = Concat("", expr.toList())
 
-fun concat(separator: String = "", expr: List<Expression<String>>): Concat = Concat(separator, expr)
+public fun concat(separator: String = "", expr: List<Expression<String>>): Concat =
+  Concat(separator, expr)
 
-infix fun <T : String?> Expression<T>.like(pattern: String): LikeOp =
+public infix fun <T : String?> Expression<T>.like(pattern: String): LikeOp =
   LikeOp(this, stringParam(pattern))
 
-infix fun <T : String?> Expression<T>.like(expr: Expression<T>): LikeOp =
+public infix fun <T : String?> Expression<T>.like(expr: Expression<T>): LikeOp =
   LikeOp(this, expr)
 
-infix fun <T : String?> Expression<T>.notLike(pattern: String): NotLikeOp =
+public infix fun <T : String?> Expression<T>.notLike(pattern: String): NotLikeOp =
   NotLikeOp(this, stringParam(pattern))
 
-fun case(value: Expression<*>? = null): Case = Case(value)
+public fun case(value: Expression<*>? = null): Case = Case(value)
 
-infix fun <T> SqlTypeExpression<T>.inList(list: Iterable<T>): InListOrNotInListOp<T> =
+public infix fun <T> SqlTypeExpression<T>.inList(list: Iterable<T>): InListOrNotInListOp<T> =
   InListOrNotInListOp(this, list, isInList = true)
 
-infix fun <T> SqlTypeExpression<T>.notInList(list: Iterable<T>): InListOrNotInListOp<T> =
+public infix fun <T> SqlTypeExpression<T>.notInList(list: Iterable<T>): InListOrNotInListOp<T> =
   InListOrNotInListOp(this, list, isInList = false)
 
 @OptIn(ExperimentalUnsignedTypes::class)
 @Suppress("UNCHECKED_CAST")
-fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (value) {
+public fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (value) {
   is String -> stringParam(value)
   is Int -> intParam(value)
   is Long -> longParam(value)
@@ -141,7 +154,7 @@ fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (value) {
 
 @OptIn(ExperimentalUnsignedTypes::class)
 @Suppress("UNCHECKED_CAST")
-fun <T> SqlTypeExpression<in T>.literal(value: T): LiteralOp<T> = when (value) {
+public fun <T> SqlTypeExpression<in T>.literal(value: T): LiteralOp<T> = when (value) {
   is String -> stringLiteral(value)
   is Int -> intLiteral(value)
   is Long -> longLiteral(value)
@@ -159,45 +172,51 @@ fun <T> SqlTypeExpression<in T>.literal(value: T): LiteralOp<T> = when (value) {
   else -> LiteralOp(persistentType, value)
 } as LiteralOp<T>
 
-enum class SortOrder(val sqlName: String) {
+public enum class SortOrder(public val sqlName: String) {
   ASC("ASC"),
   DESC("DESC");
 
-  override fun toString() = sqlName
+  override fun toString(): String = sqlName
 }
 
-fun Expression<String>.substring(start: Int, length: Int): Function<String> =
+public fun Expression<String>.substring(start: Int, length: Int): Function<String> =
   Substring(this, intLiteral(start), intLiteral(length))
 
-fun Expression<String>.trim(): Function<String> = Trim(this)
+public fun Expression<String>.trim(): Function<String> = Trim(this)
 
-fun Expression<Long>.random(): Function<Long> = Random()
+public fun Expression<Long>.random(): Function<Long> = Random()
 
-fun Expression<String>.lowerCase(): Function<String> = LowerCase(this)
+public fun Expression<String>.lowerCase(): Function<String> = LowerCase(this)
 
-fun Expression<String>.upperCase(): Function<String> = UpperCase(this)
+public fun Expression<String>.upperCase(): Function<String> = UpperCase(this)
 
-fun <T : Comparable<T>> SqlTypeExpression<T>.avg(): Function<T> = Avg(this, this.persistentType)
+public fun <T : Comparable<T>> SqlTypeExpression<T>.avg(): Function<T> =
+  Avg(this, this.persistentType)
 
-fun <T : Any?> SqlTypeExpression<T>.sum(): Function<T> = Sum(this, this.persistentType)
+public fun <T : Any?> SqlTypeExpression<T>.sum(): Function<T> = Sum(this, this.persistentType)
 
-fun <T : Comparable<T>> SqlTypeExpression<T>.min(): Function<T> = Min(this, this.persistentType)
+public fun <T : Comparable<T>> SqlTypeExpression<T>.min(): Function<T> =
+  Min(this, this.persistentType)
 
-fun <T : Comparable<T>> SqlTypeExpression<T>.max(): Function<T> = Max(this, this.persistentType)
+public fun <T : Comparable<T>> SqlTypeExpression<T>.max(): Function<T> =
+  Max(this, this.persistentType)
 
-fun <T : String?> Expression<T>.groupConcat(separator: String? = null): GroupConcat<T> =
+public fun <T : String?> Expression<T>.groupConcat(separator: String? = null): GroupConcat<T> =
   GroupConcat(this, separator)
 
-fun SqlTypeExpression<*>.count(): Function<Long> = Count(this)
+public fun SqlTypeExpression<*>.count(): Function<Long> = Count(this)
 
-fun <R> Expression<*>.cast(persistentType: PersistentType<R>): SqlTypeExpression<R> =
+public fun <R> Expression<*>.cast(persistentType: PersistentType<R>): SqlTypeExpression<R> =
   Cast(this, persistentType)
 
-fun <T : Any> SqlTypeExpression<T>.function(name: String): CustomFunction<T> =
+public fun <T : Any> SqlTypeExpression<T>.function(name: String): CustomFunction<T> =
   CustomFunction(name, persistentType, listOf(this))
 
-fun customStringFunction(name: String, vararg params: Expression<*>): CustomFunction<String> =
+public fun customStringFunction(
+  name: String,
+  vararg params: Expression<*>
+): CustomFunction<String> =
   CustomFunction(name, StringPersistentType(), params.toList())
 
-fun customLongFunction(name: String, vararg params: Expression<*>): CustomFunction<Long> =
+public fun customLongFunction(name: String, vararg params: Expression<*>): CustomFunction<Long> =
   CustomFunction(name, LongPersistentType(), params.toList())

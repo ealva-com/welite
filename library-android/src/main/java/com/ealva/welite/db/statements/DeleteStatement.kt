@@ -24,19 +24,19 @@ import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
 
-interface DeleteStatement : Statement {
+public interface DeleteStatement : Statement {
 
-  companion object {
+  public companion object {
     /**
      * Make a DeleteStatement from a [table] and [where] clause
      */
-    operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement =
+    public operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement =
       DeleteStatementImpl(statementSeed(table, where))
 
     /**
      * Make the StatementSeed from a [table] and [where] clause for a DeleteStatement
      */
-    fun statementSeed(table: Table, where: Op<Boolean>?): StatementSeed = buildSql {
+    public fun statementSeed(table: Table, where: Op<Boolean>?): StatementSeed = buildSql {
       append("DELETE FROM ")
       append(table.identity.value)
       if (where != null) {
@@ -50,7 +50,7 @@ interface DeleteStatement : Statement {
 /**
  * Build a DeleteStatement which can be reused binding args each time
  */
-fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {
+public fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {
   return DeleteStatement(this, where())
 }
 

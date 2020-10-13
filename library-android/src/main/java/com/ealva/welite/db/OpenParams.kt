@@ -21,7 +21,7 @@ package com.ealva.welite.db
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
-data class OpenParams(
+public data class OpenParams(
   /**
    * Used to dispatch transaction and query functions. Defaults to Dispatchers.IO which should
    * generally suffice.
@@ -95,7 +95,7 @@ data class OpenParams(
  *
  *  [SQLite synchronous flag](https://sqlite.org/pragma.html#pragma_synchronous)
  */
-enum class SynchronousMode(val value: String, val numValue: Long) {
+public enum class SynchronousMode(public val value: String, public val numValue: Long) {
   OFF("OFF", SYNC_MODE_OFF),
   NORMAL("NORMAL", SYNC_MODE_NORMAL),
   FULL("FULL", SYNC_MODE_FULL),
@@ -112,9 +112,9 @@ private const val SYNC_MODE_FULL = 2L
 private const val SYNC_MODE_EXTRA = 3L
 
 private val syncModes = SynchronousMode.values()
-fun Long.toSynchronousMode(): SynchronousMode =
+public fun Long.toSynchronousMode(): SynchronousMode =
   syncModes.firstOrNull { mode -> mode.numValue == this } ?: SynchronousMode.UNKNOWN
-fun String.toSynchronousMode(): SynchronousMode =
+public fun String.toSynchronousMode(): SynchronousMode =
   syncModes.firstOrNull { mode -> mode.value.equals(this, true) } ?: SynchronousMode.UNKNOWN
 
 /**
@@ -143,7 +143,7 @@ fun String.toSynchronousMode(): SynchronousMode =
  *
  * [SQLite journal_mode](https://sqlite.org/pragma.html#pragma_journal_mode)
  */
-enum class JournalMode(val value: String) {
+public enum class JournalMode(public val value: String) {
   DELETE("DELETE"),
   TRUNCATE("TRUNCATE"),
   PERSIST("PERSIST"),
@@ -157,7 +157,7 @@ enum class JournalMode(val value: String) {
 }
 
 private val journalModes = JournalMode.values()
-fun String.toJournalMode(): JournalMode =
+public fun String.toJournalMode(): JournalMode =
   journalModes.firstOrNull { mode -> mode.value.equals(this, true) } ?: JournalMode.UNKNOWN
 
 /**
@@ -168,15 +168,15 @@ fun String.toJournalMode(): JournalMode =
  *
  * [SQLite Lookaside Memory Allocator](https://sqlite.org/malloc.html#lookaside)
  */
-interface LookasideSlot {
-  val size: Int
-  val count: Int
+public interface LookasideSlot {
+  public val size: Int
+  public val count: Int
 
-  companion object {
+  public companion object {
     /**
      * Create a LookasideSlot with [size] and [count]
      */
-    operator fun invoke(size: Int, count: Int): LookasideSlot {
+    public operator fun invoke(size: Int, count: Int): LookasideSlot {
       data class LookasideSlotImpl(override val size: Int, override val count: Int) : LookasideSlot
       require(size >= 0 && count >= 0) { "Size and count must be >= 0, size:$size count:$count" }
       require((size > 0 && count > 0) || (size == 0 && count == 0))

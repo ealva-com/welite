@@ -21,6 +21,7 @@ import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.statements.insertValues
+import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.where
@@ -33,8 +34,8 @@ import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonNaturalJoinTests {
-  suspend fun testNaturalJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonNaturalJoinTests {
+  public suspend fun testNaturalJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Doctors, Specialty, Visits),
@@ -91,7 +92,10 @@ object CommonNaturalJoinTests {
     }
   }
 
-  suspend fun testNaturalJoinThreeTables(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testNaturalJoinThreeTables(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Doctors, Specialty, Visits),
@@ -239,25 +243,25 @@ object CommonNaturalJoinTests {
   }
 }
 
-object Doctors : Table("doctors") {
-  val doctorId = integer("doctor_id") { primaryKey() }
-  val doctorName = text("doctor_name")
-  val degree = text("degree")
+public object Doctors : Table("doctors") {
+  public val doctorId: Column<Int> = integer("doctor_id") { primaryKey() }
+  public val doctorName: Column<String> = text("doctor_name")
+  public val degree: Column<String> = text("degree")
 }
 
-object Specialty : Table("specialty") {
-  val splId = integer("spl_id") { primaryKey() }
-  val description = text("spl_descrip") { unique() }
-  val doctorId = integer("doctor_id")
+public object Specialty : Table("specialty") {
+  public val splId: Column<Int> = integer("spl_id") { primaryKey() }
+  public val description: Column<String> = text("spl_descrip") { unique() }
+  public val doctorId: Column<Int> = integer("doctor_id")
 }
 
-object Visits : Table("visits") {
-  val doctorId = integer("doctor_id")
-  val patientName = text("patient_name")
-  val visitDate = text("vdate")
+public object Visits : Table("visits") {
+  public val doctorId: Column<Int> = integer("doctor_id")
+  public val patientName: Column<String> = text("patient_name")
+  public val visitDate: Column<String> = text("vdate")
 }
 
-data class DoctorsVisit(
+public data class DoctorsVisit(
   val doctorId: Int,
   val doctorName: String,
   val degree: String,

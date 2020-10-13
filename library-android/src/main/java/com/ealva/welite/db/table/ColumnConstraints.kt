@@ -22,7 +22,7 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.type.PersistentType
 
 @DslMarker
-annotation class WeLiteMarker
+public annotation class WeLiteMarker
 
 /**
  * ```
@@ -40,48 +40,51 @@ annotation class WeLiteMarker
  * [Column constraints](https://sqlite.org/syntax/column-constraint.html)
  */
 @WeLiteMarker
-interface ColumnConstraints<T> {
-  fun primaryKey(): ColumnConstraints<T>
-  fun unique(): ColumnConstraints<T>
-  fun asc(): ColumnConstraints<T>
-  fun desc(): ColumnConstraints<T>
-  fun autoIncrement(): ColumnConstraints<T>
-  fun default(defaultValue: T): ColumnConstraints<T>
-  fun defaultExpression(defaultValue: Expression<T>): ColumnConstraints<T>
-  fun onConflict(onConflict: OnConflict): ColumnConstraints<T>
-  fun collateBinary(): ColumnConstraints<T>
-  fun collateNoCase(): ColumnConstraints<T>
-  fun collateRTrim(): ColumnConstraints<T>
-  fun collate(name: String): ColumnConstraints<T>
-  fun index(customIndexName: String? = null): ColumnConstraints<T>
-  fun uniqueIndex(customIndexName: String? = null): ColumnConstraints<T>
-  fun <S : T> references(
+public interface ColumnConstraints<T> {
+  public fun primaryKey(): ColumnConstraints<T>
+  public fun unique(): ColumnConstraints<T>
+  public fun asc(): ColumnConstraints<T>
+  public fun desc(): ColumnConstraints<T>
+  public fun autoIncrement(): ColumnConstraints<T>
+  public fun default(defaultValue: T): ColumnConstraints<T>
+  public fun defaultExpression(defaultValue: Expression<T>): ColumnConstraints<T>
+  public fun onConflict(onConflict: OnConflict): ColumnConstraints<T>
+  public fun collateBinary(): ColumnConstraints<T>
+  public fun collateNoCase(): ColumnConstraints<T>
+  public fun collateRTrim(): ColumnConstraints<T>
+  public fun collate(name: String): ColumnConstraints<T>
+  public fun index(customIndexName: String? = null): ColumnConstraints<T>
+  public fun uniqueIndex(customIndexName: String? = null): ColumnConstraints<T>
+  public fun <S : T> references(
     ref: Column<S>,
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     fkName: String? = null
   ): ColumnConstraints<T>
 
-  fun check(name: String = "", op: (Column<T>) -> Op<Boolean>): ColumnConstraints<T>
+  public fun check(name: String = "", op: (Column<T>) -> Op<Boolean>): ColumnConstraints<T>
 }
 
 private fun List<ColumnConstraint>.joinAsString(): String = joinToString(separator = ",")
 
-class ConstraintNotAllowedException(message: String) : SQLiteException(message)
+public class ConstraintNotAllowedException(message: String) : SQLiteException(message)
 
-inline fun notAllowed(messageProvider: () -> String) {
+public inline fun notAllowed(messageProvider: () -> String) {
   throw ConstraintNotAllowedException(messageProvider())
 }
 
-sealed class ColumnConstraint {
-  abstract fun mayAppearFirst(persistentType: PersistentType<*>)
-  abstract fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>)
+public sealed class ColumnConstraint {
+  public abstract fun mayAppearFirst(persistentType: PersistentType<*>)
+  public abstract fun allowedToFollow(
+    others: List<ColumnConstraint>,
+    persistentType: PersistentType<*>
+  )
 }
 
 private const val PRIMARY_KEY = "PRIMARY KEY"
 
-object PrimaryKeyConstraint : ColumnConstraint() {
-  override fun toString() = PRIMARY_KEY
+public object PrimaryKeyConstraint : ColumnConstraint() {
+  override fun toString(): String = PRIMARY_KEY
 
   override fun mayAppearFirst(persistentType: PersistentType<*>) {}
 
@@ -94,8 +97,8 @@ object PrimaryKeyConstraint : ColumnConstraint() {
 private const val ASC = "ASC"
 private const val DESC = "DESC"
 
-abstract class AscDescConstraint(val value: String) : ColumnConstraint() {
-  override fun toString() = value
+public abstract class AscDescConstraint(public val value: String) : ColumnConstraint() {
+  override fun toString(): String = value
 
   override fun mayAppearFirst(persistentType: PersistentType<*>) {
     error { "$this must follow $PRIMARY_KEY" }
@@ -106,9 +109,9 @@ abstract class AscDescConstraint(val value: String) : ColumnConstraint() {
   }
 }
 
-object AscConstraint : AscDescConstraint(ASC)
+public object AscConstraint : AscDescConstraint(ASC)
 
-object DescConstraint : AscDescConstraint(DESC) {
+public object DescConstraint : AscDescConstraint(DESC) {
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
     super.allowedToFollow(others, persistentType)
     if (others.find { it is AutoIncrementConstraint } != null) {
@@ -129,12 +132,12 @@ object DescConstraint : AscDescConstraint(DESC) {
  * )?
  * ```
  */
-class ConflictConstraint(private val onConflict: OnConflict) : ColumnConstraint() {
-  override fun toString() = onConflict.toString()
+public class ConflictConstraint(private val onConflict: OnConflict) : ColumnConstraint() {
+  override fun toString(): String = onConflict.toString()
 
   private val mustFollow = "$this must follow $PRIMARY_KEY, $ASC or $DESC, $NOT_NULL, or $UNIQUE."
 
-  override fun mayAppearFirst(persistentType: PersistentType<*>) = notAllowed { mustFollow }
+  override fun mayAppearFirst(persistentType: PersistentType<*>): Unit = notAllowed { mustFollow }
 
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
     others.find { it is ConflictConstraint }?.let { constraint ->
@@ -153,8 +156,8 @@ class ConflictConstraint(private val onConflict: OnConflict) : ColumnConstraint(
   }
 }
 
-object AutoIncrementConstraint : ColumnConstraint() {
-  override fun toString() = "AUTOINCREMENT"
+public object AutoIncrementConstraint : ColumnConstraint() {
+  override fun toString(): String = "AUTOINCREMENT"
 
   override fun mayAppearFirst(persistentType: PersistentType<*>) {
     if (!persistentType.isIntegerType) notAllowed { "$this only allowed with INTEGER column" }
@@ -184,8 +187,8 @@ internal object NotNullConstraint : ColumnConstraint() {
 
 private const val UNIQUE = "UNIQUE"
 
-object UniqueConstraint : ColumnConstraint() {
-  override fun toString() = UNIQUE
+public object UniqueConstraint : ColumnConstraint() {
+  override fun toString(): String = UNIQUE
 
   override fun mayAppearFirst(persistentType: PersistentType<*>) {}
 
@@ -193,33 +196,33 @@ object UniqueConstraint : ColumnConstraint() {
   }
 }
 
-class CollateConstraint(private val collate: Collate) : ColumnConstraint() {
-  override fun toString() = collate.sql
+public class CollateConstraint(private val collate: Collate) : ColumnConstraint() {
+  override fun toString(): String = collate.sql
 
   override fun mayAppearFirst(persistentType: PersistentType<*>) {}
 
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {}
 }
 
-interface ConstraintCollection : Iterable<ColumnConstraint> {
-  fun add(constraint: ColumnConstraint)
-  fun hasPrimaryKey(): Boolean
-  fun hasAutoInc(): Boolean
-  fun hasNotNull(): Boolean
-  fun hasDesc(): Boolean
+public interface ConstraintCollection : Iterable<ColumnConstraint> {
+  public fun add(constraint: ColumnConstraint)
+  public fun hasPrimaryKey(): Boolean
+  public fun hasAutoInc(): Boolean
+  public fun hasNotNull(): Boolean
+  public fun hasDesc(): Boolean
 
   /**
    * If a column is INTEGER PRIMARY KEY and is not also DESC, then it is the effective row ID and
    * will be autogenerated (accepts null on insert)
    * [SQLite Row ID](https://www.sqlite.org/rowidtable.html)
    */
-  fun isRowId(isIntegerType: Boolean): Boolean
+  public fun isRowId(isIntegerType: Boolean): Boolean
 
-  companion object {
+  public companion object {
     /**
      * Make a ConstraintCollection with an initial [persistentType]
      */
-    operator fun invoke(persistentType: PersistentType<*>): ConstraintCollection {
+    public operator fun invoke(persistentType: PersistentType<*>): ConstraintCollection {
       return ConstraintList(persistentType)
     }
   }

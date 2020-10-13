@@ -28,12 +28,12 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-fun Table.offsetDateTimeText(
+public fun Table.offsetDateTimeText(
   name: String,
   block: SetConstraints<OffsetDateTime> = {}
 ): Column<OffsetDateTime> = registerColumn(name, OffsetDateTimeAsTextType(), block)
 
-fun Table.optOffsetDateTimeText(
+public fun Table.optOffsetDateTimeText(
   name: String,
   block: SetConstraints<OffsetDateTime?> = {}
 ): Column<OffsetDateTime?> = registerOptColumn(name, OffsetDateTimeAsTextType(), block)
@@ -48,7 +48,7 @@ private fun Any.valueToOffsetDateTime(): OffsetDateTime = when (this) {
 /**
  * Text form nicely compares in the database
  */
-open class OffsetDateTimeAsTextType<T : OffsetDateTime?>(
+public open class OffsetDateTimeAsTextType<T : OffsetDateTime?>(
   private val textColumn: StringPersistentType<String?>
 ) : BasePersistentType<T>(textColumn.sqlType) {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
@@ -56,14 +56,14 @@ open class OffsetDateTimeAsTextType<T : OffsetDateTime?>(
   }
 
   @Suppress("UNCHECKED_CAST")
-  override fun Row.readColumnValue(index: Int) = OffsetDateTime.parse(getString(index)) as T
+  override fun Row.readColumnValue(index: Int): T = OffsetDateTime.parse(getString(index)) as T
 
   override fun notNullValueToDB(value: Any): Any = value.valueToOffsetDateTime()
 
   override fun nonNullValueToString(value: Any): String = "'${value.valueToOffsetDateTime()}'"
 
-  companion object {
-    operator fun <T : OffsetDateTime?> invoke(): OffsetDateTimeAsTextType<T> =
+  public companion object {
+    public operator fun <T : OffsetDateTime?> invoke(): OffsetDateTimeAsTextType<T> =
       OffsetDateTimeAsTextType(StringPersistentType())
   }
 

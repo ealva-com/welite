@@ -20,9 +20,9 @@ import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.type.SqlBuilder
 
-fun exists(queryBuilder: QueryBuilder): Op<Boolean> = Exists(queryBuilder)
+public fun exists(queryBuilder: QueryBuilder): Op<Boolean> = Exists(queryBuilder)
 
-class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
+public class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("EXISTS (")
     this@Exists.queryBuilder.appendTo(this)
@@ -30,9 +30,10 @@ class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   }
 }
 
-fun notExists(queryBuilder: QueryBuilder): Op<Boolean> = NotExists(queryBuilder)
+@Suppress("unused")
+public fun notExists(queryBuilder: QueryBuilder): Op<Boolean> = NotExists(queryBuilder)
 
-class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
+public class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("NOT EXISTS (")
     this@NotExists.queryBuilder.appendTo(this)
@@ -40,10 +41,10 @@ class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   }
 }
 
-infix fun <T> Expression<T>.inSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
+public infix fun <T> Expression<T>.inSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
   InSubQueryOp(this, queryBuilder)
 
-class InSubQueryOp<T>(
+public class InSubQueryOp<T>(
   private val expr: Expression<T>,
   private val queryBuilder: QueryBuilder
 ) : Op<Boolean>() {
@@ -55,10 +56,11 @@ class InSubQueryOp<T>(
   }
 }
 
-infix fun <T> Expression<T>.notInSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
+@Suppress("unused")
+public infix fun <T> Expression<T>.notInSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
   NotInSubQueryOp(this, queryBuilder)
 
-class NotInSubQueryOp<T>(
+public class NotInSubQueryOp<T>(
   private val expr: Expression<T>,
   private val queryBuilder: QueryBuilder
 ) : Op<Boolean>() {

@@ -21,12 +21,12 @@ package com.ealva.welite.test.shared
 import com.nhaarman.expect.Matcher
 import com.nhaarman.expect.fail
 
-fun <K, V> expect(actual: Map<K, V>?): MapMatcher<K, V> {
+public fun <K, V> expect(actual: Map<K, V>?): MapMatcher<K, V> {
   return MapMatcher(actual)
 }
 
-class MapMatcher<K, V>(override val actual: Map<K, V>?) : Matcher<Map<K, V>>(actual) {
-  fun toBeEmpty(message: (() -> Any?)? = null) {
+public class MapMatcher<K, V>(override val actual: Map<K, V>?) : Matcher<Map<K, V>>(actual) {
+  public fun toBeEmpty(message: (() -> Any?)? = null) {
     if (actual == null) {
       fail("Expected value to be empty, but the actual value was null.", message)
     }
@@ -36,7 +36,7 @@ class MapMatcher<K, V>(override val actual: Map<K, V>?) : Matcher<Map<K, V>>(act
     }
   }
 
-  fun toHaveSize(size: Int, message: (() -> Any?)? = null) {
+  public fun toHaveSize(size: Int, message: (() -> Any?)? = null) {
     if (actual == null) {
       fail("Expected value to have size $size, but the actual value was null.", message)
     }
@@ -46,7 +46,7 @@ class MapMatcher<K, V>(override val actual: Map<K, V>?) : Matcher<Map<K, V>>(act
     }
   }
 
-  fun toContainKey(expected: K, message: (() -> Any?)? = null) {
+  public fun toContainKey(expected: K, message: (() -> Any?)? = null) {
     if (actual == null) {
       fail("Expected value to contain key $expected but was null", message)
     }
@@ -56,7 +56,7 @@ class MapMatcher<K, V>(override val actual: Map<K, V>?) : Matcher<Map<K, V>>(act
     }
   }
 
-  fun toContain(expected: Pair<K, V>, message: (() -> Any?)? = null) {
+  public fun toContain(expected: Pair<K, V>, message: (() -> Any?)? = null) {
     if (actual == null) {
       fail("Expected value to contain $expected, but the actual value was null.", message)
     }

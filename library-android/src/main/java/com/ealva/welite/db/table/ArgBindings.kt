@@ -19,19 +19,19 @@ package com.ealva.welite.db.table
 /**
  * The interface presented to the client to bind arguments to the sql statement.
  */
-interface ArgBindings {
+public interface ArgBindings {
   /**
    * Set the argument at [index] to [value]. The index is the position of the '?' bind-parameter in
    * the SQL. The underlying persistent type object handles any necessary conversions of value or
    * throws an exception on error. If a value is not bound at a particular index, that index will
    * contain the equivalent of the null value and ultimately be bound as such.
    */
-  operator fun <T> set(index: Int, value: T?)
+  public operator fun <T> set(index: Int, value: T?)
 
   /**
    * Total number of bindable arguments
    */
-  val argCount: Int
+  public val argCount: Int
 }
 
-val NO_ARGS: (ArgBindings) -> Unit = {}
+public val NO_ARGS: (ArgBindings) -> Unit = {}

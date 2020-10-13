@@ -16,9 +16,9 @@
 
 package com.ealva.welite.db.table
 
-data class TableDescription(val tableName: String, val columnsMetadata: List<ColumnMetadata>)
+public data class TableDescription(val tableName: String, val columnsMetadata: List<ColumnMetadata>)
 
-enum class FieldType(val type: Int, val display: String) {
+public enum class FieldType(public val type: Int, public val display: String) {
   @Suppress("unused")
   NullField(android.database.Cursor.FIELD_TYPE_NULL, "NULL"),
   IntegerField(android.database.Cursor.FIELD_TYPE_INTEGER, "INTEGER"),
@@ -27,18 +27,18 @@ enum class FieldType(val type: Int, val display: String) {
   BlobField(android.database.Cursor.FIELD_TYPE_BLOB, "BLOB"),
   UnknownField(Int.MAX_VALUE, "UNKNOWN");
 
-  companion object {
+  public companion object {
     private val allValues = values()
 
-    fun fromType(type: String, defaultValue: FieldType = UnknownField): FieldType =
+    public fun fromType(type: String, defaultValue: FieldType = UnknownField): FieldType =
       allValues.find { it.display == type } ?: defaultValue
 
-    fun fromInt(type: Int, defaultValue: FieldType = UnknownField): FieldType =
+    public fun fromInt(type: Int, defaultValue: FieldType = UnknownField): FieldType =
       allValues.find { it.type == type } ?: defaultValue
   }
 }
 
-data class ColumnMetadata(
+public data class ColumnMetadata(
   val id: Int,
   val name: String,
   val type: FieldType,

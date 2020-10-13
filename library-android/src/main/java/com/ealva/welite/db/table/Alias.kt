@@ -37,9 +37,9 @@ private inline operator fun Identity.plus(identity: Identity): Identity {
   }.asIdentity()
 }
 
-class Alias<out T : Table>(private val delegate: T, private val alias: String) : Table() {
+public class Alias<out T : Table>(private val delegate: T, private val alias: String) : Table() {
   override val tableName: String get() = alias
-  val tableNameWithAlias: String = "${delegate.tableName} AS $alias"
+  public val tableNameWithAlias: String = "${delegate.tableName} AS $alias"
   override val identity: Identity = Identity.make(alias)
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
@@ -49,7 +49,7 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
   private fun <T : Any?> Column<T>.clone(): Column<T> = Column(this@Alias, name, persistentType)
 
   @Suppress("unused", "UNCHECKED_CAST")
-  fun <R> originalColumn(column: Column<R>): Column<R>? =
+  public fun <R> originalColumn(column: Column<R>): Column<R>? =
     delegate.columns.firstOrNull { column.name == it.name } as Column<R>
 
   override val columns: List<Column<*>> = delegate.columns.map { it.clone() }
@@ -60,20 +60,23 @@ class Alias<out T : Table>(private val delegate: T, private val alias: String) :
   override fun hashCode(): Int = tableNameWithAlias.hashCode()
 
   @Suppress("UNCHECKED_CAST")
-  operator fun <T : Any?> get(original: Column<T>): Column<T> =
+  public operator fun <T : Any?> get(original: Column<T>): Column<T> =
     delegate.columns.find { it == original }
       ?.let { it.clone() as? Column<T> }
       ?: error("Column not found in original table")
 }
 
-class ExpressionAlias<T>(val delegate: Expression<T>, val alias: String) : BaseExpression<T>() {
+public class ExpressionAlias<T>(
+  public val delegate: Expression<T>,
+  public val alias: String
+) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(delegate)
     append(" ")
     append(alias)
   }
 
-  fun aliasOnlyExpression(): Expression<T> {
+  public fun aliasOnlyExpression(): Expression<T> {
     return if (delegate is SqlTypeExpression<T>) {
       object : Function<T>(delegate.persistentType) {
         override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
@@ -88,9 +91,9 @@ class ExpressionAlias<T>(val delegate: Expression<T>, val alias: String) : BaseE
   }
 }
 
-class SqlTypeExpressionAlias<T>(
-  val delegate: SqlTypeExpression<T>,
-  val alias: String
+public class SqlTypeExpressionAlias<T>(
+  public val delegate: SqlTypeExpression<T>,
+  public val alias: String
 ) : BaseSqlTypeExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(delegate)
@@ -98,7 +101,7 @@ class SqlTypeExpressionAlias<T>(
     append(alias)
   }
 
-  fun aliasOnlyExpression(): SqlTypeExpression<T> {
+  public fun aliasOnlyExpression(): SqlTypeExpression<T> {
     return object : Function<T>(delegate.persistentType) {
       override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
         sqlBuilder.apply { append(alias) }
@@ -109,7 +112,10 @@ class SqlTypeExpressionAlias<T>(
     get() = delegate.persistentType
 }
 
-class QueryBuilderAlias(private val queryBuilder: QueryBuilder, val alias: String) : ColumnSet {
+public class QueryBuilderAlias(
+  private val queryBuilder: QueryBuilder,
+  public val alias: String
+) : ColumnSet {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("(")
     append(queryBuilder)
@@ -123,13 +129,13 @@ class QueryBuilderAlias(private val queryBuilder: QueryBuilder, val alias: Strin
     get() = queryBuilder.sourceSetColumnsInResult().map { it.clone() }
 
   @Suppress("UNCHECKED_CAST")
-  operator fun <T : Any?> get(original: Column<T>): Column<T> =
+  public operator fun <T : Any?> get(original: Column<T>): Column<T> =
     queryBuilder.findSourceSetOriginal(original)
       ?.clone() as? Column<T>
       ?: error("Column not found in original table")
 
   @Suppress("UNCHECKED_CAST")
-  operator fun <T : Any?> get(original: SqlTypeExpression<T>): SqlTypeExpression<T> {
+  public operator fun <T : Any?> get(original: SqlTypeExpression<T>): SqlTypeExpression<T> {
     val expressionAlias = queryBuilder.findResultColumnExpressionAlias(original)
       ?: error("Field not found in original table fields")
 
@@ -152,11 +158,12 @@ class QueryBuilderAlias(private val queryBuilder: QueryBuilder, val alias: Strin
   private fun <T : Any?> Column<T>.clone(): Column<T> = makeAlias(alias)
 }
 
-fun <T : Table> T.alias(alias: String) = Alias(this, alias)
-fun QueryBuilder.alias(alias: String) = QueryBuilderAlias(this, alias)
-fun <T> SqlTypeExpression<T>.alias(alias: String) = SqlTypeExpressionAlias(this, alias)
+public fun <T : Table> T.alias(alias: String): Alias<T> = Alias(this, alias)
+public fun QueryBuilder.alias(alias: String): QueryBuilderAlias = QueryBuilderAlias(this, alias)
+public fun <T> SqlTypeExpression<T>.alias(alias: String): SqlTypeExpressionAlias<T> =
+  SqlTypeExpressionAlias(this, alias)
 
-fun Join.joinQuery(
+public fun Join.joinQuery(
   on: ((QueryBuilderAlias) -> Op<Boolean>),
   joinType: JoinType = JoinType.INNER,
   joinPart: () -> QueryBuilder
@@ -166,13 +173,13 @@ fun Join.joinQuery(
 }
 
 @Suppress("unused")
-fun Table.joinQuery(
+public fun Table.joinQuery(
   on: (QueryBuilderAlias) -> Op<Boolean>,
   joinType: JoinType = JoinType.INNER,
   joinPart: () -> QueryBuilder
-) = Join(this).joinQuery(on, joinType, joinPart)
+): Join = Join(this).joinQuery(on, joinType, joinPart)
 
-val Join.lastQueryBuilderAlias: QueryBuilderAlias?
+public val Join.lastQueryBuilderAlias: QueryBuilderAlias?
   get() = lastPartAsQueryBuilderAlias()
 
 private fun Join.lastPartAsQueryBuilderAlias() = joinParts.map {

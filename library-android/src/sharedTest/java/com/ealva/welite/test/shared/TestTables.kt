@@ -17,36 +17,37 @@
 package com.ealva.welite.test.shared
 
 import com.ealva.welite.db.Database
+import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.nhaarman.expect.expect
 
-object MediaFileTable : Table() {
-  val id = long("_id") { primaryKey() }
-  val mediaTitle = text("MediaTitle")
-  val mediaUri = text("MediaUri") { unique() }
-  val artistId = reference("ArtistId", ArtistTable.id)
-  val albumId = reference("AlbumId", AlbumTable.id)
+public object MediaFileTable : Table() {
+  public val id: Column<Long> = long("_id") { primaryKey() }
+  public val mediaTitle: Column<String> = text("MediaTitle")
+  public val mediaUri: Column<String> = text("MediaUri") { unique() }
+  public val artistId: Column<Long> = reference("ArtistId", ArtistTable.id)
+  public val albumId: Column<Long> = reference("AlbumId", AlbumTable.id)
 }
 
-object ArtistTable : Table() {
-  val id = long("_id") { primaryKey() }
-  val artistName = text("ArtistName") { collateNoCase().uniqueIndex() }
+public object ArtistTable : Table() {
+  public val id: Column<Long> = long("_id") { primaryKey() }
+  public val artistName: Column<String> = text("ArtistName") { collateNoCase().uniqueIndex() }
 }
 
-object AlbumTable : Table() {
-  val id = long("_id") { primaryKey() }
-  val albumName = text("AlbumName") { collateNoCase() }
-  val artistName = text("ArtistName") { collateNoCase() }
+public object AlbumTable : Table() {
+  public val id: Column<Long> = long("_id") { primaryKey() }
+  public val albumName: Column<String> = text("AlbumName") { collateNoCase() }
+  public val artistName: Column<String> = text("ArtistName") { collateNoCase() }
 
   init {
     uniqueIndex(albumName, artistName)
   }
 }
 
-object ArtistAlbumTable : Table() {
-  val id = long("_id") { primaryKey() }
-  val artistId = reference("ArtistId", ArtistTable.id)
-  val albumId = reference("AlbumId", AlbumTable.id)
+public object ArtistAlbumTable : Table() {
+  public val id: Column<Long> = long("_id") { primaryKey() }
+  public val artistId: Column<Long> = reference("ArtistId", ArtistTable.id)
+  public val albumId: Column<Long> = reference("AlbumId", AlbumTable.id)
 
   init {
     index(artistId)
@@ -55,9 +56,10 @@ object ArtistAlbumTable : Table() {
   }
 }
 
-val MEDIA_TABLES = listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable)
+public val MEDIA_TABLES: List<Table> =
+  listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable)
 
-suspend fun Database.expectMediaTablesExist() {
+public suspend fun Database.expectMediaTablesExist() {
   query {
     expect(MediaFileTable.exists).toBe(true)
     expect(AlbumTable.exists).toBe(true)

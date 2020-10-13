@@ -24,6 +24,7 @@ import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.expr.stringLiteral
 import com.ealva.welite.db.table.Alias
+import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.Table
@@ -39,8 +40,8 @@ import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
 
-object CommonJoinTests {
-  suspend fun testJoinInnerJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonJoinTests {
+  public suspend fun testJoinInnerJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -65,7 +66,7 @@ object CommonJoinTests {
     }
   }
 
-  suspend fun testFKJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testFKJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -85,7 +86,7 @@ object CommonJoinTests {
     }
   }
 
-  suspend fun testJoinWithOrderBy(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testJoinWithOrderBy(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -116,7 +117,10 @@ object CommonJoinTests {
     }
   }
 
-  suspend fun testJoinWithRelationshipTable(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testJoinWithRelationshipTable(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Numbers, Names, NumberNameRel),
@@ -146,7 +150,7 @@ object CommonJoinTests {
     }
   }
 
-  suspend fun testCrossJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCrossJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -174,7 +178,7 @@ object CommonJoinTests {
     }
   }
 
-  suspend fun testJoinMultipleReferencesFKViolation(
+  public suspend fun testJoinMultipleReferencesFKViolation(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -212,7 +216,7 @@ object CommonJoinTests {
     }
   }
 
-  suspend fun testJoinWithAlias(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testJoinWithAlias(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
       tables = listOf(Place, Person, Review),
@@ -237,17 +241,17 @@ object CommonJoinTests {
   }
 }
 
-object Numbers : Table() {
-  val id = long("id") { primaryKey() }
+public object Numbers : Table() {
+  public val id: Column<Long> = long("id") { primaryKey() }
 }
 
-object Names : Table() {
-  val name = text("name") { primaryKey() }
+public object Names : Table() {
+  public val name: Column<String> = text("name") { primaryKey() }
 }
 
-object NumberNameRel : Table() {
+public object NumberNameRel : Table() {
   @Suppress("unused")
-  val id = long("id") { primaryKey() }
-  val numberId = reference("id_ref", Numbers.id)
-  val name = reference("name_ref", Names.name)
+  public val id: Column<Long> = long("id") { primaryKey() }
+  public val numberId: Column<Long> = reference("id_ref", Numbers.id)
+  public val name: Column<String> = reference("name_ref", Names.name)
 }

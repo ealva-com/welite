@@ -16,10 +16,10 @@
 
 package com.ealva.welite.db.type
 
-interface Bindable {
-  fun bindNull(index: Int)
-  fun bind(index: Int, value: Long)
-  fun bind(index: Int, value: Double)
-  fun bind(index: Int, value: String)
-  fun bind(index: Int, value: ByteArray)
+public interface Bindable {
+  public fun bindNull(index: Int)
+  public fun bind(index: Int, value: Long)
+  public fun bind(index: Int, value: Double)
+  public fun bind(index: Int, value: String)
+  public fun bind(index: Int, value: ByteArray)
 }

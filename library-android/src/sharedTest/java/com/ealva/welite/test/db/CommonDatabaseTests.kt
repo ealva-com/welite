@@ -19,9 +19,11 @@ package com.ealva.welite.test.db
 import android.content.Context
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.OpenParams
+import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.type.Blob
 import com.ealva.welite.test.db.trigger.DeleteAlbumTrigger
 import com.ealva.welite.test.db.trigger.DeleteArtistTrigger
 import com.ealva.welite.test.db.trigger.DeleteMediaTrigger
@@ -41,8 +43,8 @@ import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
 
-object CommonDatabaseTests {
-  suspend fun testInTransaction(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+public object CommonDatabaseTests {
+  public suspend fun testInTransaction(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
       var visitedOngoing = false
       expect(inTransaction).toBe(false)
@@ -62,7 +64,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testSqliteVersion(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testSqliteVersion(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
       query {
         // supports "n.nn.nn"  nn is 1 or 2 numbers
@@ -71,7 +73,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testDbLifecycle(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testDbLifecycle(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     var onConfigureCalled = false
     var onCreateCalled = false
     var onOpenCalled = false
@@ -106,7 +108,7 @@ object CommonDatabaseTests {
     db.close()
   }
 
-  suspend fun createTableTest(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun createTableTest(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
       query {
         expect(SomeMediaTable.exists).toBe(true)
@@ -175,7 +177,7 @@ object CommonDatabaseTests {
    * Test that a table on which another table is dependent occurs earlier in the list of tables.
    * eg. Table A depends on Table B, Table B must occur somewhere earlier in the list than Table A.
    */
-  suspend fun testCreateTablesRearrangeOrderForCreate(
+  public suspend fun testCreateTablesRearrangeOrderForCreate(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -200,7 +202,7 @@ object CommonDatabaseTests {
     expect(tables.indexOf(before)).toBeSmallerThan(tables.indexOf(after))
   }
 
-  suspend fun testIntegritySunnyDay(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testIntegritySunnyDay(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       expectMediaTablesExist()
       query {
@@ -211,7 +213,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testCreateTablesWithForeignKeys(
+  public suspend fun testCreateTablesWithForeignKeys(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -279,7 +281,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testCreateAndDropTable(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCreateAndDropTable(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, emptyList(), testDispatcher) {
       transaction { MediaFileTable.create() }
       query { expect(MediaFileTable.exists).toBe(true) }
@@ -288,7 +290,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testCreateAndDropView(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCreateAndDropView(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       expectMediaTablesExist()
       transaction { FullMediaView.create() }
@@ -298,7 +300,10 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testCreateAndDropTrigger(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCreateAndDropTrigger(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       expectMediaTablesExist()
       transaction {
@@ -328,7 +333,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testCreateAndDropIndex(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCreateAndDropIndex(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     val aTable = object : Table() {
       @Suppress("unused") val id = long("_id") { primaryKey() }
       val artistName = text("ArtistName") { collateNoCase() }
@@ -348,7 +353,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testCreateAndRollback(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testCreateAndRollback(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       expectMediaTablesExist()
       transaction {
@@ -362,7 +367,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testTxnToString(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+  public suspend fun testTxnToString(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
       expectMediaTablesExist()
       val unitOfWork = "Create FullMediaView"
@@ -392,7 +397,7 @@ object CommonDatabaseTests {
     }
   }
 
-  suspend fun testNoAutoCommitTxnWithoutMarkingSuccessOrRollback(
+  public suspend fun testNoAutoCommitTxnWithoutMarkingSuccessOrRollback(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -404,7 +409,7 @@ object CommonDatabaseTests {
   }
 }
 
-fun <T> ListMatcher<T>.toNotContain(expected: T, message: (() -> Any?)? = null) {
+public fun <T> ListMatcher<T>.toNotContain(expected: T, message: (() -> Any?)? = null) {
   if (actual == null) {
     fail("Expected value to contain $expected, but the actual value was null.", message)
   }
@@ -419,13 +424,13 @@ private fun StringMatcher.matches(regex: Regex) {
   if (!value.matches(regex)) fail("Expected `$value` to match $regex")
 }
 
-object SomeMediaTable : Table() {
-  val id = integer("_id") { primaryKey() }
-  val mediaUri = text("MediaUri") { unique() }
-  val fileName = text("MediaFileName") { collateNoCase() }
-  val mediaTitle = text("MediaTitle") { collateNoCase().default("Title") }
-  val real = double("Real")
-  val blob = optBlob("Blob")
+public object SomeMediaTable : Table() {
+  public val id: Column<Int> = integer("_id") { primaryKey() }
+  public val mediaUri: Column<String> = text("MediaUri") { unique() }
+  public val fileName: Column<String> = text("MediaFileName") { collateNoCase() }
+  public val mediaTitle: Column<String> = text("MediaTitle") { collateNoCase().default("Title") }
+  public val real: Column<Double> = double("Real")
+  public val blob: Column<Blob?> = optBlob("Blob")
 
   init {
     index(fileName, real)

@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+@file:Suppress(
+  "NO_EXPLICIT_VISIBILITY_IN_API_MODE_WARNING",
+  "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING"
+)
+
 package com.ealva.welite.db.javatime
 
 import android.content.Context
@@ -59,17 +64,17 @@ private object OffsetDt : Table() {
   val other = optText("other")
 }
 
-object HasOffsetDtRef : Table() {
-  val ref: Column<OffsetDateTime?> =
+public object HasOffsetDtRef : Table() {
+  public val ref: Column<OffsetDateTime?> =
     optReference("ref", offsetDate, ForeignKeyAction.CASCADE)
 }
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
-class OffsetDateTimeColumnTest {
+public class OffsetDateTimeColumnTest {
   @ExperimentalCoroutinesApi
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule public var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()

@@ -20,11 +20,11 @@ import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.buildStr
 
-interface Expression<T> : AppendsToSqlBuilder {
-  fun asDefaultValue(): String
+public interface Expression<T> : AppendsToSqlBuilder {
+  public fun asDefaultValue(): String
 }
 
-abstract class BaseExpression<T> : Expression<T> {
+public abstract class BaseExpression<T> : Expression<T> {
   private val _hashCode: Int by lazy { toString().hashCode() }
 
   override fun asDefaultValue(): String = buildStr {
@@ -46,12 +46,12 @@ abstract class BaseExpression<T> : Expression<T> {
 
   override fun toString(): String = buildStr { appendTo(this) }
 
-  companion object {
-    inline fun <T, E : Expression<T>> build(builder: () -> E): E = builder()
+  public companion object {
+    public inline fun <T, E : Expression<T>> build(builder: () -> E): E = builder()
   }
 }
 
-fun <T> Iterable<T>.appendTo(
+public fun <T> Iterable<T>.appendTo(
   builder: SqlBuilder,
   separator: CharSequence = ", ",
   prefix: CharSequence = "",
