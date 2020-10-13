@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.db.javatime
+package com.ealva.welite.javatime
 
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.SetConstraints

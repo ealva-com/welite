@@ -19,7 +19,7 @@
   "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING"
 )
 
-package com.ealva.welite.db.javatime
+package com.ealva.welite.javatime
 
 import android.content.Context
 import android.os.Build
@@ -27,10 +27,10 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.ForeignKeyInfo
 import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.greaterEq
-import com.ealva.welite.db.javatime.VisitTime.localDate
-import com.ealva.welite.db.javatime.VisitTime.name
-import com.ealva.welite.db.javatime.VisitTime.optLocalDate
-import com.ealva.welite.db.javatime.VisitTime.other
+import com.ealva.welite.javatime.VisitTime.localDate
+import com.ealva.welite.javatime.VisitTime.name
+import com.ealva.welite.javatime.VisitTime.optLocalDate
+import com.ealva.welite.javatime.VisitTime.other
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction

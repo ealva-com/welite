@@ -14,8 +14,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/buildSrc" />
-            <option value="$PROJECT_DIR$/library-android" />
-            <option value="$PROJECT_DIR$/library-javatime" />
+            <option value="$PROJECT_DIR$/welite-core" />
+            <option value="$PROJECT_DIR$/welite-javatime" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

@@ -50,8 +50,8 @@ android {
 }
 
 dependencies {
-  implementation(project(":library-android"))
-  implementation(project(":library-javatime"))
+  implementation(project(":welite-core"))
+  implementation(project(":welite-javatime"))
   coreLibraryDesugaring(ToolsLib.DESUGARING)
   implementation(kotlin("stdlib-jdk8"))
 

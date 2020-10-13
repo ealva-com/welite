@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-include(":library-android")
-include(":library-javatime")
+include(":welite-core")
+include(":welite-javatime")
 include("app")
 
 pluginManagement {

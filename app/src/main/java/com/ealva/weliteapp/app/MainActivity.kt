@@ -25,7 +25,7 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.like
-import com.ealva.welite.db.javatime.localDate
+import com.ealva.welite.javatime.localDate
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.OnConflict

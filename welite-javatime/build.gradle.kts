@@ -83,7 +83,7 @@ android {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
-  implementation(project(":library-android"))
+  implementation(project(":welite-core"))
   coreLibraryDesugaring(ToolsLib.DESUGARING)
   implementation(SupportLibs.ANDROIDX_CORE_KTX)
   implementation(ThirdParty.EALVALOG)
