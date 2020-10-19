@@ -164,6 +164,27 @@ query {
   * app - skeleton application demos configuration, Koin injection, simple database creation, table 
   population, query, etc.
 
+Gradle:
+```gradle
+implementation("com.ealva:welite-core:0.1.0-0")
+implementation("com.ealva:welite-javatime:0.1.0-0")
+```
+
+Maven:
+```xml
+<dependency>
+    <groupId>com.ealva</groupId>
+    <artifactId>welite-core</artifactId>
+    <version>0.1.0-0</version>
+</dependency>
+```
+```xml
+<dependency>
+    <groupId>com.ealva</groupId>
+    <artifactId>welite-javatime</artifactId>
+    <version>0.1.0-0</version>
+</dependency>
+```
 ### Why this library?
 For WeLite the desire is to push all SQL down into the library and treat it as an implementation 
 detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe 

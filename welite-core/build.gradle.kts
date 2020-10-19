@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-version = LibraryAndroidCoordinates.LIBRARY_VERSION
+version = WeLiteCoreCoordinates.LIBRARY_VERSION
 
 plugins {
   id("com.android.library")
@@ -35,8 +35,8 @@ android {
     minSdkVersion(Sdk.MIN_SDK_VERSION)
     targetSdkVersion(Sdk.TARGET_SDK_VERSION)
 
-    versionCode = LibraryAndroidCoordinates.LIBRARY_VERSION_CODE
-    versionName = LibraryAndroidCoordinates.LIBRARY_VERSION
+    versionCode = WeLiteCoreCoordinates.LIBRARY_VERSION_CODE
+    versionName = WeLiteCoreCoordinates.LIBRARY_VERSION
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("consumer-rules.pro")

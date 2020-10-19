@@ -21,7 +21,7 @@ object AppCoordinates {
   const val APP_VERSION_CODE = 1
 }
 
-object LibraryAndroidCoordinates {
+object WeLiteCoreCoordinates {
   // All parts of versioning can be up to 2 digits: 0-99
   private const val versionMajor = 0
   private const val versionMinor = 0
@@ -33,7 +33,7 @@ object LibraryAndroidCoordinates {
   const val LIBRARY_VERSION = "$versionMajor.$versionMinor.$versionPatch-$versionBuild"
 }
 
-object LibraryJavaTimeCoordinates {
+object WeLiteJavaTimeCoordinates {
   // All parts of versioning can be up to 2 digits: 0-99
   private const val versionMajor = 0
   private const val versionMinor = 0
