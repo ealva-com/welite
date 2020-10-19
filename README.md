@@ -185,6 +185,10 @@ Maven:
     <version>0.1.0-0</version>
 </dependency>
 ```
+
+Ensure you have the most recent version by checking [here][maven-welite-core] and [here][maven-welite-javatime]
+
+For the latest SNAPSHOT check [here][core-snapshot] and [here][javatime-snapshot] 
 ### Why this library?
 For WeLite the desire is to push all SQL down into the library and treat it as an implementation 
 detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe 
@@ -235,3 +239,7 @@ you open.
 [bug_report]: .github/ISSUE_TEMPLATE/bug_report.md
 [feature_request]: .github/ISSUE_TEMPLATE/feature_request.md
 [pull_request]: .github/pull_request_template.md
+[maven-welite-core]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-core%22
+[maven-welite-javatime]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-javatime%22
+[core-snapshot]: https://oss.sonatype.org/content/repositories/snapshots/com/ealva/welite-core/
+[javatime-snapshot]: https://oss.sonatype.org/content/repositories/snapshots/com/ealva/welite-javatime/
