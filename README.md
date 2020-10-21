@@ -225,20 +225,13 @@ higher level layer providing more ORM type functionality could be built over WeL
   conversions at run-time
   
 ### Contributions
-Contributions welcome. Please fill out the template for the situation and include it in the Issue 
-you open.
-  * [Defect Report][bug_report]
-  * [Feature Request][feature_request]
-  * [Pull Request][pull_request]
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 [squash]: https://github.com/orangy/squash
 [exposed]: https://github.com/JetBrains/Exposed
 [coroutines]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [flow]: https://kotlinlang.org/docs/reference/coroutines/flow.html  
 [splitties]: https://github.com/LouisCAD/Splitties
-[bug_report]: .github/ISSUE_TEMPLATE/bug_report.md
-[feature_request]: .github/ISSUE_TEMPLATE/feature_request.md
-[pull_request]: .github/pull_request_template.md
 [maven-welite-core]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-core%22
 [maven-welite-javatime]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-javatime%22
 [core-snapshot]: https://oss.sonatype.org/content/repositories/snapshots/com/ealva/welite-core/
