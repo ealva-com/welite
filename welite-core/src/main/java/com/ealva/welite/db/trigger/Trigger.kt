@@ -46,28 +46,47 @@ public interface Trigger<T : Table> : Creatable {
     BEFORE(" BEFORE"),
     AFTER(" AFTER")
   }
+}
 
-  public enum class Event(public val value: String) {
-    INSERT(" INSERT"),
-    UPDATE(" UPDATE"),
-    DELETE(" DELETE")
-  }
+public interface OldNewColumnFactory {
+  /**
+   * Refer to a column as "NEW.columnName" in a trigger
+   */
+  public fun <T> new(column: Column<T>): Column<T>
+
+  /**
+   * Refer to a column as "OLD.columnName" in a trigger
+   */
+  public fun <T> old(column: Column<T>): Column<T>
+}
+
+/** internal visibility for test */
+internal enum class Event(
+  val value: String,
+  val acceptsNewColumnRef: Boolean,
+  val acceptsOldColumnRef: Boolean
+) {
+  INSERT(" INSERT", true, false),
+  UPDATE(" UPDATE", true, true),
+  DELETE(" DELETE", false, true);
 }
 
 private class TriggerImpl<T : Table>(
   name: String,
   private val temp: Boolean,
   private val beforeAfter: Trigger.BeforeAfter,
-  private val event: Trigger.Event,
+  private val event: Event,
   private val updateCols: List<Column<*>>,
   private val table: T,
-  private val whenCondition: Expression<Boolean>?,
+  private val columnFactory: OldNewColumnFactory,
   private val statements: List<StatementSeed>
-) : Trigger<T> {
+) : Trigger<T>, OldNewColumnFactory by columnFactory {
 
   init {
     require(statements.isNotEmpty()) { "A trigger is required to have at least 1 statement" }
   }
+
+  private var whenCondition: Expression<Boolean>? = null
 
   override val masterType: MasterType = MasterType.Trigger
   override val identity = name.asIdentity()
@@ -81,7 +100,7 @@ private class TriggerImpl<T : Table>(
     append(identity.value)
     append(beforeAfter.value)
     append(event.value)
-    if (event == Trigger.Event.UPDATE && updateCols.isNotEmpty()) {
+    if (event == Event.UPDATE && updateCols.isNotEmpty()) {
       append(" OF ")
       updateCols.forEachIndexed { index, column ->
         append(column.identity())
@@ -93,9 +112,9 @@ private class TriggerImpl<T : Table>(
     append(" ON ")
     append(table.identity)
 
-    whenCondition?.let {
+    whenCondition?.let { cond ->
       append(" WHEN ")
-      append(whenCondition)
+      append(cond)
     }
 
     append(" BEGIN ")
@@ -116,6 +135,10 @@ private class TriggerImpl<T : Table>(
   private fun makeDropStatement(): String = buildStr {
     append("DROP TRIGGER IF EXISTS ")
     append(identity.value)
+  }
+
+  fun triggerWhen(cond: OldNewColumnFactory.(T) -> Expression<Boolean>) {
+    whenCondition = cond(table)
   }
 }
 
@@ -140,7 +163,7 @@ public interface TriggerUpdate<T : Table> {
 }
 
 @WeLiteMarker
-public interface TriggerStatements {
+public interface TriggerStatements : OldNewColumnFactory {
   public val statements: List<StatementSeed>
 
   public fun <T : Table> T.insert(
@@ -161,49 +184,12 @@ public interface TriggerStatements {
     SelectFrom(columns.distinct(), null)
 
   public fun SelectFrom.where(where: Op<Boolean>?)
-
-  /**
-   * Refer to a column as "NEW.columnName" in a trigger
-   */
-  public fun <T> new(column: Column<T>): Column<T>
-
-  /**
-   * Refer to a column as "OLD.columnName" in a trigger
-   */
-  public fun <T> old(column: Column<T>): Column<T>
-
-  public companion object {
-    /**
-     * Create a [TriggerStatements], from [table] specifying the [event] causing the execution of
-     * the Trigger, which will contain the statements to execute when the [Trigger] is fired.
-     */
-    public operator fun invoke(table: Table, event: Trigger.Event): TriggerStatements {
-      return TriggerStatementsImpl(table, event)
-    }
-  }
 }
 
 private class TriggerStatementsImpl(
-  private val table: Table,
-  private val event: Trigger.Event
-) : TriggerStatements {
+  private val columnFactory: OldNewColumnFactory,
+) : TriggerStatements, OldNewColumnFactory by columnFactory {
   override val statements: MutableList<StatementSeed> = mutableListOf()
-
-  override fun <T> new(column: Column<T>): Column<T> {
-    check(event === Trigger.Event.INSERT || event === Trigger.Event.UPDATE) {
-      "NEW reference not valid for a${Trigger.Event.DELETE} trigger"
-    }
-    check(column.table == table) { "NEW.column must refer to a ${table.tableName} column" }
-    return NewOrOldColumn(column, NewOrOld.NEW)
-  }
-
-  override fun <T> old(column: Column<T>): Column<T> {
-    check(event === Trigger.Event.DELETE || event === Trigger.Event.UPDATE) {
-      "OLD reference not valid for an${Trigger.Event.INSERT} trigger"
-    }
-    check(column.table == table) { "OLD.column must refer to a ${table.tableName} column" }
-    return NewOrOldColumn(column, NewOrOld.OLD)
-  }
 
   override fun <T : Table> T.insert(
     onConflict: OnConflict,
@@ -242,17 +228,18 @@ private class TriggerStatementsImpl(
 }
 
 /**
- * Make a [Trigger] with [name] for table [T] to be executed [beforeAfter] the given [event] and
+ * Make a [Trigger] with [name] for table [T] to be executed [beforeAfter] an insert and
  * call [addStatements] to add all the statements to be executed when the trigger fires.
  */
-public fun <T : Table> T.trigger(
+public fun <T : Table> T.insertTrigger(
   name: String,
   beforeAfter: Trigger.BeforeAfter,
-  event: Trigger.Event,
   temporary: Boolean = false,
-  cond: Expression<Boolean>? = null,
+  triggerCondition: (OldNewColumnFactory.(T) -> Expression<Boolean>)? = null,
   addStatements: TriggerStatements.() -> Unit
 ): Trigger<T> {
+  val event = Event.INSERT
+  val columnFactory = TriggerOldNewFactory(this, event)
   return TriggerImpl(
     name,
     temporary,
@@ -260,7 +247,95 @@ public fun <T : Table> T.trigger(
     event,
     emptyList(),
     this,
-    cond,
-    TriggerStatements(this, event).apply(addStatements).statements
-  )
+    columnFactory,
+    TriggerStatementsImpl(columnFactory).apply(addStatements).statements
+  ).apply {
+    triggerCondition?.let { cond ->
+      triggerWhen(cond)
+    }
+  }
+}
+
+/**
+ * Make a [Trigger] with [name] for table [T] to be executed [beforeAfter] an update and
+ * call [addStatements] to add all the statements to be executed when the trigger fires.
+ */
+public fun <T : Table> T.updateTrigger(
+  name: String,
+  beforeAfter: Trigger.BeforeAfter,
+  temporary: Boolean = false,
+  updateColumns: List<Column<*>> = emptyList(),
+  triggerCondition: (OldNewColumnFactory.(T) -> Expression<Boolean>)? = null,
+  addStatements: TriggerStatements.() -> Unit
+): Trigger<T> {
+  val event = Event.UPDATE
+  val columnFactory = TriggerOldNewFactory(this, event)
+  return TriggerImpl(
+    name,
+    temporary,
+    beforeAfter,
+    event,
+    updateColumns,
+    this,
+    columnFactory,
+    TriggerStatementsImpl(columnFactory).apply(addStatements).statements
+  ).apply {
+    triggerCondition?.let { cond ->
+      triggerWhen(cond)
+    }
+  }
+}
+
+/**
+ * Make a [Trigger] with [name] for table [T] to be executed [beforeAfter] a delete and
+ * call [addStatements] to add all the statements to be executed when the trigger fires.
+ */
+public fun <T : Table> T.deleteTrigger(
+  name: String,
+  beforeAfter: Trigger.BeforeAfter,
+  temporary: Boolean = false,
+  triggerCondition: (OldNewColumnFactory.(T) -> Expression<Boolean>)? = null,
+  addStatements: TriggerStatements.() -> Unit
+): Trigger<T> {
+  val event = Event.DELETE
+  val columnFactory = TriggerOldNewFactory(this, event)
+  return TriggerImpl(
+    name,
+    temporary,
+    beforeAfter,
+    event,
+    emptyList(),
+    this,
+    columnFactory,
+    TriggerStatementsImpl(columnFactory).apply(addStatements).statements
+  ).apply {
+    triggerCondition?.let { cond ->
+      triggerWhen(cond)
+    }
+  }
+}
+
+private class TriggerOldNewFactory(
+  private val table: Table,
+  private val event: Event
+) : OldNewColumnFactory {
+  override fun <T> new(column: Column<T>): Column<T> {
+    check(event.acceptsNewColumnRef) {
+      "NEW reference not valid for a $event trigger"
+    }
+    check(column.table == table) {
+      "NEW.column must refer to a $table table column. Refers to ${column.table} table"
+    }
+    return NewOrOldColumn(column, NewOrOld.NEW)
+  }
+
+  override fun <T> old(column: Column<T>): Column<T> {
+    check(event.acceptsOldColumnRef) {
+      "OLD reference not valid for an $event trigger"
+    }
+    check(column.table == table) {
+      "OLD.column must refer to a $table table column. Refers to ${column.table} table"
+    }
+    return NewOrOldColumn(column, NewOrOld.OLD)
+  }
 }

@@ -110,9 +110,6 @@ dependencies {
   testImplementation(TestingLib.EXPECT)
   testImplementation(TestingLib.ROBOLECTRIC)
   testImplementation(TestingLib.COROUTINE_TEST)
-  testImplementation(ThirdParty.EALVALOG)
-  testImplementation(ThirdParty.EALVALOG_CORE)
-  testImplementation(ThirdParty.EALVALOG_ANDROID)
 
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER) {
     exclude("junit", "junit")
@@ -123,7 +120,4 @@ dependencies {
   androidTestImplementation(TestingLib.JUNIT)
   androidTestImplementation(TestingLib.EXPECT)
   androidTestImplementation(TestingLib.COROUTINE_TEST)
-  androidTestImplementation(ThirdParty.EALVALOG)
-  androidTestImplementation(ThirdParty.EALVALOG_CORE)
-  androidTestImplementation(ThirdParty.EALVALOG_ANDROID)
 }

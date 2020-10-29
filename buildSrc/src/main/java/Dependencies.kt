@@ -29,7 +29,7 @@ object Versions {
   const val CORE_KTX = "1.3.2"
   const val ESPRESSO_CORE = "3.2.0"
   const val JUNIT = "4.13"
-  const val EALVALOG = "0.5.1-SNAPSHOT"
+  const val EALVALOG = "0.5.4"
   const val ROBOLECTRIC = "4.4"
   const val EXPECT = "1.0.1"
   const val FASTUTIL = "7.2.1"

@@ -27,6 +27,7 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.test.shared.CoroutineRule
+import com.nhaarman.expect.expect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.hamcrest.CoreMatchers.isA
 import org.junit.Before
@@ -68,8 +69,32 @@ class TriggerTests {
   }
 
   @Test
+  fun `test BeforeAfter value`() {
+    expect(Trigger.BeforeAfter.BEFORE.value).toBe(" BEFORE")
+    expect(Trigger.BeforeAfter.AFTER.value).toBe(" AFTER")
+  }
+
+  @Test
+  fun `test Trigger Event accepts new or old`() {
+    expect(Event.INSERT.value).toBe(" INSERT")
+    expect(Event.INSERT.acceptsNewColumnRef).toBe(true)
+    expect(Event.INSERT.acceptsOldColumnRef).toBe(false)
+    expect(Event.UPDATE.value).toBe(" UPDATE")
+    expect(Event.UPDATE.acceptsNewColumnRef).toBe(true)
+    expect(Event.UPDATE.acceptsOldColumnRef).toBe(true)
+    expect(Event.DELETE.value).toBe(" DELETE")
+    expect(Event.DELETE.acceptsNewColumnRef).toBe(false)
+    expect(Event.DELETE.acceptsOldColumnRef).toBe(true)
+  }
+
+  @Test
   fun `test create trigger`() = coroutineRule.runBlockingTest {
     Common.testCreateTrigger()
+  }
+
+  @Test
+  fun `test drop trigger`() = coroutineRule.runBlockingTest {
+    Common.testDropTrigger()
   }
 
   @Test
@@ -91,7 +116,7 @@ class TriggerTests {
   fun `test insert trigger invalid uri causes abort`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
     thrown.expectCause(isA(SQLiteConstraintException::class.java))
-    Common.testInsertTriggerInvalidUriCausesAbor(appCtx, coroutineRule.testDispatcher)
+    Common.testInsertTriggerInvalidUriCausesAbort(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
@@ -102,5 +127,99 @@ class TriggerTests {
   @Test
   fun `test delete media and triggers cascade`() = coroutineRule.runBlockingTest {
     Common.testDeleteMediaAndTriggersCascade(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
+  fun `test new column for delete event is invalid`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testNewColumnForDeleteEventIsInvalid()
+  }
+
+  @Test
+  fun `test old column for insert event is invalid`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testOldColumnForInsertEventIsInvalid()
+  }
+
+  @Test
+  fun `test new rejects column with wrong table`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testNewRejectsColumnWithWrongTable()
+  }
+
+  @Test
+  fun `test old rejects column with wrong table`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testOldRejectsColumnWithWrongTable()
+  }
+
+  @Test
+  fun `test insert on insert event`() {
+    Common.testInsertOnInsertEvent()
+  }
+
+  @Test
+  fun `test update on insert trigger`() {
+    Common.testUpdateOnInsertTrigger()
+  }
+
+  @Test
+  fun `test identity of old and new column`() {
+    Common.testOldAndNewColumnIdentity()
+  }
+
+  @Test
+  fun `test temp trigger`() {
+    Common.testTempTrigger()
+  }
+
+  @Test
+  fun `test update trigger when condition`() {
+    Common.testUpdateTriggerWhenCondition()
+  }
+
+  @Test
+  fun `test insert trigger when condition`() {
+    Common.testInsertTriggerWhenCondition()
+  }
+
+  @Test
+  fun `test delete trigger when condition`() {
+    Common.testDeleteTriggerWhenCondition()
+  }
+
+  @Test
+  fun `test trigger condition new rejects column with wrong table`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testTriggerConditionNewRejectsColumnWithWrongTable()
+  }
+
+  @Test
+  fun `test trigger condition old rejects column with wrong table`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testTriggerConditionOldRejectsColumnWithWrongTable()
+  }
+
+  @Test
+  fun `test when condition new column for delete event is invalid`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testWhenConditionNewColumnForDeleteEventIsInvalid()
+  }
+
+  @Test
+  fun `test when condition old column for insert event is invalid`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testWhenConditionOldColumnForInsertEventIsInvalid()
+  }
+
+  @Test
+  fun `test binding arg in trigger rejected`() {
+    thrown.expect(IllegalStateException::class.java)
+    Common.testBindingArgInTriggerRejected()
+  }
+
+  @Test
+  fun `test update columns trigger`() {
+    Common.testUpdateColumnsTrigger()
   }
 }
