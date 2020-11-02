@@ -46,7 +46,7 @@ public class Alias<out T : Table>(private val delegate: T, private val alias: St
     append(tableNameWithAlias)
   }
 
-  private fun <T : Any?> Column<T>.clone(): Column<T> = Column(this@Alias, name, persistentType)
+  private fun <T : Any?> Column<T>.clone(): Column<T> = Column(name, this@Alias, persistentType)
 
   @Suppress("unused", "UNCHECKED_CAST")
   public fun <R> originalColumn(column: Column<R>): Column<R>? =

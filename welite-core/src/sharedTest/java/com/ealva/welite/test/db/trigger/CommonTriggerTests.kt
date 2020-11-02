@@ -525,7 +525,7 @@ public object CommonTriggerTests {
     MediaFileTable.insertTrigger(
       name = "InsertMediaTrigger",
       beforeAfter = Trigger.BeforeAfter.BEFORE,
-      triggerCondition = { _ ->
+      triggerCondition = {
         old(ArtistTable.id) neq 1
       }
     ) {
