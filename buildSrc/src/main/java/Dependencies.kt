@@ -34,9 +34,9 @@ object Versions {
   const val ROBOLECTRIC = "4.4"
   const val EXPECT = "1.0.1"
   const val FASTUTIL = "7.2.1"
-  const val COROUTINES = "1.3.9"
-  const val COROUTINES_TEST = "1.3.9"
-  const val KOIN = "2.1.6"
+  const val COROUTINES = "1.4.1"
+  const val COROUTINES_TEST = "1.4.1"
+  const val KOIN = "2.2.1"
   const val DESUGAR = "1.0.10"
 }
 
