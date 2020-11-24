@@ -42,13 +42,14 @@ public annotation class WeLiteMarker
 @WeLiteMarker
 public interface ColumnConstraints<T> {
   public fun primaryKey(): ColumnConstraints<T>
-  public fun unique(): ColumnConstraints<T>
   public fun asc(): ColumnConstraints<T>
   public fun desc(): ColumnConstraints<T>
+  public fun onConflict(onConflict: OnConflict): ColumnConstraints<T>
   public fun autoIncrement(): ColumnConstraints<T>
+  public fun unique(): ColumnConstraints<T>
+  public fun check(name: String = "", op: (Column<T>) -> Op<Boolean>): ColumnConstraints<T>
   public fun default(defaultValue: T): ColumnConstraints<T>
   public fun defaultExpression(defaultValue: Expression<T>): ColumnConstraints<T>
-  public fun onConflict(onConflict: OnConflict): ColumnConstraints<T>
   public fun collateBinary(): ColumnConstraints<T>
   public fun collateNoCase(): ColumnConstraints<T>
   public fun collateRTrim(): ColumnConstraints<T>
@@ -61,8 +62,6 @@ public interface ColumnConstraints<T> {
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     fkName: String? = null
   ): ColumnConstraints<T>
-
-  public fun check(name: String = "", op: (Column<T>) -> Op<Boolean>): ColumnConstraints<T>
 }
 
 private fun List<ColumnConstraint>.joinAsString(): String = joinToString(separator = ",")

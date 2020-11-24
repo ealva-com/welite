@@ -46,12 +46,12 @@ public object WeLiteLog {
   /**
    * Loggers in WeLite use this [Marker] so all WeLite logging can be filtered.
    */
-  public val marker: Marker = Markers[markerName]
+  public val marker: Marker by lazy { Markers[markerName] }
 
   /**
    * Clients can use this [MarkerFilter] in a logger handler to direct associated logging where
    * desired (file, Android log, ...). See [eAlvaLog](https://github.com/ealva-com/ealvalog) for
    * information on configuring logging.
    */
-  public val markerFilter: MarkerFilter = MarkerFilter(marker)
+  public val markerFilter: MarkerFilter by lazy { MarkerFilter(marker) }
 }

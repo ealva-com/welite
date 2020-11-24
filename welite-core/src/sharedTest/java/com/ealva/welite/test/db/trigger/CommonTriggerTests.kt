@@ -23,6 +23,7 @@ import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.case
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.longLiteral
+import com.ealva.welite.db.expr.neq
 import com.ealva.welite.db.expr.notLike
 import com.ealva.welite.db.expr.raiseAbort
 import com.ealva.welite.db.table.OnConflict
@@ -32,7 +33,10 @@ import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.selectCount
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.trigger.Trigger
-import com.ealva.welite.db.trigger.trigger
+import com.ealva.welite.db.trigger.deleteTrigger
+import com.ealva.welite.db.trigger.insertTrigger
+import com.ealva.welite.db.trigger.updateTrigger
+import com.ealva.welite.db.type.asIdentity
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
 import com.ealva.welite.test.shared.ArtistTable
@@ -98,6 +102,15 @@ public object CommonTriggerTests {
           """"MediaFile"."AlbumId" = OLD.AlbumId) = 0; DELETE FROM "Artist" WHERE (SELECT """ +
           """COUNT(*) FROM "MediaFile" WHERE "MediaFile"."ArtistId" = OLD.ArtistId) = 0; END;"""
       )
+    }
+  }
+
+  public fun testDropTrigger() {
+    SqlExecutorSpy().let { spy ->
+      DeleteArtistTrigger.drop(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe("DROP TRIGGER IF EXISTS \"DeleteArtistTrigger\"")
     }
   }
 
@@ -178,7 +191,7 @@ public object CommonTriggerTests {
     }
   }
 
-  public suspend fun testInsertTriggerInvalidUriCausesAbor(
+  public suspend fun testInsertTriggerInvalidUriCausesAbort(
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
@@ -264,6 +277,302 @@ public object CommonTriggerTests {
     }
   }
 
+  public fun testNewColumnForDeleteEventIsInvalid() {
+    MediaFileTable.deleteTrigger(
+      name = "BadTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+    ) {
+      select(
+        case().caseWhen(
+          new(MediaFileTable.mediaUri) notLike "file:%", // will throw
+          raiseAbort("Abort, not URI")
+        )
+      ).where(null)
+    }
+  }
+
+  public fun testNewRejectsColumnWithWrongTable() {
+    MediaFileTable.updateTrigger(
+      name = "BadTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+    ) {
+      new(AlbumTable.id)
+    }
+  }
+
+  public fun testOldRejectsColumnWithWrongTable() {
+    MediaFileTable.updateTrigger(
+      name = "BadTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+    ) {
+      old(AlbumTable.id)
+    }
+  }
+
+  public fun testOldColumnForInsertEventIsInvalid() {
+    MediaFileTable.insertTrigger(
+      name = "BadTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+    ) {
+      select(
+        case().caseWhen(
+          old(MediaFileTable.mediaUri) notLike "file:%", // will throw
+          raiseAbort("Abort, not URI")
+        )
+      ).where(null)
+    }
+  }
+
+  public fun testInsertOnInsertEvent() {
+    val trigger = MediaFileTable.insertTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+    SqlExecutorSpy().let { spy ->
+      trigger.create(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe(
+        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile" BEGIN""" +
+          """ INSERT INTO "Album" ("AlbumName") VALUES ('Some Album'); END;"""
+      )
+    }
+  }
+
+  public fun testUpdateOnInsertTrigger() {
+    val trigger = MediaFileTable.insertTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+    ) {
+      AlbumTable.update {
+        it[albumName] = "Some Album"
+      }.where { new(MediaFileTable.mediaUri) notLike "file:%" }
+    }
+    SqlExecutorSpy().let { spy ->
+      trigger.create(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe(
+        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile" BEGIN""" +
+          """ UPDATE "Album" SET "AlbumName"='Some Album' WHERE NEW.MediaUri NOT LIKE 'file:%';""" +
+          """ END;"""
+      )
+    }
+  }
+
+  public fun testOldAndNewColumnIdentity() {
+    MediaFileTable.updateTrigger(
+      name = "BadTrigger",
+      beforeAfter = Trigger.BeforeAfter.AFTER,
+    ) {
+      // statement is required, doesn't matter what for this test
+      select(
+        case().caseWhen(
+          new(MediaFileTable.mediaUri) notLike "file:%", // must start with "file:"
+          raiseAbort("Abort, not URI")
+        )
+      ).where(null)
+
+      val oldCol = old(MediaFileTable.mediaUri)
+      val newCol = new(MediaFileTable.albumId)
+      expect(oldCol.identity()).toBe("OLD.MediaUri".asIdentity(forceQuote = true))
+      expect(newCol.identity()).toBe("NEW.AlbumId".asIdentity(forceQuote = true))
+    }
+  }
+
+  public fun testTempTrigger() {
+    val trigger = MediaFileTable.insertTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      temporary = true,
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+    SqlExecutorSpy().let { spy ->
+      trigger.create(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe(
+        """CREATE TEMP TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile"""" +
+          """ BEGIN INSERT INTO "Album" ("AlbumName") VALUES ('Some Album'); END;"""
+      )
+    }
+  }
+
+  public fun testUpdateTriggerWhenCondition() {
+    val trigger = MediaFileTable.updateTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      temporary = true,
+      triggerCondition = { table ->
+        old(table.id) neq new(table.id)
+      }
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+    SqlExecutorSpy().let { spy ->
+      trigger.create(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe(
+        """CREATE TEMP TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE UPDATE ON""" +
+          """ "MediaFile" WHEN OLD._id <> NEW._id BEGIN INSERT INTO "Album" ("AlbumName")""" +
+          """ VALUES ('Some Album'); END;"""
+      )
+    }
+  }
+
+  public fun testInsertTriggerWhenCondition() {
+    val trigger = MediaFileTable.insertTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      triggerCondition = { table ->
+        new(table.id) neq 1
+      }
+    ) {
+      select(
+        case().caseWhen(
+          new(MediaFileTable.mediaUri) notLike "file:%", // must start with "file:"
+          raiseAbort("Abort, not URI")
+        )
+      ).where(null)
+    }
+    SqlExecutorSpy().let { spy ->
+      trigger.create(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe(
+        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE""" +
+          """ INSERT ON "MediaFile" WHEN NEW._id <> 1 BEGIN SELECT CASE WHEN NEW.MediaUri NOT""" +
+          """ LIKE 'file:%' THEN RAISE(ABORT, 'Abort, not URI') END; END;"""
+      )
+    }
+  }
+
+  public fun testDeleteTriggerWhenCondition() {
+    val trigger = AlbumTable.deleteTrigger(
+      name = "DeleteAlbumTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      triggerCondition = { table ->
+        old(table.id) neq 1
+      }
+    ) {
+      ArtistAlbumTable.delete { ArtistAlbumTable.albumId eq old(AlbumTable.id) }
+    }
+    SqlExecutorSpy().let { spy ->
+      trigger.create(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe(
+        """CREATE TRIGGER IF NOT EXISTS "DeleteAlbumTrigger" BEFORE DELETE ON "Album" WHEN""" +
+          """ OLD._id <> 1 BEGIN DELETE FROM "ArtistAlbum" WHERE "ArtistAlbum"."AlbumId" =""" +
+          """ OLD._id; END;"""
+      )
+    }
+  }
+
+  public fun testTriggerConditionNewRejectsColumnWithWrongTable() {
+    MediaFileTable.updateTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      triggerCondition = { table ->
+        old(table.id) neq new(ArtistTable.id)
+      }
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+  }
+
+  public fun testTriggerConditionOldRejectsColumnWithWrongTable() {
+    MediaFileTable.updateTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      triggerCondition = { table ->
+        old(ArtistTable.id) neq new(table.id)
+      }
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+  }
+
+  public fun testWhenConditionNewColumnForDeleteEventIsInvalid() {
+    MediaFileTable.deleteTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      triggerCondition = { table ->
+        new(table.id) neq 1
+      }
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+  }
+
+  public fun testWhenConditionOldColumnForInsertEventIsInvalid() {
+    MediaFileTable.insertTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      triggerCondition = {
+        old(ArtistTable.id) neq 1
+      }
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+  }
+
+  public fun testBindingArgInTriggerRejected() {
+    val trigger = MediaFileTable.updateTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      temporary = true,
+      triggerCondition = { table ->
+        old(table.id) neq new(table.id)
+      }
+    ) {
+      AlbumTable.insert {
+        it[albumName].bindArg()
+      }
+    }
+    trigger.create(SqlExecutorSpy())
+  }
+
+  public fun testUpdateColumnsTrigger() {
+    val trigger = MediaFileTable.updateTrigger(
+      name = "InsertMediaTrigger",
+      beforeAfter = Trigger.BeforeAfter.BEFORE,
+      updateColumns = listOf(MediaFileTable.mediaTitle, MediaFileTable.mediaUri)
+    ) {
+      AlbumTable.insert {
+        it[albumName] = "Some Album"
+      }
+    }
+    SqlExecutorSpy().let { spy ->
+      trigger.create(spy)
+      val execSqlList = spy.execSqlList
+      expect(execSqlList).toHaveSize(1)
+      expect(execSqlList[0]).toBe(
+        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE UPDATE OF "MediaTitle",""" +
+          """ "MediaUri" ON "MediaFile" BEGIN INSERT INTO "Album" ("AlbumName") VALUES""" +
+          """ ('Some Album'); END;"""
+      )
+    }
+  }
+
   private fun Transaction.insertData(
     artist: String,
     album: String,
@@ -298,26 +607,23 @@ public object CommonTriggerTests {
   }
 }
 
-public val DeleteArtistTrigger: Trigger<ArtistTable> = ArtistTable.trigger(
+public val DeleteArtistTrigger: Trigger<ArtistTable> = ArtistTable.deleteTrigger(
   name = "DeleteArtistTrigger",
   beforeAfter = Trigger.BeforeAfter.BEFORE,
-  event = Trigger.Event.DELETE
 ) {
   ArtistAlbumTable.delete { ArtistAlbumTable.artistId eq old(ArtistTable.id) }
 }
 
-public val DeleteAlbumTrigger: Trigger<AlbumTable> = AlbumTable.trigger(
+public val DeleteAlbumTrigger: Trigger<AlbumTable> = AlbumTable.deleteTrigger(
   name = "DeleteAlbumTrigger",
   beforeAfter = Trigger.BeforeAfter.BEFORE,
-  event = Trigger.Event.DELETE
 ) {
   ArtistAlbumTable.delete { ArtistAlbumTable.albumId eq old(AlbumTable.id) }
 }
 
-public val InsertMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.trigger(
+public val InsertMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.insertTrigger(
   name = "InsertMediaTrigger",
   beforeAfter = Trigger.BeforeAfter.BEFORE,
-  event = Trigger.Event.INSERT
 ) {
   select(
     case().caseWhen(
@@ -327,10 +633,9 @@ public val InsertMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.trigger(
   ).where(null)
 }
 
-public val DeleteMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.trigger(
+public val DeleteMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.deleteTrigger(
   name = "DeleteMediaTrigger",
   beforeAfter = Trigger.BeforeAfter.AFTER,
-  event = Trigger.Event.DELETE
 ) {
   val mediaAlbumCount: Expression<Long> =
     (MediaFileTable.selectCount { MediaFileTable.albumId eq old(MediaFileTable.albumId) })

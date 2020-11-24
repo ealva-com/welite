@@ -20,15 +20,11 @@ import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
 
 public interface SqlTypeExpression<T> : Expression<T> {
-  public val sqlType: String
   public val persistentType: PersistentType<T>
   public fun bind(bindable: Bindable, index: Int, value: T?)
 }
 
 public abstract class BaseSqlTypeExpression<T> : BaseExpression<T>(), SqlTypeExpression<T> {
-  override val sqlType: String
-    get() = persistentType.sqlType
-
   override fun bind(bindable: Bindable, index: Int, value: T?) {
     persistentType.bind(bindable, index, value)
   }

@@ -56,8 +56,8 @@ public interface InsertStatement : Statement {
         list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
           appendName(columnValue)
         }
-        append(" VALUES ")
-        list.appendTo(this, prefix = " (", postfix = ") ") { columnValue ->
+        append("VALUES")
+        list.appendTo(this, prefix = " (", postfix = ")") { columnValue ->
           appendValue(columnValue)
         }
       }

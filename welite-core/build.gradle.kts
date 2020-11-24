@@ -19,13 +19,8 @@ version = WeLiteCoreCoordinates.LIBRARY_VERSION
 plugins {
   id("com.android.library")
   kotlin("android")
-  id("kotlin-android-extensions")
   id("org.jetbrains.dokka")
   id("com.vanniktech.maven.publish")
-}
-
-kotlin {
-  explicitApi()
 }
 
 android {
@@ -83,10 +78,12 @@ android {
     jvmTarget = "1.8"
     suppressWarnings = false
     verbose = true
-    freeCompilerArgs = freeCompilerArgs + "-XXLanguage:+InlineClasses"
-    freeCompilerArgs = freeCompilerArgs + "-Xinline-classes"
-    freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.RequiresOptIn"
-    freeCompilerArgs = freeCompilerArgs + "-Xexplicit-api=warning"
+    freeCompilerArgs = listOf(
+      "-XXLanguage:+InlineClasses",
+      "-Xinline-classes",
+      "-Xopt-in=kotlin.RequiresOptIn",
+      "-Xexplicit-api=warning"
+    )
   }
 }
 
@@ -110,9 +107,6 @@ dependencies {
   testImplementation(TestingLib.EXPECT)
   testImplementation(TestingLib.ROBOLECTRIC)
   testImplementation(TestingLib.COROUTINE_TEST)
-  testImplementation(ThirdParty.EALVALOG)
-  testImplementation(ThirdParty.EALVALOG_CORE)
-  testImplementation(ThirdParty.EALVALOG_ANDROID)
 
   androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER) {
     exclude("junit", "junit")
@@ -123,7 +117,4 @@ dependencies {
   androidTestImplementation(TestingLib.JUNIT)
   androidTestImplementation(TestingLib.EXPECT)
   androidTestImplementation(TestingLib.COROUTINE_TEST)
-  androidTestImplementation(ThirdParty.EALVALOG)
-  androidTestImplementation(ThirdParty.EALVALOG_CORE)
-  androidTestImplementation(ThirdParty.EALVALOG_ANDROID)
 }

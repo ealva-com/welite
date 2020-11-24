@@ -76,7 +76,7 @@ class TriggerTests {
   fun testInsertTriggerInvalidUriCausesAbort() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
     thrown.expectCause(CoreMatchers.isA(SQLiteConstraintException::class.java))
-    Common.testInsertTriggerInvalidUriCausesAbor(appCtx, coroutineRule.testDispatcher)
+    Common.testInsertTriggerInvalidUriCausesAbort(appCtx, coroutineRule.testDispatcher)
   }
 
   @Test
