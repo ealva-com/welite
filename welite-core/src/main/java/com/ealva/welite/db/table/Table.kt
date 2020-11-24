@@ -88,6 +88,8 @@ public abstract class Table(
 
   override val identity: Identity by lazy { tableName.asIdentity() }
 
+  override fun toString(): String = identity.unquoted
+
   override val masterType: MasterType = MasterType.Table
 
   private val _columns = mutableListOf<Column<*>>()

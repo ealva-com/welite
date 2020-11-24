@@ -90,7 +90,7 @@ private class CursorWrapperImpl(private val cursor: ACursor, columns: ExprList) 
   }
 
   private fun <T> unexpectedNullMessage(expression: SqlTypeExpression<T>) =
-    "Unexpected NULL reading column=${expression.name()} of expected type ${expression.sqlType}"
+    "Unexpected NULL reading column=${expression.name()}"
 
   private fun <T> SqlTypeExpression<T>.name() = cursor.getColumnName(index())
 }

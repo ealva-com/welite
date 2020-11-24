@@ -90,8 +90,6 @@ private class ViewColumnImpl<T>(
 ) : ViewColumn<T> {
   override val persistentType: PersistentType<T>
     get() = originalColumn.persistentType
-  override val sqlType: String
-    get() = persistentType.sqlType
 
   override fun identity(): Identity {
     return name.asIdentity()
@@ -134,7 +132,7 @@ private class ViewColumnImpl<T>(
     set(@Suppress("UNUSED_PARAMETER") value) {}
 
   override fun makeAlias(tableAlias: String?): Column<T> =
-    Column(Alias(table, tableAlias ?: "${view.viewName}_$name"), name, persistentType)
+    Column(name, Alias(table, tableAlias ?: "${view.viewName}_$name"), persistentType)
 
   override val nullable: Boolean
     get() = originalColumn.nullable
@@ -173,7 +171,7 @@ private val LOG by lazyLogger(View::class, WeLiteLog.marker)
  * requested column name. Versions >= Build.VERSION_CODES.N use the column-name list syntax of the
  * CREATE VIEW statement and will use the column name parameter if it's not blank.
  */
-public abstract class View(
+public abstract class View private constructor(
   name: String = "",
   private val querySeed: QuerySeed
 ) : ColumnSet, Creatable, Comparable<View> {

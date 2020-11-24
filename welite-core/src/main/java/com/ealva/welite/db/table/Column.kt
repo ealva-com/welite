@@ -100,13 +100,13 @@ public interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
      * Create a column implementation using syntax similar to a constructor
      */
     public operator fun <T> invoke(
-      table: Table,
       name: String,
+      table: Table,
       persistentType: PersistentType<T>,
       initialConstraints: List<ColumnConstraint> = emptyList(),
       addTo: (Column<*>) -> Unit = {},
       block: ColumnConstraints<T>.() -> Unit = {}
-    ): Column<T> = ColumnImpl(table, name, persistentType, initialConstraints).apply {
+    ): Column<T> = ColumnImpl(name, table, persistentType, initialConstraints).apply {
       addTo(this)
       block()
     }
@@ -114,8 +114,8 @@ public interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
 }
 
 private class ColumnImpl<T>(
-  override val table: Table,
   override val name: String,
+  override val table: Table,
   override val persistentType: PersistentType<T>,
   initialConstraints: List<ColumnConstraint>
 ) : BaseSqlTypeExpression<T>(), Column<T>, ColumnConstraints<T> {
@@ -127,37 +127,28 @@ private class ColumnImpl<T>(
   override val tableIdentity: Identity
     get() = table.identity
 
-  override val definesPrimaryKey: Boolean
-    get() = constraintList.hasPrimaryKey()
-
   override val isAutoInc: Boolean
     get() = constraintList.hasAutoInc()
 
-  private fun addConstraint(constraint: ColumnConstraint) = constraintList.add(constraint)
-
-  override var foreignKey: ForeignKeyConstraint? = null
+  override var dbDefaultValue: Expression<T>? = null
 
   override val refersTo: Column<*>?
     get() = foreignKey?.child
 
-  override fun identity(): Identity = Identity.make(name)
-
   override var indexInPK: Int? = null
 
-  override var dbDefaultValue: Expression<T>? = null
+  override var foreignKey: ForeignKeyConstraint? = null
 
-  @ExperimentalUnsignedTypes
-  override fun default(defaultValue: T) = apply { dbDefaultValue = literal(defaultValue) }
+  override fun identity(): Identity = Identity.make(name)
 
-  override fun defaultExpression(defaultValue: Expression<T>) = apply {
-    dbDefaultValue = defaultValue
-  }
+  override fun makeAlias(tableAlias: String?): Column<T> =
+    Column(name, Alias(table, tableAlias ?: "${table.tableName}_$name"), persistentType)
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    append(table.identity.value)
-    append('.')
-    append(identity().value)
-  }
+  override val nullable: Boolean
+    get() = persistentType.nullable || constraintList.isRowId(persistentType.isIntegerType)
+
+  override val definesPrimaryKey: Boolean
+    get() = constraintList.hasPrimaryKey()
 
   override fun isOneColumnPK(): Boolean = table.primaryKey?.columns?.singleOrNull() == this
 
@@ -174,6 +165,93 @@ private class ColumnImpl<T>(
       append(" DEFAULT ")
       append(defaultValue.asDefaultValue())
     }
+  }
+
+  override fun markPrimaryKey() {
+    val columnDefiningPrimaryKey = table.columnDefiningPrimaryKey
+    check(columnDefiningPrimaryKey == null) {
+      "Primary key already defined for column ${columnDefiningPrimaryKey?.name}"
+    }
+    check(indexInPK == null) { "$this already part of primary key" }
+    indexInPK = table.columns.count { it.indexInPK != null } + 1
+  }
+
+  override fun asDefaultValue(): String = buildStr {
+    append("(")
+    append(tableIdentity.unquoted)
+    append('.')
+    append(name)
+    append(")")
+  }
+
+  override fun primaryKey() = apply { addConstraint(PrimaryKeyConstraint) }
+
+  override fun asc() = apply { addConstraint(AscConstraint) }
+
+  override fun desc() = apply { addConstraint(DescConstraint) }
+
+  override fun onConflict(onConflict: OnConflict) = apply {
+    addConstraint(ConflictConstraint(onConflict))
+  }
+
+  override fun autoIncrement() = apply {
+    if (!constraintList.hasPrimaryKey()) {
+      primaryKey()
+    }
+    addConstraint(AutoIncrementConstraint)
+  }
+
+  override fun unique() = apply { addConstraint(UniqueConstraint) }
+
+  @ExperimentalUnsignedTypes
+  override fun check(name: String, op: (Column<T>) -> Op<Boolean>) = apply {
+    table.check(name) { op(this@ColumnImpl) }
+  }
+
+  @ExperimentalUnsignedTypes
+  override fun default(defaultValue: T) = apply { dbDefaultValue = literal(defaultValue) }
+
+  override fun defaultExpression(defaultValue: Expression<T>) = apply {
+    dbDefaultValue = defaultValue
+  }
+
+  override fun collateBinary() = collate(CollateBinary)
+  override fun collateNoCase() = collate(CollateNoCase)
+  override fun collateRTrim() = collate(CollateRTrim)
+  private fun collate(collate: Collate) = apply { addConstraint(CollateConstraint(collate)) }
+  override fun collate(name: String) = apply { addConstraint(CollateConstraint(CollateUser(name))) }
+
+  override fun index(customIndexName: String?) = apply {
+    customIndexName?.let { table.index(customIndexName, this) } ?: table.index(this)
+  }
+
+  override fun uniqueIndex(customIndexName: String?) = apply {
+    customIndexName?.let { table.uniqueIndex(customIndexName, this) } ?: table.uniqueIndex(this)
+  }
+
+  override fun <S : T> references(
+    ref: Column<S>,
+    onDelete: ForeignKeyAction,
+    onUpdate: ForeignKeyAction,
+    fkName: String?
+  ) = apply {
+    foreignKey = ForeignKeyConstraint(
+      parentTable = tableIdentity,
+      parent = this,
+      childTable = ref.tableIdentity,
+      child = ref,
+      onUpdate = onUpdate,
+      onDelete = onDelete,
+      name = fkName
+    )
+  }
+
+  private fun addConstraint(constraint: ColumnConstraint) = constraintList.add(constraint)
+
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(table.identity.value)
+    append('.')
+    append(identity().value)
   }
 
   override fun compareTo(other: Column<*>): Int = columnComparator.compare(this, other)
@@ -194,84 +272,6 @@ private class ColumnImpl<T>(
     append(tableIdentity.unquoted)
     append('.')
     append(name)
-  }
-
-  override fun asDefaultValue(): String = buildStr {
-    append("(")
-    append(tableIdentity.unquoted)
-    append('.')
-    append(name)
-    append(")")
-  }
-
-  override val nullable: Boolean
-    get() = persistentType.nullable || constraintList.isRowId(persistentType.isIntegerType)
-
-  override fun primaryKey() = apply { addConstraint(PrimaryKeyConstraint) }
-
-  override fun unique() = apply { addConstraint(UniqueConstraint) }
-
-  override fun asc() = apply { addConstraint(AscConstraint) }
-
-  override fun desc() = apply { addConstraint(DescConstraint) }
-
-  override fun autoIncrement() = apply {
-    if (!constraintList.hasPrimaryKey()) {
-      primaryKey()
-    }
-    addConstraint(AutoIncrementConstraint)
-  }
-
-  override fun onConflict(onConflict: OnConflict) = apply {
-    addConstraint(ConflictConstraint(onConflict))
-  }
-
-  override fun collateBinary() = collate(CollateBinary)
-  override fun collateNoCase() = collate(CollateNoCase)
-  override fun collateRTrim() = collate(CollateRTrim)
-  private fun collate(collate: Collate) = apply { addConstraint(CollateConstraint(collate)) }
-  override fun collate(name: String) = apply { addConstraint(CollateConstraint(CollateUser(name))) }
-
-  @ExperimentalUnsignedTypes
-  override fun check(name: String, op: (Column<T>) -> Op<Boolean>) = apply {
-    table.check(name) { op(this@ColumnImpl) }
-  }
-
-  override fun <S : T> references(
-    ref: Column<S>,
-    onDelete: ForeignKeyAction,
-    onUpdate: ForeignKeyAction,
-    fkName: String?
-  ) = apply {
-    foreignKey = ForeignKeyConstraint(
-      parentTable = tableIdentity,
-      parent = this,
-      childTable = ref.tableIdentity,
-      child = ref,
-      onUpdate = onUpdate,
-      onDelete = onDelete,
-      name = fkName
-    )
-  }
-
-  override fun index(customIndexName: String?) = apply {
-    customIndexName?.let { table.index(customIndexName, this) } ?: table.index(this)
-  }
-
-  override fun uniqueIndex(customIndexName: String?) = apply {
-    customIndexName?.let { table.uniqueIndex(customIndexName, this) } ?: table.uniqueIndex(this)
-  }
-
-  override fun makeAlias(tableAlias: String?): Column<T> =
-    Column(Alias(table, tableAlias ?: "${table.tableName}_$name"), name, persistentType)
-
-  override fun markPrimaryKey() {
-    val columnDefiningPrimaryKey = table.columnDefiningPrimaryKey
-    check(columnDefiningPrimaryKey == null) {
-      "Primary key already defined for column ${columnDefiningPrimaryKey?.name}"
-    }
-    check(indexInPK == null) { "$this already part of primary key" }
-    indexInPK = table.columns.count { it.indexInPK != null } + 1
   }
 }
 
