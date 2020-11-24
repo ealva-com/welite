@@ -21,6 +21,7 @@ object Sdk {
 }
 
 object Versions {
+  const val KOTLIN = "1.4.20"
   const val ANDROIDX_TEST_EXT = "1.1.2"
   const val ANDROIDX_TEST = "1.3.0"
   const val APPCOMPAT = "1.2.0"
@@ -40,10 +41,12 @@ object Versions {
 }
 
 object BuildPluginsVersion {
-  const val AGP = "4.0.1"
+  const val AGP = "4.2.0-alpha16"
   const val DETEKT = "1.14.1"
-  const val KOTLIN = "1.4.10"
-  const val VERSIONS_PLUGIN = "0.33.0"
+  const val KOTLIN = "1.4.20"
+  const val VERSIONS = "0.33.0"
+  const val DOKKA = "1.4.10.2"
+  const val VANNIKTECH_PUBLISH = "0.13.0"
 }
 
 object SupportLibs {

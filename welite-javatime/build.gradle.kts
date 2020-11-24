@@ -19,7 +19,6 @@ version = WeLiteJavaTimeCoordinates.LIBRARY_VERSION
 plugins {
   id("com.android.library")
   kotlin("android")
-  id("kotlin-android-extensions")
   id("org.jetbrains.dokka")
   id("com.vanniktech.maven.publish")
 }
@@ -39,14 +38,14 @@ android {
   }
 
   compileOptions {
-    coreLibraryDesugaringEnabled = true
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
 
   buildTypes {
     getByName("debug") {
-      isTestCoverageEnabled = true
+      isTestCoverageEnabled = false
     }
 
     getByName("release") {
@@ -74,10 +73,12 @@ android {
     jvmTarget = "1.8"
     suppressWarnings = false
     verbose = true
-    freeCompilerArgs = freeCompilerArgs + "-XXLanguage:+InlineClasses"
-    freeCompilerArgs = freeCompilerArgs + "-Xinline-classes"
-    freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlin.RequiresOptIn"
-    freeCompilerArgs = freeCompilerArgs + "-Xexplicit-api=warning"
+    freeCompilerArgs = listOf(
+      "-XXLanguage:+InlineClasses",
+      "-Xinline-classes",
+      "-Xopt-in=kotlin.RequiresOptIn",
+      "-Xexplicit-api=warning"
+    )
   }
 }
 

@@ -17,7 +17,6 @@
 plugins {
   id("com.android.application")
   kotlin("android")
-  id("kotlin-android-extensions")
 }
 
 android {
@@ -33,7 +32,7 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
-    coreLibraryDesugaringEnabled = true
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
@@ -46,6 +45,17 @@ android {
   lintOptions {
     isWarningsAsErrors = true
     isAbortOnError = true
+  }
+
+  kotlinOptions {
+    jvmTarget = "1.8"
+    suppressWarnings = false
+    verbose = true
+    freeCompilerArgs = listOf(
+      "-XXLanguage:+InlineClasses",
+      "-Xinline-classes",
+      "-Xopt-in=kotlin.RequiresOptIn"
+    )
   }
 }
 

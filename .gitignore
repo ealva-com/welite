@@ -12,3 +12,4 @@
 /captures
 .externalNativeBuild
 .cxx
+/welite-javatime/jacoco.exec

@@ -166,8 +166,8 @@ query {
 
 Gradle:
 ```gradle
-implementation("com.ealva:welite-core:0.1.0-0")
-implementation("com.ealva:welite-javatime:0.1.0-0")
+implementation("com.ealva:welite-core:0.2.0")
+implementation("com.ealva:welite-javatime:0.2.0")
 ```
 
 Maven:
@@ -175,14 +175,14 @@ Maven:
 <dependency>
     <groupId>com.ealva</groupId>
     <artifactId>welite-core</artifactId>
-    <version>0.1.0-0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 ```xml
 <dependency>
     <groupId>com.ealva</groupId>
     <artifactId>welite-javatime</artifactId>
-    <version>0.1.0-0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 

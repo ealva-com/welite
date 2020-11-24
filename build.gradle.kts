@@ -21,9 +21,9 @@ plugins {
   id("com.android.library") version BuildPluginsVersion.AGP apply false
   kotlin("android") version BuildPluginsVersion.KOTLIN apply false
   id("io.gitlab.arturbosch.detekt") version BuildPluginsVersion.DETEKT
-  id("com.github.ben-manes.versions") version BuildPluginsVersion.VERSIONS_PLUGIN
-  id("org.jetbrains.dokka") version BuildPluginsVersion.KOTLIN
-  id("com.vanniktech.maven.publish") version "0.13.0"
+  id("com.github.ben-manes.versions") version BuildPluginsVersion.VERSIONS
+  id("org.jetbrains.dokka") version BuildPluginsVersion.DOKKA
+  id("com.vanniktech.maven.publish") version BuildPluginsVersion.VANNIKTECH_PUBLISH
 }
 
 allprojects {
@@ -53,7 +53,7 @@ subprojects {
 
 buildscript {
   dependencies {
-    classpath("com.android.tools.build:gradle:4.0.2")
+    classpath("com.android.tools.build:gradle:4.2.0-alpha16")
   }
 }
 
