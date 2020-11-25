@@ -59,8 +59,6 @@ private const val CREATE_TEMP_TABLE = "CREATE TEMP TABLE IF NOT EXISTS "
 private const val IGNORED_CONSTRAINT_WITH_SAME_NAME =
   "A CHECK constraint with name '%s' was ignored because there is already one with that name"
 
-public typealias SetConstraints<T> = ColumnConstraints<T>.() -> Unit
-
 /**
  * Table base class typically instantiated as a singleton in the style:
  * ```
@@ -150,116 +148,163 @@ public abstract class Table(
 //    .sortedWith(compareBy({ !it.isAutoInc }, { it.indexInPK }))
 //    .takeIf { it.isNotEmpty() }
 
-  protected fun byte(name: String, block: SetConstraints<Byte> = {}): Column<Byte> =
-    registerColumn(name, BytePersistentType(), block)
+  protected fun byte(name: String, block: ColumnConstraints<Byte>.() -> Unit = {}): Column<Byte> =
+    registerColumn(name, BytePersistentType<Byte>(), block)
 
-  protected fun optByte(name: String, block: SetConstraints<Byte?> = {}): Column<Byte?> =
-    registerOptColumn(name, BytePersistentType(), block)
+  protected fun optByte(
+    name: String,
+    block: ColumnConstraints<Byte?>.() -> Unit = {}
+  ): Column<Byte?> = registerOptColumn(name, BytePersistentType<Byte?>(), block)
 
-  protected fun short(name: String, block: SetConstraints<Short> = {}): Column<Short> =
-    registerColumn(name, ShortPersistentType(), block)
+  protected fun short(
+    name: String,
+    block: ColumnConstraints<Short>.() -> Unit = {}
+  ): Column<Short> = registerColumn(name, ShortPersistentType<Short>(), block)
 
-  protected fun optShort(name: String, block: SetConstraints<Short?> = {}): Column<Short?> =
-    registerOptColumn(name, ShortPersistentType(), block)
+  protected fun optShort(
+    name: String,
+    block: ColumnConstraints<Short?>.() -> Unit = {}
+  ): Column<Short?> = registerOptColumn(name, ShortPersistentType<Short?>(), block)
 
-  protected fun integer(name: String, block: SetConstraints<Int> = {}): Column<Int> =
-    registerColumn(name, IntegerPersistentType(), block)
+  protected fun integer(name: String, block: ColumnConstraints<Int>.() -> Unit = {}): Column<Int> =
+    registerColumn(name, IntegerPersistentType<Int>(), block)
 
-  protected fun optInteger(name: String, block: SetConstraints<Int?> = {}): Column<Int?> =
-    registerOptColumn(name, IntegerPersistentType(), block)
+  protected fun optInteger(
+    name: String,
+    block: ColumnConstraints<Int?>.() -> Unit = {}
+  ): Column<Int?> = registerOptColumn(name, IntegerPersistentType<Int?>(), block)
 
-  protected fun long(name: String, block: SetConstraints<Long> = {}): Column<Long> =
-    registerColumn(name, LongPersistentType(), block)
+  protected fun long(name: String, block: ColumnConstraints<Long>.() -> Unit = {}): Column<Long> =
+    registerColumn(name, LongPersistentType<Long>(), block)
 
-  protected fun optLong(name: String, block: SetConstraints<Long?> = {}): Column<Long?> =
-    registerOptColumn(name, LongPersistentType(), block)
+  protected fun optLong(
+    name: String,
+    block: ColumnConstraints<Long?>.() -> Unit = {}
+  ): Column<Long?> = registerOptColumn(name, LongPersistentType<Long?>(), block)
 
-  protected fun float(name: String, block: SetConstraints<Float> = {}): Column<Float> =
-    registerColumn(name, FloatPersistentType(), block)
+  protected fun float(
+    name: String,
+    block: ColumnConstraints<Float>.() -> Unit = {}
+  ): Column<Float> = registerColumn(name, FloatPersistentType<Float>(), block)
 
-  protected fun optFloat(name: String, block: SetConstraints<Float?> = {}): Column<Float?> =
-    registerOptColumn(name, FloatPersistentType(), block)
+  protected fun optFloat(
+    name: String,
+    block: ColumnConstraints<Float?>.() -> Unit = {}
+  ): Column<Float?> = registerOptColumn(name, FloatPersistentType<Float?>(), block)
 
-  protected fun double(name: String, block: SetConstraints<Double> = {}): Column<Double> =
-    registerColumn(name, DoublePersistentType(), block)
+  protected fun double(
+    name: String,
+    block: ColumnConstraints<Double>.() -> Unit = {}
+  ): Column<Double> = registerColumn(name, DoublePersistentType<Double>(), block)
 
-  protected fun optDouble(name: String, block: SetConstraints<Double?> = {}): Column<Double?> =
-    registerOptColumn(name, DoublePersistentType(), block)
+  protected fun optDouble(
+    name: String,
+    block: ColumnConstraints<Double?>.() -> Unit = {}
+  ): Column<Double?> = registerOptColumn(name, DoublePersistentType<Double?>(), block)
 
-  protected fun text(name: String, block: SetConstraints<String> = {}): Column<String> =
-    registerColumn(name, StringPersistentType(), block)
+  protected fun text(
+    name: String,
+    block: ColumnConstraints<String>.() -> Unit = {}
+  ): Column<String> = registerColumn(name, StringPersistentType<String>(), block)
 
-  protected fun optText(name: String, block: SetConstraints<String?> = {}): Column<String?> =
-    registerOptColumn(name, StringPersistentType(), block)
+  protected fun optText(
+    name: String,
+    block: ColumnConstraints<String?>.() -> Unit = {}
+  ): Column<String?> = registerOptColumn(name, StringPersistentType<String?>(), block)
 
-  protected fun blob(name: String, block: SetConstraints<Blob> = {}): Column<Blob> =
-    registerColumn(name, BlobPersistentType(), block)
+  protected fun blob(name: String, block: ColumnConstraints<Blob>.() -> Unit = {}): Column<Blob> =
+    registerColumn(name, BlobPersistentType<Blob>(), block)
 
-  protected fun optBlob(name: String, block: SetConstraints<Blob?> = {}): Column<Blob?> =
-    registerOptColumn(name, BlobPersistentType(), block)
-
-  @ExperimentalUnsignedTypes
-  protected fun uByte(name: String, block: SetConstraints<UByte> = {}): Column<UByte> =
-    registerColumn(name, UBytePersistentType(), block)
-
-  @ExperimentalUnsignedTypes
-  protected fun optUByte(name: String, block: SetConstraints<UByte?> = {}): Column<UByte?> =
-    registerOptColumn(name, UBytePersistentType(), block)
-
-  @ExperimentalUnsignedTypes
-  protected fun uShort(name: String, block: SetConstraints<UShort> = {}): Column<UShort> =
-    registerColumn(name, UShortPersistentType(), block)
-
-  @ExperimentalUnsignedTypes
-  protected fun optUShort(name: String, block: SetConstraints<UShort?> = {}): Column<UShort?> =
-    registerOptColumn(name, UShortPersistentType(), block)
-
-  @ExperimentalUnsignedTypes
-  protected fun uInteger(name: String, block: SetConstraints<UInt> = {}): Column<UInt> =
-    registerColumn(name, UIntegerPersistentType(), block)
-
-  @ExperimentalUnsignedTypes
-  protected fun optUInteger(name: String, block: SetConstraints<UInt?> = {}): Column<UInt?> =
-    registerOptColumn(name, UIntegerPersistentType(), block)
-
-  @ExperimentalUnsignedTypes
-  protected fun uLong(name: String, block: SetConstraints<ULong> = {}): Column<ULong> =
-    registerColumn(name, ULongPersistentType(), block)
+  protected fun optBlob(
+    name: String,
+    block: ColumnConstraints<Blob?>.() -> Unit = {}
+  ): Column<Blob?> = registerOptColumn(name, BlobPersistentType<Blob?>(), block)
 
   @ExperimentalUnsignedTypes
-  protected fun optULong(name: String, block: SetConstraints<ULong?> = {}): Column<ULong?> =
-    registerOptColumn(name, ULongPersistentType(), block)
+  protected fun uByte(
+    name: String,
+    block: ColumnConstraints<UByte>.() -> Unit = {}
+  ): Column<UByte> = registerColumn(name, UBytePersistentType<UByte>(), block)
 
-  protected fun bool(name: String, block: SetConstraints<Boolean> = {}): Column<Boolean> =
-    registerColumn(name, BooleanPersistentType(), block)
+  @ExperimentalUnsignedTypes
+  protected fun optUByte(
+    name: String,
+    block: ColumnConstraints<UByte?>.() -> Unit = {}
+  ): Column<UByte?> = registerOptColumn(name, UBytePersistentType<UByte?>(), block)
 
-  protected fun optBool(name: String, block: SetConstraints<Boolean?> = {}): Column<Boolean?> =
-    registerOptColumn(name, BooleanPersistentType(), block)
+  @ExperimentalUnsignedTypes
+  protected fun uShort(
+    name: String,
+    block: ColumnConstraints<UShort>.() -> Unit = {}
+  ): Column<UShort> = registerColumn(name, UShortPersistentType<UShort>(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun optUShort(
+    name: String,
+    block: ColumnConstraints<UShort?>.() -> Unit = {}
+  ): Column<UShort?> = registerOptColumn(name, UShortPersistentType<UShort?>(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun uInteger(
+    name: String,
+    block: ColumnConstraints<UInt>.() -> Unit = {}
+  ): Column<UInt> = registerColumn(name, UIntegerPersistentType<UInt>(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun optUInteger(
+    name: String,
+    block: ColumnConstraints<UInt?>.() -> Unit = {}
+  ): Column<UInt?> = registerOptColumn(name, UIntegerPersistentType<UInt?>(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun uLong(
+    name: String,
+    block: ColumnConstraints<ULong>.() -> Unit = {}
+  ): Column<ULong> = registerColumn(name, ULongPersistentType<ULong>(), block)
+
+  @ExperimentalUnsignedTypes
+  protected fun optULong(
+    name: String,
+    block: ColumnConstraints<ULong?>.() -> Unit = {}
+  ): Column<ULong?> = registerOptColumn(name, ULongPersistentType<ULong?>(), block)
+
+  protected fun bool(
+    name: String,
+    block: ColumnConstraints<Boolean>.() -> Unit = {}
+  ): Column<Boolean> = registerColumn(name, BooleanPersistentType<Boolean>(), block)
+
+  protected fun optBool(
+    name: String,
+    block: ColumnConstraints<Boolean?>.() -> Unit = {}
+  ): Column<Boolean?> = registerOptColumn(name, BooleanPersistentType<Boolean?>(), block)
 
   protected fun <T : Enum<T>> enumeration(
     name: String,
     klass: KClass<T>,
-    block: SetConstraints<T> = {}
+    block: ColumnConstraints<T>.() -> Unit = {}
   ): Column<T> = registerColumn(name, EnumerationPersistentType(klass), block)
 
   protected fun <T : Enum<T>> enumByName(
     name: String,
     klass: KClass<T>,
-    block: SetConstraints<T> = {}
+    block: ColumnConstraints<T>.() -> Unit = {}
   ): Column<T> = registerColumn(name, EnumerationNamePersistentType(klass), block)
 
-  protected fun uuid(name: String, block: SetConstraints<UUID> = {}): Column<UUID> =
+  protected fun uuid(name: String, block: ColumnConstraints<UUID>.() -> Unit = {}): Column<UUID> =
     registerColumn(name, UUIDPersistentType(), block)
 
   @Suppress("unused")
-  protected fun optUuid(name: String, block: SetConstraints<UUID?> = {}): Column<UUID?> =
+  protected fun optUuid(
+    name: String,
+    block: ColumnConstraints<UUID?>.() -> Unit = {}
+  ): Column<UUID?> =
     registerOptColumn(name, UUIDPersistentType(), block)
 
   protected fun bigDecimal(
     name: String,
     scale: Int,
     roundingMode: RoundingMode = RoundingMode.HALF_UP,
-    block: SetConstraints<BigDecimal> = {}
+    block: ColumnConstraints<BigDecimal>.() -> Unit = {}
   ): Column<BigDecimal> =
     registerColumn(name, ScaledBigDecimalAsLongType(scale, roundingMode), block)
 
@@ -267,7 +312,7 @@ public abstract class Table(
     name: String,
     scale: Int,
     roundingMode: RoundingMode = RoundingMode.HALF_UP,
-    block: SetConstraints<BigDecimal?> = {}
+    block: ColumnConstraints<BigDecimal?>.() -> Unit = {}
   ): Column<BigDecimal?> =
     registerOptColumn(name, ScaledBigDecimalAsLongType(scale, roundingMode), block)
 
@@ -326,7 +371,7 @@ public abstract class Table(
   public fun <T> registerColumn(
     name: String,
     type: PersistentType<T>,
-    block: SetConstraints<T>
+    block: ColumnConstraints<T>.() -> Unit
   ): Column<T> {
     return Column(
       table = this,
@@ -341,7 +386,7 @@ public abstract class Table(
   public fun <T> registerOptColumn(
     name: String,
     type: PersistentType<T?>,
-    block: SetConstraints<T?>
+    block: ColumnConstraints<T?>.() -> Unit
   ): Column<T?> {
     return Column(
       table = this,
@@ -576,94 +621,112 @@ public abstract class Table(
   private val columnFactory by lazy { ColumnFactoryImpl(this) }
 
   private class ColumnFactoryImpl(private val table: Table) : ColumnFactory {
-    override fun byte(name: String, block: SetConstraints<Byte>): Column<Byte> =
+    override fun byte(name: String, block: ColumnConstraints<Byte>.() -> Unit): Column<Byte> =
       table.byte(name, block)
 
-    override fun optByte(name: String, block: SetConstraints<Byte?>): Column<Byte?> =
+    override fun optByte(name: String, block: ColumnConstraints<Byte?>.() -> Unit): Column<Byte?> =
       table.optByte(name, block)
 
-    override fun short(name: String, block: SetConstraints<Short>): Column<Short> =
+    override fun short(name: String, block: ColumnConstraints<Short>.() -> Unit): Column<Short> =
       table.short(name, block)
 
-    override fun optShort(name: String, block: SetConstraints<Short?>): Column<Short?> =
+    override fun optShort(
+      name: String,
+      block: ColumnConstraints<Short?>.() -> Unit
+    ): Column<Short?> =
       table.optShort(name, block)
 
-    override fun integer(name: String, block: SetConstraints<Int>): Column<Int> =
+    override fun integer(name: String, block: ColumnConstraints<Int>.() -> Unit): Column<Int> =
       table.integer(name, block)
 
-    override fun optInteger(name: String, block: SetConstraints<Int?>): Column<Int?> =
+    override fun optInteger(name: String, block: ColumnConstraints<Int?>.() -> Unit): Column<Int?> =
       table.optInteger(name, block)
 
-    override fun long(name: String, block: SetConstraints<Long>): Column<Long> =
+    override fun long(name: String, block: ColumnConstraints<Long>.() -> Unit): Column<Long> =
       table.long(name, block)
 
-    override fun optLong(name: String, block: SetConstraints<Long?>): Column<Long?> =
+    override fun optLong(name: String, block: ColumnConstraints<Long?>.() -> Unit): Column<Long?> =
       table.optLong(name, block)
 
-    override fun float(name: String, block: SetConstraints<Float>): Column<Float> =
+    override fun float(name: String, block: ColumnConstraints<Float>.() -> Unit): Column<Float> =
       table.float(name, block)
 
-    override fun optFloat(name: String, block: SetConstraints<Float?>) =
+    override fun optFloat(name: String, block: ColumnConstraints<Float?>.() -> Unit) =
       table.optFloat(name, block)
 
-    override fun double(name: String, block: SetConstraints<Double>): Column<Double> =
+    override fun double(name: String, block: ColumnConstraints<Double>.() -> Unit): Column<Double> =
       table.double(name, block)
 
-    override fun optDouble(name: String, block: SetConstraints<Double?>): Column<Double?> =
+    override fun optDouble(
+      name: String,
+      block: ColumnConstraints<Double?>.() -> Unit
+    ): Column<Double?> =
       table.optDouble(name, block)
 
-    override fun text(name: String, block: SetConstraints<String>): Column<String> =
+    override fun text(name: String, block: ColumnConstraints<String>.() -> Unit): Column<String> =
       table.text(name, block)
 
-    override fun optText(name: String, block: SetConstraints<String?>) =
+    override fun optText(name: String, block: ColumnConstraints<String?>.() -> Unit) =
       table.optText(name, block)
 
-    override fun blob(name: String, block: SetConstraints<Blob>): Column<Blob> =
+    override fun blob(name: String, block: ColumnConstraints<Blob>.() -> Unit): Column<Blob> =
       table.blob(name, block)
 
-    override fun optBlob(name: String, block: SetConstraints<Blob?>): Column<Blob?> =
+    override fun optBlob(name: String, block: ColumnConstraints<Blob?>.() -> Unit): Column<Blob?> =
       table.optBlob(name, block)
 
     @ExperimentalUnsignedTypes
-    override fun ubyte(name: String, block: SetConstraints<UByte>): Column<UByte> =
+    override fun ubyte(name: String, block: ColumnConstraints<UByte>.() -> Unit): Column<UByte> =
       table.uByte(name, block)
 
     @ExperimentalUnsignedTypes
-    override fun optUbyte(name: String, block: SetConstraints<UByte?>): Column<UByte?> =
+    override fun optUbyte(
+      name: String,
+      block: ColumnConstraints<UByte?>.() -> Unit
+    ): Column<UByte?> =
       table.optUByte(name, block)
 
     @ExperimentalUnsignedTypes
-    override fun uShort(name: String, block: SetConstraints<UShort>): Column<UShort> =
+    override fun uShort(name: String, block: ColumnConstraints<UShort>.() -> Unit): Column<UShort> =
       table.uShort(name, block)
 
     @ExperimentalUnsignedTypes
-    override fun optUshort(name: String, block: SetConstraints<UShort?>): Column<UShort?> =
+    override fun optUshort(
+      name: String,
+      block: ColumnConstraints<UShort?>.() -> Unit
+    ): Column<UShort?> =
       table.optUShort(name, block)
 
     @ExperimentalUnsignedTypes
-    override fun ulong(name: String, block: SetConstraints<ULong>): Column<ULong> =
+    override fun ulong(name: String, block: ColumnConstraints<ULong>.() -> Unit): Column<ULong> =
       table.uLong(name, block)
 
     @ExperimentalUnsignedTypes
-    override fun optUlong(name: String, block: SetConstraints<ULong?>): Column<ULong?> =
+    override fun optUlong(
+      name: String,
+      block: ColumnConstraints<ULong?>.() -> Unit
+    ): Column<ULong?> =
       table.optULong(name, block)
 
-    override fun bool(name: String, block: SetConstraints<Boolean>): Column<Boolean> =
+    override fun bool(name: String, block: ColumnConstraints<Boolean>.() -> Unit): Column<Boolean> =
       table.bool(name, block)
 
-    override fun optBool(name: String, block: SetConstraints<Boolean?>): Column<Boolean?> =
+    override fun optBool(
+      name: String,
+      block: ColumnConstraints<Boolean?>.() -> Unit
+    ): Column<Boolean?> =
       table.optBool(name, block)
 
     override fun <T : Enum<T>> enumeration(
       name: String,
       klass: KClass<T>,
-      block: SetConstraints<T>
+      block: ColumnConstraints<T>.() -> Unit
     ): Column<T> = table.enumeration(name, klass, block)
 
     override fun <T : Enum<T>> enumerationByName(
       name: String,
       klass: KClass<T>,
-      block: SetConstraints<T>
+      block: ColumnConstraints<T>.() -> Unit
     ): Column<T> = table.enumByName(name, klass, block)
   }
 

@@ -17,7 +17,7 @@
 package com.ealva.welite.javatime
 
 import com.ealva.welite.db.table.Column
-import com.ealva.welite.db.table.SetConstraints
+import com.ealva.welite.db.table.ColumnConstraints
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.BasePersistentType
 import com.ealva.welite.db.type.Bindable
@@ -30,12 +30,12 @@ import java.time.ZoneOffset
 
 public fun Table.offsetDateTimeText(
   name: String,
-  block: SetConstraints<OffsetDateTime> = {}
+  block: ColumnConstraints<OffsetDateTime>.() -> Unit = {}
 ): Column<OffsetDateTime> = registerColumn(name, OffsetDateTimeAsTextType(), block)
 
 public fun Table.optOffsetDateTimeText(
   name: String,
-  block: SetConstraints<OffsetDateTime?> = {}
+  block: ColumnConstraints<OffsetDateTime?>.() -> Unit = {}
 ): Column<OffsetDateTime?> = registerOptColumn(name, OffsetDateTimeAsTextType(), block)
 
 private fun Any.valueToOffsetDateTime(): OffsetDateTime = when (this) {
