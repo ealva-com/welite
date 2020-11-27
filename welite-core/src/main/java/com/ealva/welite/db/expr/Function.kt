@@ -32,7 +32,7 @@ public abstract class Function<T>(
 public class CustomFunction<T>(
   private val functionName: String,
   persistentType: PersistentType<T>,
-  private val exprList: ExprList
+  private val exprList: List<Expression<*>>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(functionName).append('(')

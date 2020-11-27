@@ -35,8 +35,6 @@ import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.withTestDatabase
@@ -212,7 +210,7 @@ class LocalDateTimeColumnTest {
         }
         visitInsert.insert {
           it[0] = LocalDate.now()
-          it[1] = "20071203"  // bad date format
+          it[1] = "20071203" // bad date format
         }
         setSuccessful()
       }
@@ -233,7 +231,7 @@ class LocalDateTimeColumnTest {
         }
         visitInsert.insert {
           it[0] = LocalDate.now()
-          it[1] = Date()  // doesn't accept
+          it[1] = Date() // doesn't accept
         }
         setSuccessful()
       }

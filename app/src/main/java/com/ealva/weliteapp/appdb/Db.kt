@@ -49,10 +49,10 @@ val dbModule = module {
           LOG.i { it("    maxSize=%d", configuration.maximumSize) }
         }
         onCreate { database ->
-          LOG.i { it("onCreate %d", database.tables.size) }
+//          LOG.i { it("onCreate %d", database.tables.size) }
         }
         onOpen { database ->
-          LOG.i { it("onOpen %d", database.tables.size) }
+//          LOG.i { it("onOpen %d", database.tables.size) }
         }
       }
     )

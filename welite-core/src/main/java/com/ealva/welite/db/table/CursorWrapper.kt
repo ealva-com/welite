@@ -22,7 +22,6 @@ import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
-import com.ealva.welite.db.expr.ExprList
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.log.WeLiteLog
@@ -43,7 +42,7 @@ internal interface CursorWrapper : Cursor, Row, AutoCloseable {
 
 private typealias ExpressionToIndexMap = Object2IntMap<Expression<*>>
 
-private fun ExprList.mapExprToIndex(): ExpressionToIndexMap {
+private fun List<Expression<*>>.mapExprToIndex(): ExpressionToIndexMap {
   return Object2IntOpenHashMap<Expression<*>>(size).apply {
     defaultReturnValue(-1)
     this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
@@ -52,7 +51,10 @@ private fun ExprList.mapExprToIndex(): ExpressionToIndexMap {
 
 private typealias ACursor = android.database.Cursor
 
-private class CursorWrapperImpl(private val cursor: ACursor, columns: ExprList) : CursorWrapper {
+private class CursorWrapperImpl(
+  private val cursor: ACursor,
+  columns: List<Expression<*>>
+) : CursorWrapper {
   private val exprMap = columns.mapExprToIndex()
 
   override val count: Int

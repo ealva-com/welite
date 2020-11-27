@@ -28,16 +28,20 @@ public interface DatabaseLifecycle {
 
   /**
    * After the database has been opened, configured, all tables created, and all table post
-   * processing, call [block] with the fully created Database instance. This function is called
-   * if the database tables need to be created (first app run or DB file deleted)
+   * processing, call [block] with the fully created Database instance with the receiver being a
+   * TransactionInProgress. This function is only called if the database tables needed to be created
+   * (first app run or DB file deleted).
    */
-  public fun onCreate(block: (Database) -> Unit)
+  public fun onCreate(block: TransactionInProgress.(Database) -> Unit)
 
   /**
    * After the database has been opened, configured, and either created or migrated, as
-   * necessary, call [block] with the fully configured Database instance
+   * necessary, call [block] with the fully configured Database instance with a
+   * TransactionInProgress as the receiver. The open transaction is separate from the txn used
+   * during [onCreate]. If an exception is thrown from [block] all db changes made in the scope of
+   * [block] are rolled back.
    */
-  public fun onOpen(block: (Database) -> Unit)
+  public fun onOpen(block: TransactionInProgress.(Database) -> Unit)
 
   /**
    * Call [block] when database corruption is detected. [useDefaultHandler] indicates if default

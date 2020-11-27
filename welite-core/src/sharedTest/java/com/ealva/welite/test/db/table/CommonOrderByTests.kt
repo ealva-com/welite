@@ -24,8 +24,6 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.substring
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail

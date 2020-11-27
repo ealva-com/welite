@@ -62,13 +62,6 @@ android {
     unitTests.isIncludeAndroidResources = true
   }
 
-  packagingOptions {
-    exclude("META-INF/*")
-    exclude("META-INF/LICENSE.txt")
-    exclude("META-INF/license.txt")
-    exclude("META-INF/javolution*")
-  }
-
   kotlinOptions {
     jvmTarget = "1.8"
     suppressWarnings = false
