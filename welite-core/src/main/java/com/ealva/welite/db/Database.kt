@@ -519,7 +519,7 @@ private class OpenHelper private constructor(
 
   val tablesInCreateOrder: List<Table>
     get() = TableDependencies(tables).also { deps ->
-      if (deps.tablesAreCyclic()) LOG.w { it("Tables dependencies are cyclic") }
+      if (deps.tablesAreCyclic()) LOG.w { it("Table dependencies are cyclic") }
     }.sortedTableList
 
   override fun onConfigure(block: (DatabaseConfiguration) -> Unit) {

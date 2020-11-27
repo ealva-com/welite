@@ -65,6 +65,12 @@ android {
 
   testOptions {
     unitTests.isIncludeAndroidResources = true
+    packagingOptions {
+      exclude("META-INF/*")
+      exclude("META-INF/LICENSE.txt")
+      exclude("META-INF/license.txt")
+      exclude("META-INF/javolution*")
+    }
   }
 
   kotlinOptions {

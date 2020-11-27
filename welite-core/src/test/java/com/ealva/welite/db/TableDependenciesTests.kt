@@ -37,7 +37,9 @@ class TableDependenciesTests {
   @Test
   fun `test cycle detection`() {
     val deps = TableDependencies(listOf(TableA, TableB, TableC))
-    expect(deps.tablesAreCyclic()).toBe(true)
+    expect(
+      deps.tablesAreCyclic()
+    ).toBe(true)
   }
 }
 
