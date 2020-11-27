@@ -92,11 +92,15 @@ public object CommonDatabaseTests {
       onConfigure {
         onConfigureCalled = true
       }
-      onCreate {
+      onCreate { db ->
         onCreateCalled = true
+        expect(db.tables).toContain(SomeMediaTable)
+        expect(SomeMediaTable.exists).toBe(true)
+        expect(SomeMediaTable.selectAll().count()).toBe(0)
       }
-      onOpen {
+      onOpen { db ->
         onOpenCalled = true
+        expect(db.tables).toContain(SomeMediaTable)
       }
     }
     db.transaction {

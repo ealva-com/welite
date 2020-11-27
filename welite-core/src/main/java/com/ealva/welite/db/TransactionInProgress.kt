@@ -56,7 +56,6 @@ import com.ealva.welite.db.table.asMasterType
 import com.ealva.welite.db.table.columnMetadata
 import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr

@@ -31,9 +31,6 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.test.db.table.Person
 import com.ealva.welite.test.db.table.Place
 import com.ealva.welite.test.db.table.Review
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.db.table.withPlaceTestDatabase
 import com.ealva.welite.test.shared.AlbumTable

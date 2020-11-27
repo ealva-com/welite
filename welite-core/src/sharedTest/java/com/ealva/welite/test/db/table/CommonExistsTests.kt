@@ -22,7 +22,6 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.table.exists
-import com.ealva.welite.db.table.selectWhere
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 

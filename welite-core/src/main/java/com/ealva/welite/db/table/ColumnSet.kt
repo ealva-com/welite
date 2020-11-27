@@ -16,7 +16,6 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.expr.ExprList
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
@@ -54,39 +53,39 @@ public interface ColumnSet {
   public fun leftJoin(joinTo: ColumnSet): Join
   public fun crossJoin(joinTo: ColumnSet): Join
   public fun naturalJoin(joinTo: ColumnSet): Join
+
+  /**
+   * Start select by selecting all [columns]
+   */
+  public fun select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
+
+  /**
+   * Start select with [columns] which defaults to all columns of this [ColumnSet]
+   */
+  public fun select(columns: List<Expression<*>> = this.columns): SelectFrom =
+    SelectFrom(columns.distinct(), this)
+
+  /**
+   * Select COUNT(*) (no columns) using [where]
+   */
+  public fun selectCount(where: () -> Op<Boolean>): QueryBuilder =
+    QueryBuilder(set = select(emptyList()), where = where(), count = true)
+
+  /**
+   * Select all columns [where]
+   */
+  public fun selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
+
+  /**
+   * Select all columns and all rows
+   */
+  public fun selectAll(): QueryBuilder = QueryBuilder(SelectFrom(columns, this), null)
+
+  /**
+   * Select all columns of this [ColumnSet] and call [where] to make the where expression
+   */
+  public fun selectWhere(where: () -> Op<Boolean>): QueryBuilder = selectWhere(where())
 }
-
-/**
- * Start select by selecting all [columns]
- */
-public fun ColumnSet.select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
-
-/**
- * Start select with [columns] which defaults to all columns of this [ColumnSet]
- */
-public fun ColumnSet.select(columns: ExprList = this.columns): SelectFrom =
-  SelectFrom(columns.distinct(), this)
-
-/**
- * Select COUNT(*) (no columns) using [where]
- */
-public fun ColumnSet.selectCount(where: () -> Op<Boolean>): QueryBuilder =
-  QueryBuilder(set = select(emptyList()), where = where(), count = true)
-
-/**
- * Select all columns [where]
- */
-public fun ColumnSet.selectWhere(where: Op<Boolean>?): QueryBuilder = select().where(where)
-
-/**
- * Select all columns and all rows
- */
-public fun ColumnSet.selectAll(): QueryBuilder = QueryBuilder(SelectFrom(columns, this), null)
-
-/**
- * Select all columns of this [ColumnSet] and call [where] to make the where expression
- */
-public fun ColumnSet.selectWhere(where: () -> Op<Boolean>): QueryBuilder = selectWhere(where())
 
 /**
  * SelectFrom is a subset of columns from a ColumnSet, plus any added expressions which appear as
@@ -106,28 +105,28 @@ public interface SelectFrom {
   public fun subset(vararg columns: Expression<*>): SelectFrom
 
   /** Take a subset of the result columns  */
-  public fun subset(columns: ExprList): SelectFrom
+  public fun subset(columns: List<Expression<*>>): SelectFrom
 
   public fun <T> findResultColumnExpressionAlias(
     original: SqlTypeExpression<T>
   ): SqlTypeExpressionAlias<T>?
 
   /** Result columns as they appear in a Select */
-  public val resultColumns: ExprList
+  public val resultColumns: List<Expression<*>>
 
   public companion object {
     /**
      * Make a SelectFrom from [resultColumns] and an optional [sourceSet] ColumnSet
      */
     public operator fun invoke(
-      resultColumns: ExprList,
+      resultColumns: List<Expression<*>>,
       sourceSet: ColumnSet?
     ): SelectFrom = SelectFromImpl(resultColumns, sourceSet)
   }
 }
 
 private data class SelectFromImpl(
-  private val columns: ExprList,
+  private val columns: List<Expression<*>>,
   private val sourceSet: ColumnSet?
 ) : SelectFrom {
   override fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
@@ -151,7 +150,7 @@ private data class SelectFromImpl(
 
   override fun subset(vararg columns: Expression<*>): SelectFrom = subset(columns.asList())
 
-  override fun subset(columns: ExprList): SelectFrom =
+  override fun subset(columns: List<Expression<*>>): SelectFrom =
     SelectFrom(columns.distinct(), sourceSet)
 
   override fun <T> findResultColumnExpressionAlias(
@@ -161,7 +160,7 @@ private data class SelectFromImpl(
     return columns.find { it == original } as? SqlTypeExpressionAlias<T>
   }
 
-  override val resultColumns: ExprList
+  override val resultColumns: List<Expression<*>>
     get() = columns.toList()
 }
 

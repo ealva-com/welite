@@ -26,16 +26,13 @@ import java.util.ArrayList
 import java.util.HashMap
 import java.util.TreeMap
 
-public interface Migration {
-  public val startVersion: Int
-  public val endVersion: Int
-  public fun execute(db: Database)
-}
+public abstract class Migration {
+  public fun doExec(txn: TransactionInProgress, database: Database): Unit = txn.execute(database)
 
-public abstract class BaseMigration(
-  override val startVersion: Int,
-  override val endVersion: Int
-) : Migration {
+  public abstract val startVersion: Int
+  public abstract val endVersion: Int
+  protected abstract fun TransactionInProgress.execute(db: Database)
+
   override fun toString(): String = "Migration from $startVersion to $endVersion"
 }
 
@@ -59,7 +56,6 @@ private val LOG by lazyLogger(Migration::class, WeLiteLog.marker)
  * @return An ordered list of [Migration]s that should be executed to migrate the database or null
  * if a migration path cannot be found.
  */
-@Suppress("ReturnCount") // detekt
 public fun List<Migration>.findMigrationPath(startVersion: Int, endVersion: Int): List<Migration>? {
   val migrationMap: StartToEndMigrationMap = StartToEndMigrationMap().apply {
     this@findMigrationPath.forEach { migration ->
@@ -71,34 +67,35 @@ public fun List<Migration>.findMigrationPath(startVersion: Int, endVersion: Int)
     }
   }
 
-  if (startVersion == endVersion) {
-    return emptyList()
-  }
-  val isUpgrade = endVersion > startVersion
-  val result = ArrayList<Migration>(migrationMap.size)
-  var start = startVersion
-  var found = false
-  while (if (isUpgrade) start < endVersion else start > endVersion) {
-    val targetNodes: EndMigrationMap = migrationMap[start] ?: return null
-    val keySet = if (isUpgrade) {
-      (targetNodes as EndMigrationMapImpl).descendingKeySet()
-    } else {
-      targetNodes.keys
-    }
-    for (targetVersion in keySet) {
-      val shouldAddToPath: Boolean = if (isUpgrade) {
-        targetVersion in (start + 1)..endVersion
+  return if (startVersion != endVersion) {
+    val isUpgrade = endVersion > startVersion
+    val result = ArrayList<Migration>(migrationMap.size)
+    var start = startVersion
+    var found = false
+    while (if (isUpgrade) start < endVersion else start > endVersion) {
+      val targetNodes: EndMigrationMap = migrationMap[start] ?: return null
+      val keySet = if (isUpgrade) {
+        (targetNodes as EndMigrationMapImpl).descendingKeySet()
       } else {
-        targetVersion in endVersion until start
+        targetNodes.keys
       }
-      if (shouldAddToPath) {
-        result.add(checkNotNull(targetNodes[targetVersion]))
-        start = targetVersion
-        found = true
-        break
+      for (targetVersion in keySet) {
+        val shouldAddToPath: Boolean = if (isUpgrade) {
+          targetVersion in (start + 1)..endVersion
+        } else {
+          targetVersion in endVersion until start
+        }
+        if (shouldAddToPath) {
+          result.add(checkNotNull(targetNodes[targetVersion]))
+          start = targetVersion
+          found = true
+          break
+        }
       }
+      if (!found) break
     }
-    if (!found) break
+    if (found) result else null
+  } else {
+    emptyList()
   }
-  return if (found) result else null
 }

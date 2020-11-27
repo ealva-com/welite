@@ -28,9 +28,6 @@ import com.ealva.welite.db.expr.notLike
 import com.ealva.welite.db.expr.raiseAbort
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.asExpression
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.selectCount
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.trigger.Trigger
 import com.ealva.welite.db.trigger.deleteTrigger
