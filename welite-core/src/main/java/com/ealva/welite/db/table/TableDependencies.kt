@@ -65,21 +65,63 @@ public class TableDependencies(private val tables: List<Table>) {
    * Returns true if there is a cyclic dependency between tables
    */
   public fun tablesAreCyclic(): Boolean {
-    val visited = mutableSetOf<Table>()
-    val recursion = mutableSetOf<Table>()
-
-    val sortedTables = sortedTableList
-
-    fun traverse(table: Table): Boolean {
-      return if (table !in recursion) {
-        if (table !in visited) {
-          recursion += table
-          visited += table
-          (graph[table]?.any { traverse(it.key) } ?: false).also { if (!it) recursion -= table }
-        } else true
-      } else false
+    val graph = Graph()
+    val vertexMap = mutableMapOf<Table, Vertex>().apply {
+      sortedTableList.forEach { table ->
+        val vertex = Vertex(table)
+        put(table, vertex)
+        graph.addVertex(vertex)
+      }
     }
+    sortedTableList.forEach { table ->
+      table.columns.forEach { col ->
+        col.refersTo?.let { referent ->
+          graph.addEdge(
+            checkNotNull(vertexMap[table]),
+            checkNotNull(vertexMap[referent.table])
+          )
+        }
+      }
+    }
+    return graph.hasCycle()
+  }
+}
 
-    return sortedTables.any { traverse(it) }
+private class Vertex(val table: Table) {
+  var isVisited = false
+  var isBeingVisited = false
+  var adjacencyList = mutableListOf<Vertex>()
+
+  fun addNeighbour(adjacent: Vertex) {
+    adjacencyList.add(adjacent)
+  }
+}
+
+private class Graph {
+  private var vertices = mutableListOf<Vertex>()
+  fun addVertex(vertex: Vertex) {
+    vertices.add(vertex)
+  }
+
+  fun addEdge(from: Vertex, to: Vertex) = from.addNeighbour(to)
+
+  fun hasCycle(): Boolean {
+    vertices.forEach { vertex ->
+      if (!vertex.isVisited && hasCycle(vertex)) return true
+    }
+    return false
+  }
+
+  @Suppress("ReturnCount")
+  fun hasCycle(sourceVertex: Vertex): Boolean {
+    sourceVertex.isBeingVisited = true
+    sourceVertex.adjacencyList.forEach { neighbour ->
+      if (neighbour.isBeingVisited || (!neighbour.isVisited && hasCycle(neighbour))) {
+        return true
+      }
+    }
+    sourceVertex.isBeingVisited = false
+    sourceVertex.isVisited = true
+    return false
   }
 }
