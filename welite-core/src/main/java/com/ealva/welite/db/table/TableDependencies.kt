@@ -76,7 +76,7 @@ public class TableDependencies(private val tables: List<Table>) {
         col.refersTo?.let { referent ->
           graph.addEdge(
             checkNotNull(vertexMap[table]) { "No vertex for $table" },
-            checkNotNull(vertexMap[referent.table]) { "No vertex for ${referent.table}"}
+            checkNotNull(vertexMap[referent.table]) { "No vertex for ${referent.table}" }
           )
         }
       }
