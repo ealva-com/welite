@@ -36,7 +36,7 @@ public object CommonGroupByTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -62,7 +62,7 @@ public object CommonGroupByTests {
   public suspend fun testGroupByHaving(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -86,7 +86,7 @@ public object CommonGroupByTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -114,7 +114,7 @@ public object CommonGroupByTests {
   public suspend fun testGroupConcat(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {

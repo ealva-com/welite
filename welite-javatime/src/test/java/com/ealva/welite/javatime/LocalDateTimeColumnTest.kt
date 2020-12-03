@@ -91,7 +91,7 @@ class LocalDateTimeColumnTest {
 
   @Test
   fun `test local date time query`() = coroutineRule.runBlockingTest {
-    withTestDatabase(appCtx, listOf(VisitTime), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       val noon = LocalDateTime.of(LocalDate.now(), LocalTime.NOON)
 
       transaction {
@@ -156,7 +156,7 @@ class LocalDateTimeColumnTest {
 
   @Test
   fun `test bind other than LocalDateTime`() = coroutineRule.runBlockingTest {
-    withTestDatabase(appCtx, listOf(VisitTime), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = VisitTime.insertValues {
           it[localDate].bindArg()
@@ -179,7 +179,7 @@ class LocalDateTimeColumnTest {
   @Test
   fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
-    withTestDatabase(appCtx, listOf(VisitTime), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = VisitTime.insertValues {
           it[localDate].bindArg()
@@ -200,7 +200,7 @@ class LocalDateTimeColumnTest {
   @Test
   fun `test bind malformed LocalDateTime string`() = coroutineRule.runBlockingTest {
     thrown.expectCause(isA(DateTimeParseException::class.java))
-    withTestDatabase(appCtx, listOf(VisitTime), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = VisitTime.insertValues {
           it[localDate].bindArg()
@@ -221,7 +221,7 @@ class LocalDateTimeColumnTest {
   @Test
   fun `test bind bad type`() = coroutineRule.runBlockingTest {
     thrown.expectCause(isA(DateTimeParseException::class.java))
-    withTestDatabase(appCtx, listOf(VisitTime), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = VisitTime.insertValues {
           it[localDate].bindArg()
@@ -244,7 +244,7 @@ class LocalDateTimeColumnTest {
     expect(HasVisitTimeRef.ref.descriptionDdl()).toBe(""""ref" TEXT""")
     withTestDatabase(
       appCtx,
-      listOf(VisitTime, HasVisitTimeRef),
+      setOf(VisitTime, HasVisitTimeRef),
       coroutineRule.testDispatcher,
       true
     ) {

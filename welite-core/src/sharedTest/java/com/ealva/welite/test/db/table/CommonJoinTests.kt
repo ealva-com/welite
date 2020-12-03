@@ -41,7 +41,7 @@ public object CommonJoinTests {
   public suspend fun testJoinInnerJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -66,7 +66,7 @@ public object CommonJoinTests {
   public suspend fun testFKJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -86,7 +86,7 @@ public object CommonJoinTests {
   public suspend fun testJoinWithOrderBy(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -120,7 +120,7 @@ public object CommonJoinTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Numbers, Names, NumberNameRel),
+      tables = setOf(Numbers, Names, NumberNameRel),
       testDispatcher = testDispatcher
     ) {
       transaction {
@@ -150,7 +150,7 @@ public object CommonJoinTests {
   public suspend fun testCrossJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -190,7 +190,7 @@ public object CommonJoinTests {
 
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(fooTable, barTable),
+      tables = setOf(fooTable, barTable),
       testDispatcher = testDispatcher
     ) {
       try {
@@ -216,7 +216,7 @@ public object CommonJoinTests {
   public suspend fun testJoinWithAlias(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       val person = Person

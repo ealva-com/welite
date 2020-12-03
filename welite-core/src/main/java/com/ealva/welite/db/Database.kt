@@ -219,7 +219,7 @@ public interface Database {
     public operator fun invoke(
       context: Context,
       fileName: String,
-      tables: List<Table>,
+      tables: Set<Table>,
       version: Int,
       migrations: List<Migration> = emptyList(),
       requireMigration: Boolean = true,
@@ -249,7 +249,7 @@ public interface Database {
      */
     public operator fun invoke(
       context: Context,
-      tables: List<Table>,
+      tables: Set<Table>,
       version: Int,
       migrations: List<Migration>,
       requireMigration: Boolean = true,
@@ -272,7 +272,7 @@ public interface Database {
       context: Context,
       fileName: String?,
       version: Int,
-      tables: List<Table>,
+      tables: Set<Table>,
       migrations: List<Migration>,
       requireMigration: Boolean,
       openParams: OpenParams,
@@ -302,7 +302,7 @@ private class WeLiteDatabase(
   context: Context,
   fileName: String?,
   version: Int,
-  tables: List<Table>,
+  tables: Set<Table>,
   migrations: List<Migration>,
   requireMigration: Boolean,
   openParams: OpenParams,
@@ -321,7 +321,7 @@ private class WeLiteDatabase(
     configure = configure
   )
   override val tables: List<Table>
-    get() = openHelper.tablesInCreateOrder
+    get() = openHelper.tablesInCreateOrder.toList()
   override var allowWorkOnUiThread: Boolean = openParams.allowWorkOnUiThread
   override val dispatcher: CoroutineDispatcher = openParams.dispatcher
 
@@ -498,7 +498,7 @@ private class OpenHelper private constructor(
   private val database: WeLiteDatabase,
   name: String?,
   version: Int,
-  private val tables: List<Table>,
+  private val tables: Set<Table>,
   private val migrations: List<Migration>,
   private val requireMigration: Boolean,
   openParams: OpenParams,
@@ -517,10 +517,11 @@ private class OpenHelper private constructor(
       database.allowWorkOnUiThread = value
     }
 
-  val tablesInCreateOrder: List<Table>
-    get() = TableDependencies(tables).also { deps ->
-      if (deps.tablesAreCyclic()) LOG.w { it("Table dependencies are cyclic") }
+  val tablesInCreateOrder: Set<Table> by lazy {
+    TableDependencies(tables).also { dependencies ->
+      if (dependencies.tablesAreCyclic()) LOG.w { it("Table dependencies are cyclic") }
     }.sortedTableList
+  }
 
   override fun onConfigure(block: (DatabaseConfiguration) -> Unit) {
     onConfigure = block
@@ -651,7 +652,7 @@ private class OpenHelper private constructor(
       database: WeLiteDatabase,
       name: String?,
       version: Int,
-      tables: List<Table>,
+      tables: Set<Table>,
       migrations: List<Migration>,
       requireMigration: Boolean,
       openParams: OpenParams,

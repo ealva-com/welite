@@ -92,7 +92,7 @@ public class OffsetDateTimeColumnTest {
 
   @Test
   fun `test offset date time insert and query`() = coroutineRule.runBlockingTest {
-    withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       val noonSomewhere = OffsetDateTime.of(
         LocalDateTime.of(2018, 6, 12, 12, 0),
         ZoneOffset.ofHours(6)
@@ -144,7 +144,7 @@ public class OffsetDateTimeColumnTest {
 
   @Test
   fun `test bind other than OffsetDateTime`() = coroutineRule.runBlockingTest {
-    withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
           it[offsetDate].bindArg()
@@ -167,7 +167,7 @@ public class OffsetDateTimeColumnTest {
   @Test
   fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
-    withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
           it[offsetDate].bindArg()
@@ -188,7 +188,7 @@ public class OffsetDateTimeColumnTest {
   @Test
   fun `test bind malformed OffsetDateTime string`() = coroutineRule.runBlockingTest {
     thrown.expectCause(CoreMatchers.isA(DateTimeParseException::class.java))
-    withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
           it[offsetDate].bindArg()
@@ -209,7 +209,7 @@ public class OffsetDateTimeColumnTest {
   @Test
   fun `test bind bad type`() = coroutineRule.runBlockingTest {
     thrown.expectCause(CoreMatchers.isA(DateTimeParseException::class.java))
-    withTestDatabase(appCtx, listOf(OffsetDt), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
           it[offsetDate].bindArg()
@@ -230,7 +230,7 @@ public class OffsetDateTimeColumnTest {
   @Test
   fun `test opt reference`() = coroutineRule.runBlockingTest {
     expect(HasOffsetDtRef.ref.descriptionDdl()).toBe(""""ref" TEXT""")
-    withTestDatabase(appCtx, listOf(OffsetDt, HasOffsetDtRef), coroutineRule.testDispatcher, true) {
+    withTestDatabase(appCtx, setOf(OffsetDt, HasOffsetDtRef), coroutineRule.testDispatcher, true) {
       query {
         HasOffsetDtRef.foreignKeyList.let { list ->
           expect(list).toHaveSize(1)

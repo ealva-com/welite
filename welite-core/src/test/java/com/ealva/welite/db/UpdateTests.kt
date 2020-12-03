@@ -90,7 +90,7 @@ class UpdateTests {
   fun `test update Person name`() = coroutineRule.runBlockingTest {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       val nathaliaId = "nathalia"
@@ -128,7 +128,7 @@ class UpdateTests {
   fun `test update with join`() = coroutineRule.runBlockingTest {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       val join = Person.innerJoin(Review)

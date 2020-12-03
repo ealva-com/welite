@@ -38,7 +38,7 @@ public object CommonNaturalJoinTests {
   public suspend fun testNaturalJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Doctors, Specialty, Visits),
+      tables = setOf(Doctors, Specialty, Visits),
       testDispatcher = testDispatcher
     ) {
       insertData()
@@ -98,7 +98,7 @@ public object CommonNaturalJoinTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Doctors, Specialty, Visits),
+      tables = setOf(Doctors, Specialty, Visits),
       testDispatcher = testDispatcher
     ) {
       insertData()

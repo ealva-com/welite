@@ -62,7 +62,7 @@ public object CommonDeleteTests {
   public suspend fun testDeleteAllAndDelete(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       transaction { Review.deleteAll() }
@@ -80,7 +80,7 @@ public object CommonDeleteTests {
   public suspend fun testDeleteWhere(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       enableForeignKeyConstraints = false,
       testDispatcher = testDispatcher
     ) {

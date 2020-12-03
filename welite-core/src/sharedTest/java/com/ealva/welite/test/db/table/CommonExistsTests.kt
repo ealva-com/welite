@@ -29,7 +29,7 @@ public object CommonExistsTests {
   public suspend fun testSelectExists(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -49,7 +49,7 @@ public object CommonExistsTests {
   public suspend fun testSelectExistsAndOr(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -77,7 +77,7 @@ public object CommonExistsTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {

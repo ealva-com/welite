@@ -65,9 +65,14 @@ android {
 
   testOptions {
     unitTests.isIncludeAndroidResources = true
-    packagingOptions {
-      exclude("META-INF/AL2.0")
-      exclude("META-INF/LGPL2.1")
+  }
+
+  packagingOptions {
+    resources {
+      excludes += listOf(
+        "META-INF/AL2.0",
+        "META-INF/LGPL2.1"
+      )
     }
   }
 

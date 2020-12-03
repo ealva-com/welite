@@ -173,7 +173,7 @@ class DatabaseTests {
     val db = Database(
       context = appCtx,
       version = 1,
-      tables = listOf(SomeMediaTable),
+      tables = setOf(SomeMediaTable),
       migrations = emptyList(),
       requireMigration = false,
       openParams = OpenParams(
@@ -190,7 +190,7 @@ class DatabaseTests {
     val db = Database(
       context = appCtx,
       version = 1,
-      tables = listOf(SomeMediaTable),
+      tables = setOf(SomeMediaTable),
       migrations = emptyList(),
       requireMigration = false,
       openParams = OpenParams(
@@ -205,7 +205,7 @@ class DatabaseTests {
     return Database(
       context = appCtx,
       version = 1,
-      tables = listOf(),
+      tables = setOf(),
       migrations = emptyList(),
       requireMigration = false,
       openParams = OpenParams(
