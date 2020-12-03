@@ -76,7 +76,7 @@ class BigDecimalColumnTest {
   fun `test BigDecimal insert and query`() = coroutineRule.runBlockingTest {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(BigTable),
+      tables = setOf(BigTable),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
@@ -120,7 +120,7 @@ class BigDecimalColumnTest {
 
   @Test
   fun `test bind other than BigDecimal`() = coroutineRule.runBlockingTest {
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, setOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -146,7 +146,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteException::class.java)
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, setOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -167,7 +167,7 @@ class BigDecimalColumnTest {
   fun `test bind malformed BigDecimal string`() = coroutineRule.runBlockingTest {
     thrown.expect(WeLiteUncaughtException::class.java)
     thrown.expectCause(isA(NumberFormatException::class.java))
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, setOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -186,7 +186,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test bind bad type`() = coroutineRule.runBlockingTest {
     thrown.expectCause(isA(NumberFormatException::class.java))
-    withTestDatabase(appCtx, listOf(BigTable), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, setOf(BigTable), coroutineRule.testDispatcher) {
       transaction {
         val bigTableInsert = BigTable.insertValues {
           it[name] = "name"
@@ -206,7 +206,7 @@ class BigDecimalColumnTest {
   @Test
   fun `test opt reference`() = coroutineRule.runBlockingTest {
     expect(HasBigTableRef.ref.descriptionDdl()).toBe(""""ref" INTEGER""")
-    withTestDatabase(appCtx, listOf(BigTable, HasBigTableRef), coroutineRule.testDispatcher) {
+    withTestDatabase(appCtx, setOf(BigTable, HasBigTableRef), coroutineRule.testDispatcher) {
       query {
         HasBigTableRef.foreignKeyList.let { list ->
           expect(list).toHaveSize(1)

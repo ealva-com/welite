@@ -61,7 +61,7 @@ class BindParameterTests {
     }
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(table),
+      tables = setOf(table),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
@@ -113,7 +113,7 @@ class BindParameterTests {
     }
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(table),
+      tables = setOf(table),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
@@ -330,7 +330,7 @@ class BindParameterTests {
     val bArray = bBlobContents.toByteArray()
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(table),
+      tables = setOf(table),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {

@@ -56,8 +56,8 @@ public object ArtistAlbumTable : Table() {
   }
 }
 
-public val MEDIA_TABLES: List<Table> =
-  listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable)
+public val MEDIA_TABLES: Set<Table> =
+  setOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable)
 
 public suspend fun Database.expectMediaTablesExist() {
   query {

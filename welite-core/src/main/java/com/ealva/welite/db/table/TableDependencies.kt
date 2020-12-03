@@ -23,7 +23,8 @@ package com.ealva.welite.db.table
  * If [tablesAreCyclic] is true it indicates one or more cycles in Table dependencies, eg. TableA ->
  * TableB -> TableC -> TableA
  */
-public class TableDependencies(private val tables: List<Table>) {
+public class TableDependencies(private val tables: Set<Table>) {
+  // traverse the references to ensure all tables are found
   private val setOfAllTables: Set<Table> = mutableSetOf<Table>().apply {
     fun parseTable(table: Table) {
       if (add(table)) table.columns.forEach {
@@ -33,7 +34,7 @@ public class TableDependencies(private val tables: List<Table>) {
     tables.forEach(::parseTable)
   }
 
-  public val sortedTableList: List<Table> = ArrayList<Table>(tables.size).apply {
+  public val sortedTableList: LinkedHashSet<Table> = LinkedHashSet<Table>(tables.size).apply {
     val graph = setOfAllTables.associateWith { table ->
       table.columns.mapNotNull { column ->
         column.refersTo?.let { referent ->
