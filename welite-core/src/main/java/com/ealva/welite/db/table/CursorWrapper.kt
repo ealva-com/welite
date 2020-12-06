@@ -182,7 +182,7 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBind
     if (arguments[index] !== UNBOUND) {
       LOG.w { it("Arg at index:$index previously bound as ${arguments[index]}") }
     }
-    arguments[index] = argTypes[index].valueToString(value)
+    arguments[index] = argTypes[index].valueToString(value, false)
   }
 
   override val argCount: Int

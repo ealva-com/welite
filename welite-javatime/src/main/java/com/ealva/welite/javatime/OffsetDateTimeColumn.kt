@@ -60,7 +60,8 @@ public open class OffsetDateTimeAsTextType<T : OffsetDateTime?>(
 
   override fun notNullValueToDB(value: Any): Any = value.valueToOffsetDateTime()
 
-  override fun nonNullValueToString(value: Any): String = "'${value.valueToOffsetDateTime()}'"
+  override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
+    if (quoteAsLiteral) "'${value.valueToOffsetDateTime()}'" else "${value.valueToOffsetDateTime()}"
 
   public companion object {
     public operator fun <T : OffsetDateTime?> invoke(): OffsetDateTimeAsTextType<T> =
