@@ -40,7 +40,7 @@ public class LiteralOp<T>(
   override fun appendTo(
     sqlBuilder: SqlBuilder
   ): SqlBuilder = sqlBuilder.apply {
-    append(persistentType.valueToString(value))
+    append(persistentType.valueToString(value, true))
   }
 }
 

@@ -125,7 +125,7 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
   }
 
   override fun <T> registerArgument(sqlType: PersistentType<T>, argument: T) {
-    append(sqlType.valueToString(argument))
+    append(sqlType.valueToString(argument, true))
   }
 
   override fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>) {

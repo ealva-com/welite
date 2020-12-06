@@ -26,7 +26,6 @@ import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.all
-import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.toQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.view.View

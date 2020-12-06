@@ -64,7 +64,8 @@ public class LocalDateAsTextType<T : LocalDate?>(
     return value.valueToLocalDate()
   }
 
-  override fun nonNullValueToString(value: Any): String = "'${value.valueToLocalDate()}'"
+  override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
+    if (quoteAsLiteral) "'${value.valueToLocalDate()}'" else "${value.valueToLocalDate()}"
 
   public companion object {
     public operator fun <T : LocalDate?> invoke(): LocalDateAsTextType<T> =
