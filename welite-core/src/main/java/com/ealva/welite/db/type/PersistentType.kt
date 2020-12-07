@@ -329,9 +329,13 @@ public class StringPersistentType<T : String?> : BasePersistentType<T>("TEXT") {
   override fun Row.readColumnValue(index: Int): T = getString(index) as T
 
   override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String = buildStr {
-    if (quoteAsLiteral) append('\'')
-    append(escape(value.toString()))
-    if (quoteAsLiteral) append('\'')
+    if (quoteAsLiteral) {
+      append('\'')
+      append(escape(value.toString()))
+      append('\'')
+    } else {
+      append(value.toString())
+    }
   }
 
   override fun doBind(bindable: Bindable, index: Int, value: Any): Unit = when (value) {
