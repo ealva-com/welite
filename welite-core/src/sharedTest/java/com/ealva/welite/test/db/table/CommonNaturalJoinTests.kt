@@ -24,7 +24,6 @@ import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.where
 import com.ealva.welite.test.db.table.Doctors.degree
 import com.ealva.welite.test.db.table.Doctors.doctorName
 import com.ealva.welite.test.db.table.Specialty.description
@@ -38,7 +37,7 @@ public object CommonNaturalJoinTests {
   public suspend fun testNaturalJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Doctors, Specialty, Visits),
+      tables = setOf(Doctors, Specialty, Visits),
       testDispatcher = testDispatcher
     ) {
       insertData()
@@ -98,7 +97,7 @@ public object CommonNaturalJoinTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Doctors, Specialty, Visits),
+      tables = setOf(Doctors, Specialty, Visits),
       testDispatcher = testDispatcher
     ) {
       insertData()

@@ -22,6 +22,7 @@ import android.database.DefaultDatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.os.Build
+import androidx.core.database.sqlite.transaction
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
@@ -218,7 +219,7 @@ public interface Database {
     public operator fun invoke(
       context: Context,
       fileName: String,
-      tables: List<Table>,
+      tables: Set<Table>,
       version: Int,
       migrations: List<Migration> = emptyList(),
       requireMigration: Boolean = true,
@@ -248,7 +249,7 @@ public interface Database {
      */
     public operator fun invoke(
       context: Context,
-      tables: List<Table>,
+      tables: Set<Table>,
       version: Int,
       migrations: List<Migration>,
       requireMigration: Boolean = true,
@@ -271,7 +272,7 @@ public interface Database {
       context: Context,
       fileName: String?,
       version: Int,
-      tables: List<Table>,
+      tables: Set<Table>,
       migrations: List<Migration>,
       requireMigration: Boolean,
       openParams: OpenParams,
@@ -301,7 +302,7 @@ private class WeLiteDatabase(
   context: Context,
   fileName: String?,
   version: Int,
-  tables: List<Table>,
+  tables: Set<Table>,
   migrations: List<Migration>,
   requireMigration: Boolean,
   openParams: OpenParams,
@@ -320,16 +321,26 @@ private class WeLiteDatabase(
     configure = configure
   )
   override val tables: List<Table>
-    get() = openHelper.tablesInCreateOrder
+    get() = openHelper.tablesInCreateOrder.toList()
   override var allowWorkOnUiThread: Boolean = openParams.allowWorkOnUiThread
   override val dispatcher: CoroutineDispatcher = openParams.dispatcher
+
+  /**
+   * We want to use the db instance passed to the open helper onConfigure method because it's usable
+   * in onCreate, onUpgrade, onOpen, etc. If we call openHelper.writableDatabase in those
+   * instances we'll get an exception as SQLiteOpenHelper is still initializing. So the first
+   * call to openHelper.writableDatabase begins the process and our open helper calls back
+   * and sets internalDb which is safe to use from that point forward
+   */
+  var internalDb: SQLiteDatabase? = null
   override val db: SQLiteDatabase
-    get() = openHelper.writableDatabase
+    get() = internalDb ?: openHelper.writableDatabase
 
   override fun close() {
     if (!closed) {
       LOG.i { it("Closing Database") }
       openHelper.close()
+      internalDb = null
       closed = true
     }
   }
@@ -484,10 +495,10 @@ private class ErrorHandler(private val database: Database) : DatabaseErrorHandle
  */
 private class OpenHelper private constructor(
   context: Context,
-  private val database: Database,
+  private val database: WeLiteDatabase,
   name: String?,
   version: Int,
-  private val tables: List<Table>,
+  private val tables: Set<Table>,
   private val migrations: List<Migration>,
   private val requireMigration: Boolean,
   openParams: OpenParams,
@@ -497,8 +508,8 @@ private class OpenHelper private constructor(
   private val openParams = openParams.copy()
 
   private var onConfigure: ((DatabaseConfiguration) -> Unit) = {}
-  private var onCreate: ((Database) -> Unit) = {}
-  private var onOpen: ((Database) -> Unit) = {}
+  private var onCreate: (TransactionInProgress.(Database) -> Unit) = {}
+  private var onOpen: (TransactionInProgress.(Database) -> Unit) = {}
 
   var allowWorkOnUiThread: Boolean
     get() = database.allowWorkOnUiThread
@@ -506,20 +517,21 @@ private class OpenHelper private constructor(
       database.allowWorkOnUiThread = value
     }
 
-  val tablesInCreateOrder: List<Table>
-    get() = TableDependencies(tables).also { deps ->
-      if (deps.tablesAreCyclic()) LOG.w { it("Tables dependencies are cyclic") }
+  val tablesInCreateOrder: Set<Table> by lazy {
+    TableDependencies(tables).also { dependencies ->
+      if (dependencies.tablesAreCyclic()) LOG.w { it("Table dependencies are cyclic") }
     }.sortedTableList
+  }
 
   override fun onConfigure(block: (DatabaseConfiguration) -> Unit) {
     onConfigure = block
   }
 
-  override fun onCreate(block: (Database) -> Unit) {
+  override fun onCreate(block: TransactionInProgress.(Database) -> Unit) {
     onCreate = block
   }
 
-  override fun onOpen(block: (Database) -> Unit) {
+  override fun onOpen(block: TransactionInProgress.(Database) -> Unit) {
     onOpen = block
   }
 
@@ -543,6 +555,7 @@ private class OpenHelper private constructor(
         setLookasideConfig(lookaside.size, lookaside.count)
       }
     }
+    database.internalDb = db
     onConfigure(config)
     config.closed = true
   }
@@ -568,15 +581,19 @@ private class OpenHelper private constructor(
     orderedTables.forEach { table ->
       table.postCreate(executor)
     }
-    onCreate(database)
+    database.ongoingTransaction {
+      onCreate(database)
+    }
   }
 
   override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
     val migrationPath = migrations.findMigrationPath(oldVersion, newVersion)
     when {
       migrationPath != null -> {
-        migrationPath.forEach { migration ->
-          migration.execute(database)
+        database.ongoingTransaction {
+          migrationPath.forEach { migration ->
+            migration.doExec(this, database)
+          }
         }
       }
       requireMigration -> throw IllegalStateException(
@@ -603,7 +620,11 @@ private class OpenHelper private constructor(
   }
 
   override fun onOpen(db: SQLiteDatabase) {
-    onOpen(database)
+    db.transaction {
+      database.ongoingTransaction {
+        onOpen(database)
+      }
+    }
   }
 
   private fun setSchemaWritable(writable: Boolean) {
@@ -631,7 +652,7 @@ private class OpenHelper private constructor(
       database: WeLiteDatabase,
       name: String?,
       version: Int,
-      tables: List<Table>,
+      tables: Set<Table>,
       migrations: List<Migration>,
       requireMigration: Boolean,
       openParams: OpenParams,

@@ -47,10 +47,12 @@ import com.ealva.welite.test.db.CommonDatabaseTests as Common
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [LOLLIPOP])
 class DatabaseTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  @get:Rule
+  var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
   private var config: DatabaseConfiguration? = null
@@ -173,7 +175,7 @@ class DatabaseTests {
     val db = Database(
       context = appCtx,
       version = 1,
-      tables = listOf(SomeMediaTable),
+      tables = setOf(SomeMediaTable),
       migrations = emptyList(),
       requireMigration = false,
       openParams = OpenParams(
@@ -190,7 +192,7 @@ class DatabaseTests {
     val db = Database(
       context = appCtx,
       version = 1,
-      tables = listOf(SomeMediaTable),
+      tables = setOf(SomeMediaTable),
       migrations = emptyList(),
       requireMigration = false,
       openParams = OpenParams(
@@ -205,7 +207,7 @@ class DatabaseTests {
     return Database(
       context = appCtx,
       version = 1,
-      tables = listOf(),
+      tables = setOf(),
       migrations = emptyList(),
       requireMigration = false,
       openParams = OpenParams(

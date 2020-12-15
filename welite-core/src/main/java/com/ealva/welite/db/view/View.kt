@@ -29,11 +29,11 @@ import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.DuplicateColumnException
 import com.ealva.welite.db.table.ForeignKeyConstraint
+import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Join
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.Query
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.QuerySeed
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
@@ -58,7 +58,7 @@ public interface ViewColumn<T> : Column<T> {
         } else {
           column.identity().unquoted
         }
-      return ViewColumnImpl(view, actualName, column)
+      return ViewColumnImpl(actualName, view, column)
     }
 
     private fun makeName(
@@ -84,8 +84,8 @@ private const val CREATE_VIEW = "CREATE VIEW IF NOT EXISTS "
 private const val CREATE_TEMP_VIEW = "CREATE TEMP VIEW IF NOT EXISTS "
 
 private class ViewColumnImpl<T>(
-  private val view: View,
   override val name: String,
+  private val view: View,
   private val originalColumn: Column<T>
 ) : ViewColumn<T> {
   override val persistentType: PersistentType<T>
@@ -120,7 +120,7 @@ private class ViewColumnImpl<T>(
       originalColumn.dbDefaultValue = value
     }
 
-  override val refersTo: Column<*>?
+  override val refersTo: Column<*>
     get() = originalColumn
 
   override var indexInPK: Int?
@@ -150,8 +150,34 @@ private class ViewColumnImpl<T>(
     return if (other !is ViewColumnImpl) -1 else columnComparator.compare(this, other)
   }
 
-  private val columnComparator: Comparator<ViewColumnImpl<*>> =
-    compareBy({ column -> column.name }, { column -> column.view })
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as ViewColumnImpl<*>
+
+    if (name != other.name) return false
+    if (view != other.view) return false
+    if (originalColumn != other.originalColumn) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = name.hashCode()
+    result = 31 * result + view.hashCode()
+    result = 31 * result + originalColumn.hashCode()
+    return result
+  }
+
+  companion object {
+    private val columnComparator: Comparator<ViewColumnImpl<*>> =
+      compareBy(
+        { column -> column.name },
+        { column -> column.view },
+        { column -> column.originalColumn }
+      )
+  }
 }
 
 private val LOG by lazyLogger(View::class, WeLiteLog.marker)

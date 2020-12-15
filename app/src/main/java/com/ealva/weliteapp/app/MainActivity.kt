@@ -30,8 +30,6 @@ import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.where
 import com.ealva.weliteapp.app.MediaFileTable.fileName
 import com.ealva.weliteapp.app.MediaFileTable.localDate
 import com.ealva.weliteapp.app.MediaFileTable.mediaTitle

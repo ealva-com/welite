@@ -25,7 +25,6 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.test.db.table.withPlaceTestDatabase
 import com.ealva.welite.db.type.Blob
 import com.ealva.welite.test.shared.CoroutineRule
@@ -62,7 +61,7 @@ class BindParameterTests {
     }
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(table),
+      tables = setOf(table),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
@@ -114,7 +113,7 @@ class BindParameterTests {
     }
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(table),
+      tables = setOf(table),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {
@@ -331,7 +330,7 @@ class BindParameterTests {
     val bArray = bBlobContents.toByteArray()
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(table),
+      tables = setOf(table),
       testDispatcher = coroutineRule.testDispatcher
     ) {
       transaction {

@@ -30,18 +30,18 @@ object Versions {
   const val CORE_KTX = "1.3.2"
   const val ESPRESSO_CORE = "3.2.0"
   const val JUNIT = "4.13"
-  const val EALVALOG = "0.5.4"
+  const val EALVALOG = "0.5.6-SNAPSHOT"
   const val ROBOLECTRIC = "4.4"
   const val EXPECT = "1.0.1"
   const val FASTUTIL = "7.2.1"
-  const val COROUTINES = "1.3.9"
-  const val COROUTINES_TEST = "1.3.9"
-  const val KOIN = "2.1.6"
+  const val COROUTINES = "1.4.1"
+  const val COROUTINES_TEST = "1.4.1"
+  const val KOIN = "2.2.1"
   const val DESUGAR = "1.0.10"
 }
 
 object BuildPluginsVersion {
-  const val AGP = "4.2.0-alpha16"
+  const val AGP = "7.0.0-alpha02"
   const val DETEKT = "1.14.1"
   const val KOTLIN = "1.4.20"
   const val VERSIONS = "0.33.0"

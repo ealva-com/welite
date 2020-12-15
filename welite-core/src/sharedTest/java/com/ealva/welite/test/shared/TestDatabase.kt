@@ -24,7 +24,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 public suspend fun withTestDatabase(
   context: Context,
-  tables: List<Table>,
+  tables: Set<Table>,
   testDispatcher: CoroutineDispatcher,
   enableForeignKeyConstraints: Boolean = true,
   block: suspend Database.() -> Unit
@@ -40,7 +40,7 @@ public suspend fun withTestDatabase(
 @Suppress("TestFunctionName")
 public fun TestDatabase(
   context: Context,
-  tables: List<Table>,
+  tables: Set<Table>,
   testDispatcher: CoroutineDispatcher,
   enableForeignKeyConstraints: Boolean
 ): Database {

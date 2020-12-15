@@ -23,8 +23,6 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.groupConcat
 import com.ealva.welite.db.expr.max
 import com.ealva.welite.db.table.alias
-import com.ealva.welite.db.table.all
-import com.ealva.welite.db.table.select
 import com.ealva.welite.test.shared.expect
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,7 +34,7 @@ public object CommonGroupByTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -62,7 +60,7 @@ public object CommonGroupByTests {
   public suspend fun testGroupByHaving(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -86,7 +84,7 @@ public object CommonGroupByTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -114,7 +112,7 @@ public object CommonGroupByTests {
   public suspend fun testGroupConcat(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -123,7 +121,7 @@ public object CommonGroupByTests {
           (Place leftJoin Person)
             .select(Place.name, this)
             .all()
-            .groupBy(Place.id, Place.name)
+            .groupBy(listOf(Place.id, Place.name))
             .forEach { map[it[Place.name]] = it.getOptional(this) }
           assertBlock(map)
         }

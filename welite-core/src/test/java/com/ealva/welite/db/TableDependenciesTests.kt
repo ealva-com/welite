@@ -36,8 +36,10 @@ import org.robolectric.annotation.Config
 class TableDependenciesTests {
   @Test
   fun `test cycle detection`() {
-    val deps = TableDependencies(listOf(TableA, TableB, TableC))
-    expect(deps.tablesAreCyclic()).toBe(true)
+    val deps = TableDependencies(setOf(TableA, TableB, TableC))
+    expect(
+      deps.tablesAreCyclic()
+    ).toBe(true)
   }
 }
 

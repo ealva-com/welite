@@ -17,7 +17,7 @@
 package com.ealva.welite.javatime
 
 import com.ealva.welite.db.table.Column
-import com.ealva.welite.db.table.SetConstraints
+import com.ealva.welite.db.table.ColumnConstraints
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.BasePersistentType
 import com.ealva.welite.db.type.Bindable
@@ -29,12 +29,12 @@ import java.time.LocalDateTime
 
 public fun Table.localDateTimeText(
   name: String,
-  block: SetConstraints<LocalDateTime> = {}
+  block: ColumnConstraints<LocalDateTime>.() -> Unit = {}
 ): Column<LocalDateTime> = registerColumn(name, LocalDateTimeAsTextType(), block)
 
 public fun Table.optLocalDateTimeText(
   name: String,
-  block: SetConstraints<LocalDateTime?> = {}
+  block: ColumnConstraints<LocalDateTime?>.() -> Unit = {}
 ): Column<LocalDateTime?> = registerOptColumn(name, LocalDateTimeAsTextType(), block)
 
 private fun String.toLocalDateTime(): LocalDateTime = LocalDateTime.parse(this)
@@ -63,7 +63,8 @@ public class LocalDateTimeAsTextType<T : LocalDateTime?>(
     return value.valueToLocalDateTime()
   }
 
-  override fun nonNullValueToString(value: Any): String = "'${value.valueToLocalDateTime()}'"
+  override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
+    if (quoteAsLiteral) "'${value.valueToLocalDateTime()}'" else "${value.valueToLocalDateTime()}"
 
   public companion object {
     public operator fun <T : LocalDateTime?> invoke(): LocalDateTimeAsTextType<T> =

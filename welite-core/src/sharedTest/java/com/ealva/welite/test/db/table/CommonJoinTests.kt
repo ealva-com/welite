@@ -22,17 +22,13 @@ import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.or
-import com.ealva.welite.db.expr.stringLiteral
+import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.table.Alias
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.alias
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.selectWhere
-import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
@@ -44,7 +40,7 @@ public object CommonJoinTests {
   public suspend fun testJoinInnerJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -69,7 +65,7 @@ public object CommonJoinTests {
   public suspend fun testFKJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -89,7 +85,7 @@ public object CommonJoinTests {
   public suspend fun testJoinWithOrderBy(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -123,7 +119,7 @@ public object CommonJoinTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Numbers, Names, NumberNameRel),
+      tables = setOf(Numbers, Names, NumberNameRel),
       testDispatcher = testDispatcher
     ) {
       transaction {
@@ -153,7 +149,7 @@ public object CommonJoinTests {
   public suspend fun testCrossJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -193,7 +189,7 @@ public object CommonJoinTests {
 
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(fooTable, barTable),
+      tables = setOf(fooTable, barTable),
       testDispatcher = testDispatcher
     ) {
       try {
@@ -219,7 +215,7 @@ public object CommonJoinTests {
   public suspend fun testJoinWithAlias(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       val person = Person
@@ -228,7 +224,7 @@ public object CommonJoinTests {
         val pair = Person.join(
           personAlias,
           JoinType.LEFT,
-          stringLiteral("nathalia"),
+          literal("nathalia"),
           personAlias[Person.id]
         ).selectWhere { Person.id eq "amber" }
           .flow { Pair(it[Person.name], it[personAlias[Person.name]]) }

@@ -43,7 +43,7 @@ public object Review : Table() {
 
 public suspend fun withPlaceTestDatabase(
   context: Context,
-  tables: List<Table>,
+  tables: Set<Table>,
   testDispatcher: CoroutineDispatcher,
   enableForeignKeyConstraints: Boolean = true,
   block: suspend Database.() -> Unit
@@ -133,7 +133,7 @@ public suspend fun withPlaceTestDatabase(
 @Suppress("TestFunctionName")
 public fun TestDatabase(
   context: Context,
-  tables: List<Table>,
+  tables: Set<Table>,
   testDispatcher: CoroutineDispatcher,
   enableForeignKeyConstraints: Boolean
 ): Database {

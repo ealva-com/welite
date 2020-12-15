@@ -45,7 +45,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 public object CommonDatabaseTests {
   public suspend fun testInTransaction(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(SomeMediaTable), testDispatcher) {
       var visitedOngoing = false
       expect(inTransaction).toBe(false)
       transaction {
@@ -65,7 +65,7 @@ public object CommonDatabaseTests {
   }
 
   public suspend fun testSqliteVersion(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(SomeMediaTable), testDispatcher) {
       query {
         // supports "n.nn.nn"  nn is 1 or 2 numbers
         expect(sqliteVersion).matches(Regex("""[3-9]\.[0-9]{1,2}\.[0-9]{1,2}"""))
@@ -81,7 +81,7 @@ public object CommonDatabaseTests {
     val db = Database(
       context = appCtx,
       version = 1,
-      tables = listOf(SomeMediaTable),
+      tables = setOf(SomeMediaTable),
       migrations = emptyList(),
       requireMigration = false,
       openParams = OpenParams(
@@ -92,11 +92,15 @@ public object CommonDatabaseTests {
       onConfigure {
         onConfigureCalled = true
       }
-      onCreate {
+      onCreate { db ->
         onCreateCalled = true
+        expect(db.tables).toContain(SomeMediaTable)
+        expect(SomeMediaTable.exists).toBe(true)
+        expect(SomeMediaTable.selectAll().count()).toBe(0)
       }
-      onOpen {
+      onOpen { db ->
         onOpenCalled = true
+        expect(db.tables).toContain(SomeMediaTable)
       }
     }
     db.transaction {
@@ -109,7 +113,7 @@ public object CommonDatabaseTests {
   }
 
   public suspend fun createTableTest(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(SomeMediaTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(SomeMediaTable), testDispatcher) {
       query {
         expect(SomeMediaTable.exists).toBe(true)
         val description = SomeMediaTable.description
@@ -183,7 +187,7 @@ public object CommonDatabaseTests {
   ) {
     withTestDatabase(
       appCtx,
-      listOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
+      setOf(ArtistAlbumTable, MediaFileTable, ArtistTable, AlbumTable),
       testDispatcher
     ) {
       expectMediaTablesExist()
@@ -282,7 +286,7 @@ public object CommonDatabaseTests {
   }
 
   public suspend fun testCreateAndDropTable(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, emptyList(), testDispatcher) {
+    withTestDatabase(appCtx, emptySet(), testDispatcher) {
       transaction { MediaFileTable.create() }
       query { expect(MediaFileTable.exists).toBe(true) }
       transaction { MediaFileTable.drop() }
@@ -338,7 +342,7 @@ public object CommonDatabaseTests {
       @Suppress("unused") val id = long("_id") { primaryKey() }
       val artistName = text("ArtistName") { collateNoCase() }
     }
-    withTestDatabase(appCtx, listOf(aTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(aTable), testDispatcher) {
       query { expect(aTable.exists).toBe(true) }
       val index = transaction { aTable.index(aTable.artistName).also { index -> index.create() } }
       query {

@@ -28,15 +28,13 @@ import com.ealva.welite.db.expr.sum
 import com.ealva.welite.db.expr.upperCase
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.all
-import com.ealva.welite.db.table.select
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
 public object CommonFunctionTests {
   public suspend fun testSumColumn(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10 }
@@ -59,7 +57,7 @@ public object CommonFunctionTests {
   }
 
   public suspend fun testAvgMinMaxColumns(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10 }
@@ -77,7 +75,7 @@ public object CommonFunctionTests {
   }
 
   public suspend fun testSubstring(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10; it[name] = "ZabY" }
@@ -106,7 +104,7 @@ public object CommonFunctionTests {
     appCtx: Context,
     testDispatcher: CoroutineDispatcher
   ) {
-    withTestDatabase(appCtx, listOf(DataTable), testDispatcher) {
+    withTestDatabase(appCtx, setOf(DataTable), testDispatcher) {
       transaction {
         expect(DataTable.exists).toBe(true)
         DataTable.insert { it[data] = 10; it[name] = "Bob" }

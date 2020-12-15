@@ -35,7 +35,7 @@ val dbModule = module {
     Database(
       context = androidContext(),
       fileName = "WeLiteTest",
-      tables = listOf(MediaFileTable),
+      tables = setOf(MediaFileTable),
       version = 1,
       openParams = OpenParams(
         enableWriteAheadLogging = true,

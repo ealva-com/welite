@@ -22,7 +22,6 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.table.exists
-import com.ealva.welite.db.table.selectWhere
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -30,7 +29,7 @@ public object CommonExistsTests {
   public suspend fun testSelectExists(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -50,7 +49,7 @@ public object CommonExistsTests {
   public suspend fun testSelectExistsAndOr(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {
@@ -78,7 +77,7 @@ public object CommonExistsTests {
   ) {
     withPlaceTestDatabase(
       context = appCtx,
-      tables = listOf(Place, Person, Review),
+      tables = setOf(Place, Person, Review),
       testDispatcher = testDispatcher
     ) {
       query {

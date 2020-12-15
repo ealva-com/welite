@@ -30,9 +30,7 @@ import com.ealva.welite.db.expr.bindLong
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.table.OnConflict
-import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.toQuery
-import com.ealva.welite.db.table.where
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.AlbumTable.albumName
 import com.ealva.welite.test.shared.ArtistAlbumTable
@@ -57,10 +55,12 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [LOLLIPOP])
 class QueryTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  @get:Rule
+  var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 

@@ -16,7 +16,7 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.expr.ExprList
+import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.StatementSeed
 
@@ -39,7 +39,7 @@ public interface QuerySeed {
   /**
    * The list of columns selected in the query. Used when reading the query results.
    */
-  public val columns: ExprList
+  public val columns: List<Expression<*>>
 
   /**
    * Make a copy but update the sql
@@ -51,10 +51,10 @@ public interface QuerySeed {
      * Create a QuerySeed from the [StatementSeed] [seed] and the [columns] to be read from the
      * query result
      */
-    public operator fun invoke(seed: StatementSeed, columns: ExprList): QuerySeed {
+    public operator fun invoke(seed: StatementSeed, columns: List<Expression<*>>): QuerySeed {
       class QuerySeedImpl(
         private val statementSeed: StatementSeed,
-        override val columns: ExprList
+        override val columns: List<Expression<*>>
       ) : QuerySeed {
 
         override fun copy(sql: String): QuerySeed {

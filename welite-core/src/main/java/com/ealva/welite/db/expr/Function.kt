@@ -27,17 +27,55 @@ public typealias ExprList = List<Expression<*>>
 
 public abstract class Function<T>(
   override val persistentType: PersistentType<T>
-) : BaseSqlTypeExpression<T>()
+) : BaseSqlTypeExpression<T>() {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Function<*>
+
+    if (persistentType != other.persistentType) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + persistentType.hashCode()
+    return result
+  }
+}
 
 public class CustomFunction<T>(
   private val functionName: String,
   persistentType: PersistentType<T>,
-  private val exprList: ExprList
+  private val exprList: List<Expression<*>>
 ) : Function<T>(persistentType) {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(functionName).append('(')
     exprList.appendEach { append(it) }
     append(')')
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as CustomFunction<*>
+
+    if (functionName != other.functionName) return false
+    if (exprList != other.exprList) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + functionName.hashCode()
+    result = 31 * result + exprList.hashCode()
+    return result
   }
 }
 
@@ -56,6 +94,28 @@ public open class CustomOperator<T>(
     append(expr2)
     append(')')
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as CustomOperator<*>
+
+    if (operatorName != other.operatorName) return false
+    if (expr1 != other.expr1) return false
+    if (expr2 != other.expr2) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + operatorName.hashCode()
+    result = 31 * result + expr1.hashCode()
+    result = 31 * result + expr2.hashCode()
+    return result
+  }
 }
 
 public class Random : Function<Long>(LongPersistentType()) {
@@ -70,6 +130,24 @@ public class LowerCase(private val expr: Expression<String>) :
     append(expr)
     append(")")
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as LowerCase
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
+  }
 }
 
 public class UpperCase(private val expr: Expression<String>) :
@@ -78,6 +156,24 @@ public class UpperCase(private val expr: Expression<String>) :
     append("UPPER(")
     append(expr)
     append(")")
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as UpperCase
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
   }
 }
 
@@ -97,6 +193,26 @@ public class Concat(
       exprList.appendTo(this, separator = " || '$separator' || ") { append(it) }
     }
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Concat
+
+    if (separator != other.separator) return false
+    if (exprList != other.exprList) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + separator.hashCode()
+    result = 31 * result + exprList.hashCode()
+    return result
+  }
 }
 
 public class GroupConcat<T : String?>(
@@ -113,6 +229,26 @@ public class GroupConcat<T : String?>(
       append('\'')
     }
     append(")")
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as GroupConcat<*>
+
+    if (expr != other.expr) return false
+    if (separator != other.separator) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    result = 31 * result + (separator?.hashCode() ?: 0)
+    return result
   }
 }
 
@@ -131,6 +267,28 @@ public class Substring(
     append(subLength)
     append(")")
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Substring
+
+    if (expr != other.expr) return false
+    if (start != other.start) return false
+    if (subLength != other.subLength) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    result = 31 * result + start.hashCode()
+    result = 31 * result + subLength.hashCode()
+    return result
+  }
 }
 
 public class Trim(
@@ -140,6 +298,24 @@ public class Trim(
     append("TRIM(")
     append(expr)
     append(")")
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Trim
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
   }
 }
 
@@ -152,6 +328,24 @@ public class Min<T : Comparable<T>>(
     append(expr)
     append(")")
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Min<*>
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
+  }
 }
 
 public class Max<T : Comparable<T>>(
@@ -162,6 +356,24 @@ public class Max<T : Comparable<T>>(
     append("MAX(")
     append(expr)
     append(")")
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Max<*>
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
   }
 }
 
@@ -174,6 +386,24 @@ public class Avg<T : Comparable<T>>(
     append(expr)
     append(")")
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Avg<*>
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
+  }
 }
 
 public class Sum<T>(
@@ -184,6 +414,24 @@ public class Sum<T>(
     append("SUM(")
     append(expr)
     append(")")
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Sum<*>
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
   }
 }
 
@@ -198,6 +446,26 @@ public class Count(
     }
     append(expr)
     append(")")
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Count
+
+    if (expr != other.expr) return false
+    if (distinct != other.distinct) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    result = 31 * result + distinct.hashCode()
+    return result
   }
 }
 
@@ -302,5 +570,23 @@ public class Cast<T>(
     append(" AS ")
     append(persistentType.sqlType)
     append(")")
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as Cast<*>
+
+    if (expr != other.expr) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    return result
   }
 }

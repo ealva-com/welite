@@ -78,7 +78,7 @@ public interface PersistentType<T> {
    */
   public fun columnValue(row: Row, columnIndex: Int): T?
 
-  public fun valueToString(value: Any?): String
+  public fun valueToString(value: Any?, quoteAsLiteral: Boolean): String
 
   public fun asNullable(): PersistentType<T?>
 }
@@ -103,19 +103,22 @@ public abstract class BasePersistentType<T>(
     bindNull(index)
   }
 
-  override fun valueToString(value: Any?): String = when (value) {
+  private fun valueToStringQuotedAsLiteral(value: Any?): String = valueToString(value, true)
+
+  override fun valueToString(value: Any?, quoteAsLiteral: Boolean): String = when (value) {
     null -> {
       require(nullable) { "NULL in non-nullable column" }
       "NULL"
     }
     DefaultValueMarker -> DefaultValueMarker.toString()
-    is Iterable<*> -> value.joinToString(",", transform = ::valueToString)
-    else -> nonNullValueToString(value)
+    is Iterable<*> -> value.joinToString(",", transform = ::valueToStringQuotedAsLiteral)
+    else -> nonNullValueToString(value, quoteAsLiteral)
   }
 
   protected open fun notNullValueToDB(value: Any): Any = value
 
-  protected open fun nonNullValueToString(value: Any): String = notNullValueToDB(value).toString()
+  protected open fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
+    notNullValueToDB(value).toString()
 
   override fun toString(): String = sqlType
 
@@ -325,10 +328,14 @@ public class StringPersistentType<T : String?> : BasePersistentType<T>("TEXT") {
   @Suppress("UNCHECKED_CAST")
   override fun Row.readColumnValue(index: Int): T = getString(index) as T
 
-  override fun nonNullValueToString(value: Any): String = buildStr {
-    append('\'')
-    append(escape(value.toString()))
-    append('\'')
+  override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String = buildStr {
+    if (quoteAsLiteral) {
+      append('\'')
+      append(escape(value.toString()))
+      append('\'')
+    } else {
+      append(value.toString())
+    }
   }
 
   override fun doBind(bindable: Bindable, index: Int, value: Any): Unit = when (value) {
@@ -355,7 +362,7 @@ public open class BlobPersistentType<T : Blob?> : BasePersistentType<T>("BLOB") 
 
   override fun notNullValueToDB(value: Any): ByteArray = (value as Blob).bytes
 
-  override fun nonNullValueToString(value: Any): String = "?"
+  override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String = "?"
 
   override fun doBind(bindable: Bindable, index: Int, value: Any): Unit = when (value) {
     is Blob -> bindable.bind(index, value.bytes)
@@ -408,7 +415,8 @@ public open class UUIDPersistentType<T : UUID?> internal constructor(
       .array()
   }
 
-  override fun nonNullValueToString(value: Any): String = "'${valueToUUID(value)}'"
+  override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
+    if (quoteAsLiteral) "'${valueToUUID(value)}'" else "${valueToUUID(value)}"
 
   private fun valueToUUID(value: Any): UUID = when (value) {
     is UUID -> value
@@ -433,7 +441,11 @@ public open class UUIDPersistentType<T : UUID?> internal constructor(
 public open class BooleanPersistentType<T : Boolean?> : BaseIntegerPersistentType<T>() {
   @Suppress("UNCHECKED_CAST")
   override fun Row.readColumnValue(index: Int): T = (getInt(index) != 0) as T
-  override fun nonNullValueToString(value: Any): String = (value as Boolean).toStatementString()
+  override fun nonNullValueToString(
+    value: Any,
+    quoteAsLiteral: Boolean
+  ): String = (value as Boolean).toStatementString()
+
   override fun doBind(bindable: Bindable, index: Int, value: Any): Unit = when (value) {
     is Boolean -> bindable.bind(index, value.toLong())
     is Number -> bindable.bind(index, if (value != 0) 1L else 0L)
@@ -591,7 +603,8 @@ public class ScaledBigDecimalAsLongType<T : BigDecimal?> private constructor(
     return value.valueToBigDecimal()
   }
 
-  override fun nonNullValueToString(value: Any): String = "'${value.valueToBigDecimal()}'"
+  override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
+    if (quoteAsLiteral) "'${value.valueToBigDecimal()}'" else "${value.valueToBigDecimal()}"
 
   private fun Any.valueToBigDecimal(): BigDecimal = when (this) {
     is BigDecimal -> this

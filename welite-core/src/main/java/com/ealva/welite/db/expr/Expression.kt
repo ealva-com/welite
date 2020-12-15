@@ -25,24 +25,11 @@ public interface Expression<T> : AppendsToSqlBuilder {
 }
 
 public abstract class BaseExpression<T> : Expression<T> {
-  private val _hashCode: Int by lazy { toString().hashCode() }
-
   override fun asDefaultValue(): String = buildStr {
     append('(')
     appendTo(this)
     append(')')
   }
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is Expression<*>) return false
-
-    if (toString() != other.toString()) return false
-
-    return true
-  }
-
-  override fun hashCode(): Int = _hashCode
 
   override fun toString(): String = buildStr { appendTo(this) }
 

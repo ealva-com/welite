@@ -56,8 +56,19 @@ public object ArtistAlbumTable : Table() {
   }
 }
 
-public val MEDIA_TABLES: List<Table> =
-  listOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable)
+public object ArtistMediaTable : Table() {
+  public val artistId: Column<Long> = reference("ArtistId", ArtistTable.id)
+  public val mediaId: Column<Long> = reference("MediaIdId", MediaFileTable.id)
+  override val primaryKey: PrimaryKey = PrimaryKey(artistId, mediaId)
+
+  init {
+    index(artistId)
+    index(mediaId)
+  }
+}
+
+public val MEDIA_TABLES: Set<Table> =
+  setOf(MediaFileTable, ArtistTable, AlbumTable, ArtistAlbumTable, ArtistMediaTable)
 
 public suspend fun Database.expectMediaTablesExist() {
   query {

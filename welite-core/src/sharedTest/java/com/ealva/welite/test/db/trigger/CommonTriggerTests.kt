@@ -22,16 +22,12 @@ import com.ealva.welite.db.Transaction
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.case
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.expr.longLiteral
+import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.expr.neq
 import com.ealva.welite.db.expr.notLike
 import com.ealva.welite.db.expr.raiseAbort
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.asExpression
-import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.selectCount
-import com.ealva.welite.db.table.where
 import com.ealva.welite.db.trigger.Trigger
 import com.ealva.welite.db.trigger.deleteTrigger
 import com.ealva.welite.db.trigger.insertTrigger
@@ -287,7 +283,7 @@ public object CommonTriggerTests {
           new(MediaFileTable.mediaUri) notLike "file:%", // will throw
           raiseAbort("Abort, not URI")
         )
-      ).where(null)
+      )
     }
   }
 
@@ -319,7 +315,7 @@ public object CommonTriggerTests {
           old(MediaFileTable.mediaUri) notLike "file:%", // will throw
           raiseAbort("Abort, not URI")
         )
-      ).where(null)
+      )
     }
   }
 
@@ -375,7 +371,7 @@ public object CommonTriggerTests {
           new(MediaFileTable.mediaUri) notLike "file:%", // must start with "file:"
           raiseAbort("Abort, not URI")
         )
-      ).where(null)
+      )
 
       val oldCol = old(MediaFileTable.mediaUri)
       val newCol = new(MediaFileTable.albumId)
@@ -443,7 +439,7 @@ public object CommonTriggerTests {
           new(MediaFileTable.mediaUri) notLike "file:%", // must start with "file:"
           raiseAbort("Abort, not URI")
         )
-      ).where(null)
+      )
     }
     SqlExecutorSpy().let { spy ->
       trigger.create(spy)
@@ -582,12 +578,12 @@ public object CommonTriggerTests {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
       .sequence { it[ArtistTable.id] }
-      .firstOrNull() ?: ArtistTable.insert { it[artistName] = artist }
+      .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
       .where { AlbumTable.albumName eq album }
       .sequence { it[AlbumTable.id] }
-      .firstOrNull() ?: AlbumTable.insert {
+      .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist
     }
@@ -630,7 +626,7 @@ public val InsertMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.insertTr
       new(MediaFileTable.mediaUri) notLike "file:%", // must start with "file:"
       raiseAbort("Abort, not URI")
     )
-  ).where(null)
+  )
 }
 
 public val DeleteMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.deleteTrigger(
@@ -641,11 +637,11 @@ public val DeleteMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.deleteTr
     (MediaFileTable.selectCount { MediaFileTable.albumId eq old(MediaFileTable.albumId) })
       .asExpression()
 
-  AlbumTable.delete { mediaAlbumCount eq longLiteral(0) }
+  AlbumTable.delete { mediaAlbumCount eq literal(0) }
 
   val mediaArtistCount: Expression<Long> =
     (MediaFileTable.selectCount { MediaFileTable.artistId eq old(MediaFileTable.artistId) })
       .asExpression()
 
-  ArtistTable.delete { mediaArtistCount eq longLiteral(0) }
+  ArtistTable.delete { mediaArtistCount eq literal(0) }
 }

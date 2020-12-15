@@ -43,8 +43,8 @@ android {
   }
 
   lintOptions {
-    isWarningsAsErrors = true
-    isAbortOnError = true
+    isWarningsAsErrors = false
+    isAbortOnError = false
   }
 
   kotlinOptions {
