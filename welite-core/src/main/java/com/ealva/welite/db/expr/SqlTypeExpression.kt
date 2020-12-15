@@ -28,4 +28,14 @@ public abstract class BaseSqlTypeExpression<T> : BaseExpression<T>(), SqlTypeExp
   override fun bind(bindable: Bindable, index: Int, value: T?) {
     persistentType.bind(bindable, index, value)
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    return javaClass.hashCode()
+  }
 }

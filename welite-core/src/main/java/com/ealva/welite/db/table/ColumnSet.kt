@@ -19,6 +19,7 @@ package com.ealva.welite.db.table
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.SqlTypeExpression
+import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
 
@@ -26,7 +27,7 @@ import com.ealva.welite.db.type.SqlBuilder
  * Represents a set of columns. Conceptually a [ColumnSet] is the ```FROM``` part of a query, eg.
  * Table, Join, Alias,...
  */
-public interface ColumnSet {
+public interface ColumnSet : AppendsToSqlBuilder {
   public val columns: List<Column<*>>
   public val identity: Identity
 
@@ -39,7 +40,7 @@ public interface ColumnSet {
    *    ( K_FROM ( table_or_subquery ( ',' table_or_subquery )* | join_clause ) )?
    * ```
    */
-  public fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
+  public override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
 
   public fun join(
     joinTo: ColumnSet,
@@ -55,21 +56,22 @@ public interface ColumnSet {
   public fun naturalJoin(joinTo: ColumnSet): Join
 
   /**
-   * Start select by selecting all [columns]
-   */
-  public fun select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
-
-  /**
-   * Start select with [columns] which defaults to all columns of this [ColumnSet]
+   * Start select with [columns] which defaults to all columns of this [ColumnSet]. As currently
+   * designed all [select]s come through here, then any 'where' is added.
    */
   public fun select(columns: List<Expression<*>> = this.columns): SelectFrom =
     SelectFrom(columns.distinct(), this)
 
   /**
-   * Select COUNT(*) (no columns) using [where]
+   * Start select by selecting all [columns] arguments
    */
-  public fun selectCount(where: () -> Op<Boolean>): QueryBuilder =
-    QueryBuilder(set = select(emptyList()), where = where(), count = true)
+  public fun select(vararg columns: Expression<*>): SelectFrom = select(columns.distinct())
+
+  /**
+   * Select COUNT(*) (no columns) using optional [where]
+   */
+  public fun selectCount(where: (() -> Op<Boolean>)? = null): QueryBuilder =
+    QueryBuilder(set = select(emptyList()), where = where?.invoke(), count = true)
 
   /**
    * Select all columns [where]
@@ -79,7 +81,7 @@ public interface ColumnSet {
   /**
    * Select all columns and all rows
    */
-  public fun selectAll(): QueryBuilder = QueryBuilder(SelectFrom(columns, this), null)
+  public fun selectAll(): QueryBuilder = selectWhere(null)
 
   /**
    * Select all columns of this [ColumnSet] and call [where] to make the where expression
@@ -93,6 +95,17 @@ public interface ColumnSet {
  * themselves from the underlying DB layer. Also contains the ```FROM``` part of a query.
  */
 public interface SelectFrom {
+  public fun where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(this, where)
+
+  /**
+   * Calls [where] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
+   * and the where clause.
+   */
+  public fun where(where: () -> Op<Boolean>): QueryBuilder = where(where())
+
+  /** All rows will be returned */
+  public fun all(): QueryBuilder = where(null)
+
   public fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder
 
   public fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder
@@ -163,14 +176,3 @@ private data class SelectFromImpl(
   override val resultColumns: List<Expression<*>>
     get() = columns.toList()
 }
-
-public fun SelectFrom.where(where: Op<Boolean>?): QueryBuilder = QueryBuilder(this, where)
-
-/**
- * Calls [where] to create the where clause and then makes a [QueryBuilder] from this [SelectFrom]
- * and the where clause.
- */
-public fun SelectFrom.where(where: () -> Op<Boolean>): QueryBuilder = where(where())
-
-/** All rows will be returned */
-public fun SelectFrom.all(): QueryBuilder = where(null)

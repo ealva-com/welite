@@ -42,34 +42,54 @@ public class LiteralOp<T>(
   ): SqlBuilder = sqlBuilder.apply {
     append(persistentType.valueToString(value, true))
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as LiteralOp<*>
+
+    if (persistentType != other.persistentType) return false
+    if (value != other.value) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + persistentType.hashCode()
+    result = 31 * result + (value?.hashCode() ?: 0)
+    return result
+  }
 }
 
-public fun booleanLiteral(value: Boolean): LiteralOp<Boolean> =
+public fun literal(value: Boolean): LiteralOp<Boolean> =
   LiteralOp(BooleanPersistentType(), value)
 
-public fun byteLiteral(value: Byte): LiteralOp<Byte> = LiteralOp(BytePersistentType(), value)
-public fun shortLiteral(value: Short): LiteralOp<Short> = LiteralOp(ShortPersistentType(), value)
-public fun intLiteral(value: Int): LiteralOp<Int> = LiteralOp(IntegerPersistentType(), value)
-public fun longLiteral(value: Long): LiteralOp<Long> = LiteralOp(LongPersistentType(), value)
-public fun floatLiteral(value: Float): LiteralOp<Float> = LiteralOp(FloatPersistentType(), value)
-public fun doubleLiteral(value: Double): LiteralOp<Double> =
+public fun literal(value: Byte): LiteralOp<Byte> = LiteralOp(BytePersistentType(), value)
+public fun literal(value: Short): LiteralOp<Short> = LiteralOp(ShortPersistentType(), value)
+public fun literal(value: Int): LiteralOp<Int> = LiteralOp(IntegerPersistentType(), value)
+public fun literal(value: Long): LiteralOp<Long> = LiteralOp(LongPersistentType(), value)
+public fun literal(value: Float): LiteralOp<Float> = LiteralOp(FloatPersistentType(), value)
+public fun literal(value: Double): LiteralOp<Double> =
   LiteralOp(DoublePersistentType(), value)
 
-public fun stringLiteral(value: String): LiteralOp<String> =
+public fun literal(value: String): LiteralOp<String> =
   LiteralOp(StringPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-public fun ubyteLiteral(value: UByte): LiteralOp<UByte> = LiteralOp(UBytePersistentType(), value)
+public fun literal(value: UByte): LiteralOp<UByte> = LiteralOp(UBytePersistentType(), value)
 
 @ExperimentalUnsignedTypes
-public fun ushortLiteral(value: UShort): LiteralOp<UShort> =
+public fun literal(value: UShort): LiteralOp<UShort> =
   LiteralOp(UShortPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-public fun uintLiteral(value: UInt): LiteralOp<UInt> = LiteralOp(UIntegerPersistentType(), value)
+public fun literal(value: UInt): LiteralOp<UInt> = LiteralOp(UIntegerPersistentType(), value)
 
 @ExperimentalUnsignedTypes
-public fun ulongLiteral(value: ULong): LiteralOp<ULong> = LiteralOp(ULongPersistentType(), value)
+public fun literal(value: ULong): LiteralOp<ULong> = LiteralOp(ULongPersistentType(), value)
 
 public class ModOp<T : Number?, S : Number?>(
   private val lhs: Expression<T>,
@@ -83,6 +103,28 @@ public class ModOp<T : Number?, S : Number?>(
     append(rhs)
     append(')')
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as ModOp<*, *>
+
+    if (lhs != other.lhs) return false
+    if (rhs != other.rhs) return false
+    if (persistentType != other.persistentType) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + lhs.hashCode()
+    result = 31 * result + rhs.hashCode()
+    result = 31 * result + persistentType.hashCode()
+    return result
+  }
 }
 
 @Suppress("unused")
@@ -91,6 +133,25 @@ public class NoOpConversion<T, S>(
   override val persistentType: PersistentType<S>
 ) : BaseSqlTypeExpression<S>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply { append(expr) }
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as NoOpConversion<*, *>
+
+    if (expr != other.expr) return false
+    if (persistentType != other.persistentType) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + expr.hashCode()
+    result = 31 * result + persistentType.hashCode()
+    return result
+  }
 }
 
 public class InListOrNotInListOp<T>(

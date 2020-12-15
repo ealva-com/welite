@@ -44,40 +44,92 @@ public inline val OrderByPair.expression: Expression<*>
 public inline val OrderByPair.ascDesc: SortOrder
   get() = second
 
+public interface QueryBuilder : AppendsToSqlBuilder {
+  public val resultColumns: List<Expression<*>>
+
+  /**
+   * Changes where field of a Query.
+   * @param body new WHERE condition builder, previous value used as a receiver
+   */
+  public fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>): QueryBuilder
+
+  /**
+   * Build the QuerySeed as a basis for a Query instance or executing a query
+   */
+  public fun build(): QuerySeed
+  public fun statementSeed(): StatementSeed
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
+  public fun distinct(value: Boolean = true): QueryBuilder
+  public fun groupBy(column: Expression<*>): QueryBuilder
+  public fun groupBy(columnList: List<Expression<*>>): QueryBuilder
+  public fun having(op: () -> Op<Boolean>): QueryBuilder
+  public fun orderBy(column: Expression<*>, order: SortOrder = SortOrder.ASC): QueryBuilder
+  public fun orderBy(pair: OrderByPair): QueryBuilder
+  public fun orderBy(orderList: List<OrderByPair>): QueryBuilder
+  public val hasOrderBy: Boolean
+  public fun limit(limit: Long, offset: Long = 0): QueryBuilder
+  public val hasLimit: Boolean
+
+  /**
+   * Used in QueryBuilderAlias
+   */
+  public fun sourceSetColumnsInResult(): List<Column<*>>
+
+  /**
+   * Used in QueryBuilderAlias
+   */
+  public fun <T> findSourceSetOriginal(original: Column<T>): Column<*>?
+
+  /**
+   * Used in QueryBuilderAlias
+   */
+  public fun <T> findResultColumnExpressionAlias(
+    original: SqlTypeExpression<T>
+  ): SqlTypeExpressionAlias<T>?
+
+  public companion object {
+    public operator fun invoke(
+      set: SelectFrom,
+      where: Op<Boolean>?,
+      count: Boolean = false
+    ): QueryBuilder = QueryBuilderImpl(set, where, count)
+  }
+}
+
+public inline val QueryBuilder.hasNoOrderBy: Boolean
+  get() = !hasOrderBy
+
+public inline val QueryBuilder.hasNoLimit: Boolean
+  get() = !hasLimit
+
 @WeLiteMarker
-public class QueryBuilder private constructor(
+private class QueryBuilderImpl(
   private var selectFrom: SelectFrom,
   private var where: Op<Boolean>?,
   private var count: Boolean = false
-) : AppendsToSqlBuilder {
-  private var groupBy = mutableListOf<Expression<*>>()
-  private var orderBy = mutableListOf<OrderByPair>()
+) : QueryBuilder {
+  private var groupBy: MutableSet<Expression<*>> = LinkedHashSet()
+  private var orderBy: MutableSet<OrderByPair> = LinkedHashSet()
   private var having: Op<Boolean>? = null
   private var distinct: Boolean = false
   private var limitOffset: LimitOffset? = null
 
-  public fun copy(): QueryBuilder = QueryBuilder(selectFrom, where).also { copy ->
-    copy.groupBy = groupBy.toMutableList()
-    copy.orderBy = orderBy.toMutableList()
-    copy.having = having
-    copy.distinct = distinct
-    copy.limitOffset = limitOffset
-    copy.count = count
-  }
+  override val resultColumns: List<Expression<*>>
+    get() = selectFrom.resultColumns
 
   /**
    * Changes [where] field of a Query.
    * @param body new WHERE condition builder, previous value used as a receiver
    */
-  public fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>): QueryBuilder =
+  override fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>): QueryBuilder =
     apply { where = where.body() }
 
   /**
    * Build the QuerySeed as a basis for a Query instance or executing a query
    */
-  internal fun build(): QuerySeed = makeQuerySeed()
+  override fun build(): QuerySeed = makeQuerySeed()
 
-  internal fun statementSeed(): StatementSeed = buildSql { append(this@QueryBuilder) }
+  override fun statementSeed(): StatementSeed = buildSql { append(this@QueryBuilderImpl) }
 
   private fun makeQuerySeed(): QuerySeed = QuerySeed(statementSeed(), selectFrom.resultColumns)
 
@@ -130,59 +182,61 @@ public class QueryBuilder private constructor(
     }
   }
 
-  public fun distinct(value: Boolean = true): QueryBuilder = apply { distinct = value }
+  override fun distinct(value: Boolean): QueryBuilder = apply { distinct = value }
 
-  public fun groupBy(first: Expression<*>, vararg columns: Expression<*>): QueryBuilder = apply {
-    groupBy.add(first)
-    if (columns.isNotEmpty()) groupBy.addAll(columns)
+  override fun groupBy(column: Expression<*>): QueryBuilder = apply {
+    groupBy.add(column)
   }
 
-  @Suppress("unused")
-  public fun having(op: () -> Op<Boolean>): QueryBuilder = apply {
+  override fun groupBy(columnList: List<Expression<*>>): QueryBuilder = apply {
+    columnList.forEach { column -> groupBy(column) }
+  }
+
+  override fun having(op: () -> Op<Boolean>): QueryBuilder = apply {
     if (having != null) {
       error("""HAVING specified twice. Old value = '$having', new value = '${Op.build { op() }}'""")
     }
     having = Op.build { op() }
   }
 
-  public fun orderBy(column: Expression<*>, order: SortOrder = SortOrder.ASC): QueryBuilder =
+  override fun orderBy(column: Expression<*>, order: SortOrder): QueryBuilder =
     orderBy(column to order)
 
-  public fun orderBy(vararg order: OrderByPair): QueryBuilder = apply { orderBy.addAll(order) }
+  override fun orderBy(pair: OrderByPair): QueryBuilder = apply {
+    orderBy.add(pair)
+  }
 
-  public fun limit(limit: Long, offset: Long = 0): QueryBuilder = apply {
+  override fun orderBy(orderList: List<OrderByPair>): QueryBuilder = apply {
+    orderList.forEach { pair -> orderBy(pair) }
+  }
+
+  override val hasOrderBy: Boolean
+    get() = orderBy.isNotEmpty()
+
+  override fun limit(limit: Long, offset: Long): QueryBuilder = apply {
     limitOffset = LimitOffset(limit, offset)
   }
 
-  /**
-   * Used in QueryBuilderAlias
-   */
-  internal fun sourceSetColumnsInResult(): List<Column<*>> = selectFrom.sourceSetColumnsInResult()
+  override val hasLimit: Boolean
+    get() = limitOffset != null
 
   /**
    * Used in QueryBuilderAlias
    */
-  internal fun <T> findSourceSetOriginal(original: Column<T>): Column<*>? =
+  override fun sourceSetColumnsInResult(): List<Column<*>> = selectFrom.sourceSetColumnsInResult()
+
+  /**
+   * Used in QueryBuilderAlias
+   */
+  override fun <T> findSourceSetOriginal(original: Column<T>): Column<*>? =
     selectFrom.findSourceSetOriginal(original)
 
   /**
    * Used in QueryBuilderAlias
    */
-  internal fun <T> findResultColumnExpressionAlias(
+  override fun <T> findResultColumnExpressionAlias(
     original: SqlTypeExpression<T>
   ): SqlTypeExpressionAlias<T>? = selectFrom.findResultColumnExpressionAlias(original)
-
-  public companion object {
-    /**
-     * Make a QueryBuilder from the initial SelectFrom, a where clause, and indicate if this will
-     * be a "count" query.
-     */
-    internal operator fun invoke(
-      set: SelectFrom,
-      where: Op<Boolean>?,
-      count: Boolean = false
-    ): QueryBuilder = QueryBuilder(set, where, count)
-  }
 }
 
 /**

@@ -31,7 +31,6 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.test.db.table.Person
 import com.ealva.welite.test.db.table.Place
 import com.ealva.welite.test.db.table.Review
-import com.ealva.welite.db.table.where
 import com.ealva.welite.test.db.table.withPlaceTestDatabase
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
@@ -100,7 +99,7 @@ class UpdateTests {
             .select(Person.name)
             .where { Person.id eq nathaliaId }
             .sequence { it[Person.name] }
-            .first()
+            .single()
         ).toBe("Nathalia")
       }
 
@@ -118,7 +117,7 @@ class UpdateTests {
             .select(Person.name)
             .where { Person.id eq nathaliaId }
             .sequence { it[Person.name] }
-            .first()
+            .single()
         ).toBe(newName)
       }
     }
@@ -155,12 +154,12 @@ class UpdateTests {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
       .sequence { it[ArtistTable.id] }
-      .firstOrNull() ?: ArtistTable.insert { it[artistName] = artist }
+      .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
       .where { AlbumTable.albumName eq album }
       .sequence { it[AlbumTable.id] }
-      .firstOrNull() ?: AlbumTable.insert {
+      .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist
     }

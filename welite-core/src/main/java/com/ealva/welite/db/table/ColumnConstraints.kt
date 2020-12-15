@@ -106,6 +106,21 @@ public abstract class AscDescConstraint(public val value: String) : ColumnConstr
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {
     if (others.find { it is PrimaryKeyConstraint } == null) "$this must follow $PRIMARY_KEY"
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as AscDescConstraint
+
+    if (value != other.value) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    return value.hashCode()
+  }
 }
 
 public object AscConstraint : AscDescConstraint(ASC)
@@ -152,6 +167,24 @@ public class ConflictConstraint(private val onConflict: OnConflict) : ColumnCons
       }
     } != null
     if (!hasRequired) notAllowed { "$mustFollow Current=${others.joinAsString()}" }
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as ConflictConstraint
+
+    if (onConflict != other.onConflict) return false
+    if (mustFollow != other.mustFollow) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = onConflict.hashCode()
+    result = 31 * result + mustFollow.hashCode()
+    return result
   }
 }
 
@@ -201,6 +234,20 @@ public class CollateConstraint(private val collate: Collate) : ColumnConstraint(
   override fun mayAppearFirst(persistentType: PersistentType<*>) {}
 
   override fun allowedToFollow(others: List<ColumnConstraint>, persistentType: PersistentType<*>) {}
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as CollateConstraint
+
+    if (collate != other.collate) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    return collate.hashCode()
+  }
 }
 
 public interface ConstraintCollection : Iterable<ColumnConstraint> {
@@ -255,4 +302,21 @@ private class ConstraintList(
   }
 
   override fun iterator() = constraints.iterator()
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as ConstraintList
+
+    if (persistentType != other.persistentType) return false
+    if (constraints != other.constraints) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = persistentType.hashCode()
+    result = 31 * result + constraints.hashCode()
+    return result
+  }
 }

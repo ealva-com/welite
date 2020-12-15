@@ -25,9 +25,7 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.OnConflict
-import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.toQuery
-import com.ealva.welite.db.table.where
 import com.ealva.welite.db.view.View
 import com.ealva.welite.db.view.ViewColumn
 import com.ealva.welite.test.shared.AlbumTable
@@ -47,7 +45,8 @@ public object CommonViewTests {
       "FullMedia",
       MediaFileTable.select(MediaFileTable.id).where(MediaFileTable.id eq 1)
     ) {
-      @Suppress("unused") val mediaId = column("mediaFileId", MediaFileTable.id)
+      @Suppress("unused")
+      val mediaId = column("mediaFileId", MediaFileTable.id)
     }
 
     SqlExecutorSpy().let { spy ->
@@ -143,8 +142,10 @@ public object CommonViewTests {
           .select()
           .where { FullMediaView.mediaId greaterEq 1 }
           .orderBy(
-            FullMediaView.artistName to SortOrder.DESC,
-            FullMediaView.albumName to SortOrder.ASC
+            listOf(
+              FullMediaView.artistName to SortOrder.DESC,
+              FullMediaView.albumName to SortOrder.ASC
+            )
           )
           .sequence { cursor ->
             Triple(

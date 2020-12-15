@@ -39,12 +39,12 @@ import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.CursorWrapper
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.OnConflict.Unspecified
 import com.ealva.welite.db.table.Query
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.QuerySeed
 import com.ealva.welite.db.table.SQLiteMaster
 import com.ealva.welite.db.table.SelectFrom
@@ -57,7 +57,6 @@ import com.ealva.welite.db.table.columnMetadata
 import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.stringForQuery
-import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -175,8 +174,10 @@ private class TransactionInProgressImpl(
   override fun <T> Query.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
     doFlow(seed, bind, factory)
 
-  override fun <T> QueryBuilder.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
-    this@TransactionInProgressImpl.doFlow(build(), bind, factory)
+  override fun <T> QueryBuilder.flow(
+    bind: (ArgBindings) -> Unit,
+    factory: (Cursor) -> T
+  ): Flow<T> = this@TransactionInProgressImpl.doFlow(build(), bind, factory)
 
   override fun <T> Query.sequence(
     bind: (ArgBindings) -> Unit,

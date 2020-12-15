@@ -28,8 +28,6 @@ import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
-import it.unimi.dsi.fastutil.objects.Object2IntMap
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 
 internal interface CursorWrapper : Cursor, Row, AutoCloseable {
   fun moveToNext(): Boolean
@@ -40,22 +38,13 @@ internal interface CursorWrapper : Cursor, Row, AutoCloseable {
   }
 }
 
-private typealias ExpressionToIndexMap = Object2IntMap<Expression<*>>
-
-private fun List<Expression<*>>.mapExprToIndex(): ExpressionToIndexMap {
-  return Object2IntOpenHashMap<Expression<*>>(size).apply {
-    defaultReturnValue(-1)
-    this@mapExprToIndex.forEachIndexed { index, expression -> put(expression, index) }
-  }
-}
-
 private typealias ACursor = android.database.Cursor
 
 private class CursorWrapperImpl(
   private val cursor: ACursor,
   columns: List<Expression<*>>
 ) : CursorWrapper {
-  private val exprMap = columns.mapExprToIndex()
+  private val exprMap = ExpressionToIndexMap(columns)
 
   override val count: Int
     get() = cursor.count
@@ -69,7 +58,9 @@ private class CursorWrapperImpl(
   override fun moveToNext(): Boolean = cursor.moveToNext()
 
   @Suppress("NOTHING_TO_INLINE")
-  private inline fun <T> SqlTypeExpression<T>.index() = exprMap.getInt(this)
+  private inline fun <T> SqlTypeExpression<T>.index(): Int {
+    return exprMap[this] // todo
+  }
 
   override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
     expression.persistentType.columnValue(this, expression.index())
@@ -130,6 +121,7 @@ private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String
     }
   }
 }
+
 /**
  * Convert the current row of the cursor to a string containing column "name:value" pairs
  * delimited with ", "

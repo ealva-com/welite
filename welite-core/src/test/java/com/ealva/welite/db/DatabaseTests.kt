@@ -47,10 +47,12 @@ import com.ealva.welite.test.db.CommonDatabaseTests as Common
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [LOLLIPOP])
 class DatabaseTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  @get:Rule
+  var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
   private var config: DatabaseConfiguration? = null

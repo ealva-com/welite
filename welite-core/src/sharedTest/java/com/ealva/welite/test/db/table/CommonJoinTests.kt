@@ -22,14 +22,13 @@ import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.or
-import com.ealva.welite.db.expr.stringLiteral
+import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.table.Alias
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.alias
-import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
@@ -225,7 +224,7 @@ public object CommonJoinTests {
         val pair = Person.join(
           personAlias,
           JoinType.LEFT,
-          stringLiteral("nathalia"),
+          literal("nathalia"),
           personAlias[Person.id]
         ).selectWhere { Person.id eq "amber" }
           .flow { Pair(it[Person.name], it[personAlias[Person.name]]) }

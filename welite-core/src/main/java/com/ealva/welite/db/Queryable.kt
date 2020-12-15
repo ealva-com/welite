@@ -21,9 +21,9 @@ import androidx.annotation.RequiresApi
 import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Cursor
+import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.Query
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker

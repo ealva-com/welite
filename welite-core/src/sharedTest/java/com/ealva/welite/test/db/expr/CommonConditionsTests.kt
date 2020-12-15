@@ -25,8 +25,6 @@ import com.ealva.welite.db.expr.less
 import com.ealva.welite.db.expr.lessEq
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.all
-import com.ealva.welite.db.table.where
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
