@@ -24,10 +24,8 @@ import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.QueryBuilderAlias
 import com.ealva.welite.db.table.SqlTypeExpressionAlias
 import com.ealva.welite.db.table.alias
-import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.joinQuery
 import com.ealva.welite.db.table.lastQueryBuilderAlias
-import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 

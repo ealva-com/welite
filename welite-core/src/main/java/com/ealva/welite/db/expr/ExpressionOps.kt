@@ -155,20 +155,20 @@ public fun <T> SqlTypeExpression<in T>.param(value: T): Expression<T> = when (va
 @OptIn(ExperimentalUnsignedTypes::class)
 @Suppress("UNCHECKED_CAST")
 public fun <T> SqlTypeExpression<in T>.literal(value: T): LiteralOp<T> = when (value) {
-  is String -> stringLiteral(value)
-  is Int -> intLiteral(value)
-  is Long -> longLiteral(value)
-  is Float -> floatLiteral(value)
-  is Double -> doubleLiteral(value)
-  is Short -> shortLiteral(value)
-  is Boolean -> booleanLiteral(value)
-  is Byte -> byteLiteral(value)
-  is UInt -> uintLiteral(value)
-  is ULong -> ulongLiteral(value)
-  is UShort -> ushortLiteral(value)
-  is UByte -> ubyteLiteral(value)
-  is BigDecimal -> longLiteral(value.unscaledValue().toLong())
-  is ByteArray -> stringLiteral(value.toString(Charsets.UTF_8))
+  is String -> com.ealva.welite.db.expr.literal(value)
+  is Int -> com.ealva.welite.db.expr.literal(value)
+  is Long -> com.ealva.welite.db.expr.literal(value)
+  is Float -> com.ealva.welite.db.expr.literal(value)
+  is Double -> com.ealva.welite.db.expr.literal(value)
+  is Short -> com.ealva.welite.db.expr.literal(value)
+  is Boolean -> com.ealva.welite.db.expr.literal(value)
+  is Byte -> com.ealva.welite.db.expr.literal(value)
+  is UInt -> com.ealva.welite.db.expr.literal(value)
+  is ULong -> com.ealva.welite.db.expr.literal(value)
+  is UShort -> com.ealva.welite.db.expr.literal(value)
+  is UByte -> com.ealva.welite.db.expr.literal(value)
+  is BigDecimal -> literal(value.unscaledValue().toLong())
+  is ByteArray -> literal(value.toString(Charsets.UTF_8))
   else -> LiteralOp(persistentType, value)
 } as LiteralOp<T>
 
@@ -180,7 +180,7 @@ public enum class SortOrder(public val sqlName: String) {
 }
 
 public fun Expression<String>.substring(start: Int, length: Int): Function<String> =
-  Substring(this, intLiteral(start), intLiteral(length))
+  Substring(this, literal(start), literal(length))
 
 public fun Expression<String>.trim(): Function<String> = Trim(this)
 

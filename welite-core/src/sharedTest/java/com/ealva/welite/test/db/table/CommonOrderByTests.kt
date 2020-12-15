@@ -22,9 +22,7 @@ import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.count
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.substring
-import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
-import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
@@ -98,7 +96,7 @@ public object CommonOrderByTests {
         val expectedList = others + withoutCities
         Person
           .selectAll()
-          .orderBy(Person.cityId to SortOrder.DESC, Person.id to SortOrder.ASC)
+          .orderBy(listOf(Person.cityId to SortOrder.DESC, Person.id to SortOrder.ASC))
           .sequence { it[Person.id] }
           .toList()
           .let { list ->

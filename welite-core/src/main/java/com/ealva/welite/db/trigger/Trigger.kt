@@ -26,7 +26,6 @@ import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.OnConflict
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.SelectFrom
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
@@ -149,12 +148,33 @@ public enum class NewOrOld(public val value: String) {
   override fun toString(): String = value
 }
 
-private class NewOrOldColumn<T>(original: Column<T>, newOrOld: NewOrOld) : Column<T> by original {
+private class NewOrOldColumn<T>(
+  newOrOld: NewOrOld,
+  private val original: Column<T>
+) : Column<T> by original {
   override val name: String = "$newOrOld${original.name}"
   override fun identity(): Identity = name.asIdentity()
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(name)
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as NewOrOldColumn<*>
+
+    if (name != other.name) return false
+    if (original != other.original) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = original.hashCode()
+    result = 31 * result + name.hashCode()
+    return result
   }
 }
 
@@ -180,12 +200,13 @@ public interface TriggerStatements : OldNewColumnFactory {
 
   public fun <T : Table> TriggerUpdate<T>.where(where: T.() -> Op<Boolean>)
 
-  public fun select(vararg columns: Expression<*>): SelectFrom =
-    SelectFrom(columns.distinct(), null)
-
-  public fun SelectFrom.where(where: Op<Boolean>?)
+  public fun select(vararg columns: Expression<*>)
 }
 
+/**
+ * As TriggerStatements are further developed it may be necessary to implement a SelectFrom
+ * delegate and/or a QueryBuilder delegate that adds statements to the TriggerStatements list
+ */
 private class TriggerStatementsImpl(
   private val columnFactory: OldNewColumnFactory,
 ) : TriggerStatements, OldNewColumnFactory by columnFactory {
@@ -222,8 +243,8 @@ private class TriggerStatementsImpl(
     addWhere(where)
   }
 
-  override fun SelectFrom.where(where: Op<Boolean>?) {
-    statements += QueryBuilder(this, where).statementSeed()
+  override fun select(vararg columns: Expression<*>) {
+    statements += SelectFrom(columns.distinct(), null).where(null).statementSeed()
   }
 }
 
@@ -326,7 +347,7 @@ private class TriggerOldNewFactory(
     check(column.table == table) {
       "NEW.column must refer to a $table table column. Refers to ${column.table} table"
     }
-    return NewOrOldColumn(column, NewOrOld.NEW)
+    return NewOrOldColumn(NewOrOld.NEW, column)
   }
 
   override fun <T> old(column: Column<T>): Column<T> {
@@ -336,6 +357,6 @@ private class TriggerOldNewFactory(
     check(column.table == table) {
       "OLD.column must refer to a $table table column. Refers to ${column.table} table"
     }
-    return NewOrOldColumn(column, NewOrOld.OLD)
+    return NewOrOldColumn(NewOrOld.OLD, column)
   }
 }

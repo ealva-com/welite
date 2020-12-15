@@ -19,7 +19,6 @@ package com.ealva.welite.test.db.table
 import android.content.Context
 import com.ealva.welite.db.expr.max
 import com.ealva.welite.db.table.alias
-import com.ealva.welite.db.table.all
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 

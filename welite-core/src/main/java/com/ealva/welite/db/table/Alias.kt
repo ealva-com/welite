@@ -50,7 +50,7 @@ public class Alias<out T : Table>(private val delegate: T, private val alias: St
 
   @Suppress("unused", "UNCHECKED_CAST")
   public fun <R> originalColumn(column: Column<R>): Column<R>? =
-    delegate.columns.firstOrNull { column.name == it.name } as Column<R>
+    delegate.columns.firstOrNull { column.name == it.name } as? Column<R>
 
   override val columns: List<Column<*>> = delegate.columns.map { it.clone() }
 
@@ -106,6 +106,26 @@ public class SqlTypeExpressionAlias<T>(
       override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
         sqlBuilder.apply { append(alias) }
     }
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as SqlTypeExpressionAlias<*>
+
+    if (delegate != other.delegate) return false
+    if (alias != other.alias) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + delegate.hashCode()
+    result = 31 * result + alias.hashCode()
+    return result
   }
 
   override val persistentType: PersistentType<T>

@@ -28,8 +28,6 @@ import com.ealva.welite.db.expr.sum
 import com.ealva.welite.db.expr.upperCase
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.db.table.all
-import com.ealva.welite.db.table.select
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher

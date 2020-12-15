@@ -256,22 +256,46 @@ private class ColumnImpl<T>(
 
   override fun compareTo(other: Column<*>): Int = columnComparator.compare(this, other)
 
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is ColumnImpl<*>) return false
-    if (!super.equals(other)) return false
-
-    if (table != other.table) return false
-    if (name != other.name) return false
-    return (persistentType == other.persistentType)
-  }
-
-  override fun hashCode(): Int = table.hashCode() * 31 + name.hashCode()
-
   override fun toString(): String = buildStr {
     append(tableIdentity.unquoted)
     append('.')
     append(name)
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as ColumnImpl<*>
+
+    if (name != other.name) return false
+    if (table != other.table) return false
+    if (persistentType != other.persistentType) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + name.hashCode()
+    result = 31 * result + table.hashCode()
+    result = 31 * result + persistentType.hashCode()
+    return result
+  }
+}
+
+/**
+ * SimpleDelegatingColumn: Simple as in it does not present it's fully qualified name when
+ * appending to SqlBuilder or in toString
+ */
+public data class SimpleDelegatingColumn<T>(val original: Column<T>) : Column<T> by original {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(identity().value)
+  }
+
+  override fun toString(): String {
+    return name
   }
 }
 
