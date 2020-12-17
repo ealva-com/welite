@@ -83,14 +83,14 @@ class BigDecimalColumnTest {
           it[optBig].bindArg()
         }
         insertBig.insert {
-          it[BigTable.name] = "Bob"
-          it[BigTable.bigD] = BigDecimal("1234.560")
-          it[BigTable.optBig] = null
+          it[name] = "Bob"
+          it[bigD] = BigDecimal("1234.560")
+          it[optBig] = null
         }
         insertBig.insert {
-          it[BigTable.name] = "Mike"
-          it[1] = BigDecimal("1234.567")
-          it[2] = BigDecimal("2345.670")
+          it[name] = "Mike"
+          it[bigD] = BigDecimal("1234.567")
+          it[optBig] = BigDecimal("2345.670")
         }
         insertBig.insert {
           it[0] = "Patricia"
@@ -126,6 +126,7 @@ class BigDecimalColumnTest {
         }
         bigTableInsert.insert {
           it[0] = BigInteger("2") // during bind converted to string, then BigDecimal
+          // can bind same repeatedly without error
           it[1] = 2.0
           it[1] = 2.0F
           it[1] = 2

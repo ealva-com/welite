@@ -70,15 +70,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         insertStatement.insert {
-          it[MediaFileTable.mediaUri] = "file.mpg"
-          it[MediaFileTable.fileName] = "/dir/Music/file.mpg"
-          it[MediaFileTable.mediaTitle] = "A Title"
+          it[mediaUri] = "file.mpg"
+          it[fileName] = "/dir/Music/file.mpg"
+          it[mediaTitle] = "A Title"
         }
 
         insertStatement.insert {
-          it[MediaFileTable.mediaUri] = "/dir/Music/anotherFile.mpg"
-          it[MediaFileTable.fileName] = "anotherFile.mpg"
-          it[MediaFileTable.mediaTitle] = "Another Title"
+          it[mediaUri] = "/dir/Music/anotherFile.mpg"
+          it[fileName] = "anotherFile.mpg"
+          it[mediaTitle] = "Another Title"
         }
 
         MediaFileTable.insert(OnConflict.Ignore) {
@@ -87,13 +87,11 @@ class MainActivity : AppCompatActivity() {
           it[mediaTitle] = "Third Title"
         }
 
-        MediaFileTable.insert(OnConflict.Ignore, { it[0] = "/dir/Music/fourth.mp3" }) {
+        MediaFileTable.insert(OnConflict.Ignore, { it[mediaUri] = "/dir/Music/fourth.mp3" }) {
           it[mediaUri].bindArg()
           it[fileName] = "fourth"
           it[mediaTitle] = "Fourth Title"
         }
-
-        setSuccessful()
       }
 
       db.query {

@@ -103,10 +103,10 @@ class LocalDateColumnTest {
           it[other].bindArg()
         }
         visitInsert.insert {
-          it[0] = LocalDate.now()
-          it[1] = LocalDate.now().plusYears(2)
-          it[2] = "Motel 6"
-          it[3] = "Vending Machine"
+          it[localDate] = LocalDate.now()
+          it[optLocalDate] = LocalDate.now().plusYears(2)
+          it[name] = "Motel 6"
+          it[other] = "Vending Machine"
         }
         visitInsert.insert {
           it[0] = LocalDate.now()
@@ -114,8 +114,6 @@ class LocalDateColumnTest {
           it[2] = "The Greenbrier"
           it[3] = "Conference Room"
         }
-
-        setSuccessful()
       }
 
       data class Accom(
@@ -162,7 +160,6 @@ class LocalDateColumnTest {
           it[0] = LocalDateTime.now()
           it[1] = "2007-12-03"
         }
-        setSuccessful()
       }
       query {
         expect(Visit.selectAll().count()).toBe(1)
@@ -185,7 +182,6 @@ class LocalDateColumnTest {
           it[0] = null
           it[1] = "2007-12-03"
         }
-        setSuccessful()
       }
       fail("bind of null should be exceptional")
     }
@@ -206,7 +202,6 @@ class LocalDateColumnTest {
           it[0] = LocalDate.now()
           it[1] = "20071203" // bad date format
         }
-        setSuccessful()
       }
       fail("bind of null should be exceptional")
     }
@@ -224,10 +219,9 @@ class LocalDateColumnTest {
           it[other] = "other"
         }
         visitInsert.insert {
-          it[0] = LocalDate.now()
+          it[localDate] = LocalDate.now()
           it[1] = Date() // doesn't accept
         }
-        setSuccessful()
       }
       fail("bind of date should be exceptional")
     }

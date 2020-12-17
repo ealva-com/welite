@@ -73,8 +73,8 @@ class BindParameterTests {
         }
         insertStatement.insert { it[0] = hasQuotes }
         insertStatement.insert {
-          it[table.name] = hasQuotes
-          it[table.optName] = optNameValue
+          it[name] = hasQuotes
+          it[optName] = optNameValue
         }
         val list = table
           .selectAll()
@@ -228,16 +228,16 @@ class BindParameterTests {
           it[19] = null
         }
         insertStatement.insert {
-          it[table.reqByte] = 4.toByte()
-          it[table.reqShort] = 4.toShort()
-          it[table.reqInt] = 4
-          it[table.reqLong] = 4.toLong()
-          it[table.reqFloat] = 4.toFloat()
-          it[table.reqDouble] = 4.toDouble()
-          it[table.reqUByte] = 4.toUByte()
-          it[table.reqUShort] = 4.toUShort()
-          it[table.reqUInt] = 4.toUInt()
-          it[table.reqULong] = 4.toULong()
+          it[reqByte] = 4.toByte()
+          it[reqShort] = 4.toShort()
+          it[reqInt] = 4
+          it[reqLong] = 4.toLong()
+          it[reqFloat] = 4.toFloat()
+          it[reqDouble] = 4.toDouble()
+          it[reqUByte] = 4.toUByte()
+          it[reqUShort] = 4.toUShort()
+          it[reqUInt] = 4.toUInt()
+          it[reqULong] = 4.toULong()
         }
       }
       query {
@@ -343,26 +343,26 @@ class BindParameterTests {
           it[reqEnumByName].bindArg()
         }
         insStmt.insert {
-          it[table.reqBlob] = Blob(aArray)
-          it[table.optBlob] = Blob(bArray)
-          it[table.reqBool] = true
-          it[table.optBool] = false
-          it[table.reqEnum] = HasTwo.First
-          it[table.reqEnumByName] = HasTwo.Second
+          it[reqBlob] = Blob(aArray)
+          it[optBlob] = Blob(bArray)
+          it[reqBool] = true
+          it[optBool] = false
+          it[reqEnum] = HasTwo.First
+          it[reqEnumByName] = HasTwo.Second
         }
         insStmt.insert {
-          it[table.reqBlob] = Blob(aArray)
-          it[table.optBlob] = null
-          it[table.reqBool] = "true".toBoolean()
-          it[table.optBool] = null
-          it[table.reqEnum] = HasTwo.First
-          it[table.reqEnumByName] = HasTwo.Second
+          it[reqBlob] = Blob(aArray)
+          it[optBlob] = null
+          it[reqBool] = "true".toBoolean()
+          it[optBool] = null
+          it[reqEnum] = HasTwo.First
+          it[reqEnumByName] = HasTwo.Second
         }
         insStmt.insert {
-          it[table.reqBlob] = Blob(aArray)
-          it[table.reqBool] = true
-          it[table.reqEnum] = HasTwo.First
-          it[table.reqEnumByName] = HasTwo.Second
+          it[reqBlob] = Blob(aArray)
+          it[reqBool] = true
+          it[reqEnum] = HasTwo.First
+          it[reqEnumByName] = HasTwo.Second
         }
       }
       query {

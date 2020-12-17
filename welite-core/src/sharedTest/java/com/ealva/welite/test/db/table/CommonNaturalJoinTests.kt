@@ -159,9 +159,9 @@ public object CommonNaturalJoinTests {
         it[degree].bindArg()
       }
       doctorInsert.insert {
-        it[0] = 210
-        it[1] = "Dr. John Linga"
-        it[2] = "MD"
+        it[doctorId] = 210
+        it[doctorName] = "Dr. John Linga"
+        it[degree] = "MD"
       }
       doctorInsert.insert {
         it[0] = 211

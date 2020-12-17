@@ -19,6 +19,7 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
@@ -32,7 +33,7 @@ import com.ealva.welite.db.type.buildSql
  * a row binding any necessary arguments during execution.
  */
 @WeLiteMarker
-public interface InsertStatement : Statement {
+public interface InsertStatement<C : ColumnSet> : Statement<C> {
 
   public companion object {
     /**
@@ -43,7 +44,10 @@ public interface InsertStatement : Statement {
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
       assignColumns: T.(ColumnValues) -> Unit
-    ): InsertStatement = InsertStatementImpl(statementSeed(table, onConflict, assignColumns))
+    ): InsertStatement<T> = InsertStatementImpl(
+      table,
+      statementSeed(table, onConflict, assignColumns)
+    )
 
     public fun <T : Table> statementSeed(
       table: T,
@@ -91,13 +95,14 @@ public interface InsertStatement : Statement {
 public fun <T : Table> T.insertValues(
   onConflict: OnConflict = OnConflict.Unspecified,
   assignColumns: T.(ColumnValues) -> Unit
-): InsertStatement {
+): InsertStatement<T> {
   return InsertStatement(this, onConflict, assignColumns)
 }
 
-private class InsertStatementImpl(
+private class InsertStatementImpl<C : ColumnSet>(
+  table: C,
   private val seed: StatementSeed
-) : BaseStatement(), InsertStatement {
+) : BaseStatement<C>(table), InsertStatement<C> {
   override val sql: String
     get() = seed.sql
   override val expressionToIndexMap: ExpressionToIndexMap
@@ -105,6 +110,6 @@ private class InsertStatementImpl(
   override val types: List<PersistentType<*>>
     get() = seed.types
 
-  override fun doExecute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
+  override fun doExecute(db: SQLiteDatabase, bindArgs: C.(ArgBindings) -> Unit): Long =
     getStatementAndTypes(db).executeInsert(bindArgs)
 }

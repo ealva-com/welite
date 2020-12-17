@@ -132,7 +132,7 @@ public object CommonTriggerTests {
       }
 
       transaction {
-        expect(ArtistTable.delete { ArtistTable.artistName eq "Led Zeppelin" }).toBe(1)
+        expect(ArtistTable.delete { artistName eq "Led Zeppelin" }).toBe(1)
       }
 
       query {
@@ -160,7 +160,7 @@ public object CommonTriggerTests {
 
       transaction {
         expect(DeleteAlbumTrigger.exists).toBe(true)
-        expect(AlbumTable.delete { AlbumTable.albumName eq "Houses of the Holy" }).toBe(1)
+        expect(AlbumTable.delete { albumName eq "Houses of the Holy" }).toBe(1)
       }
 
       query {
@@ -227,7 +227,7 @@ public object CommonTriggerTests {
 
       transaction {
         val mediaId = checkNotNull(ids).mediaId
-        MediaFileTable.delete { MediaFileTable.id eq mediaId }
+        MediaFileTable.delete { id eq mediaId }
       }
 
       query {
@@ -262,7 +262,7 @@ public object CommonTriggerTests {
 
       transaction {
         val mediaId = checkNotNull(ids).mediaId
-        MediaFileTable.delete { MediaFileTable.id eq mediaId }
+        MediaFileTable.delete { id eq mediaId }
       }
 
       query {

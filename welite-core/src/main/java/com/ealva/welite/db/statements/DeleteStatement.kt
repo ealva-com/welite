@@ -19,20 +19,21 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
 
-public interface DeleteStatement : Statement {
+public interface DeleteStatement<C : ColumnSet> : Statement<C> {
 
   public companion object {
     /**
      * Make a DeleteStatement from a [table] and [where] clause
      */
-    public operator fun invoke(table: Table, where: Op<Boolean>?): DeleteStatement =
-      DeleteStatementImpl(statementSeed(table, where))
+    public operator fun <T : Table> invoke(table: T, where: Op<Boolean>?): DeleteStatement<T> =
+      DeleteStatementImpl(table, statementSeed(table, where))
 
     /**
      * Make the StatementSeed from a [table] and [where] clause for a DeleteStatement
@@ -51,13 +52,14 @@ public interface DeleteStatement : Statement {
 /**
  * Build a DeleteStatement which can be reused binding args each time
  */
-public fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement {
+public fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement<T> {
   return DeleteStatement(this, where())
 }
 
-private class DeleteStatementImpl(
+private class DeleteStatementImpl<C : ColumnSet>(
+  columnSet: C,
   private val seed: StatementSeed
-) : BaseStatement(), DeleteStatement {
+) : BaseStatement<C>(columnSet), DeleteStatement<C> {
   override val sql: String
     get() = seed.sql
   override val expressionToIndexMap: ExpressionToIndexMap
@@ -65,6 +67,6 @@ private class DeleteStatementImpl(
   override val types: List<PersistentType<*>>
     get() = seed.types
 
-  override fun doExecute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
+  override fun doExecute(db: SQLiteDatabase, bindArgs: C.(ArgBindings) -> Unit): Long =
     getStatementAndTypes(db).executeDelete(bindArgs)
 }

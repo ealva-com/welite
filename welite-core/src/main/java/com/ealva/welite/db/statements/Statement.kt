@@ -24,6 +24,7 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
@@ -33,28 +34,32 @@ import kotlin.concurrent.withLock
 
 private val LOG by lazyLogger(Statement::class, WeLiteLog.marker)
 
-public interface Statement {
-  public fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
+public interface Statement<C : ColumnSet> {
+  public fun execute(db: SQLiteDatabase, bindArgs: C.(ArgBindings) -> Unit): Long
 }
 
-public interface StatementAndTypes : Bindable, ArgBindings {
-  public fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long
-  public fun executeDelete(bindArgs: (ArgBindings) -> Unit): Long
-  public fun executeUpdate(bindArgs: (ArgBindings) -> Unit): Long
+public interface StatementAndTypes<C : ColumnSet> : Bindable, ArgBindings {
+  public fun executeInsert(bindArgs: C.(ArgBindings) -> Unit): Long
+  public fun executeDelete(bindArgs: C.(ArgBindings) -> Unit): Long
+  public fun executeUpdate(bindArgs: C.(ArgBindings) -> Unit): Long
 
   public companion object {
-    public operator fun invoke(
+    public operator fun <C : ColumnSet> invoke(
+      columnSet: C,
       statement: SQLiteStatement,
       expressionToIndexMap: ExpressionToIndexMap,
       types: List<PersistentType<*>>,
       logSql: Boolean = WeLiteLog.logSql
-    ): StatementAndTypes {
-      return StatementAndTypesImpl(statement, expressionToIndexMap, types, logSql)
+    ): StatementAndTypes<C> {
+      return StatementAndTypesImpl(columnSet, statement, expressionToIndexMap, types, logSql)
     }
   }
 }
 
-public abstract class BaseStatement : Statement {
+public abstract class BaseStatement<C : ColumnSet>(
+  protected val columnSet: C
+) : Statement<C> {
+
   protected abstract val sql: String
   protected abstract val expressionToIndexMap: ExpressionToIndexMap
   protected abstract val types: List<PersistentType<*>>
@@ -67,29 +72,31 @@ public abstract class BaseStatement : Statement {
    */
   final override fun execute(
     db: SQLiteDatabase,
-    bindArgs: (ArgBindings) -> Unit
+    bindArgs: C.(ArgBindings) -> Unit
   ): Long = executeLock.withLock { doExecute(db, bindArgs) }
 
-  public abstract fun doExecute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
+  public abstract fun doExecute(db: SQLiteDatabase, bindArgs: C.(ArgBindings) -> Unit): Long
 
   override fun toString(): String = sql
 
-  private val _statementAndTypes: StatementAndTypesImpl? = null
+  private val _statementAndTypes: StatementAndTypesImpl<C>? = null
   protected fun getStatementAndTypes(
     db: SQLiteDatabase
-  ): StatementAndTypes = _statementAndTypes ?: StatementAndTypes(
+  ): StatementAndTypes<C> = _statementAndTypes ?: StatementAndTypes(
+    columnSet,
     db.compileStatement(sql),
     expressionToIndexMap,
     types
   )
 }
 
-private class StatementAndTypesImpl(
+private class StatementAndTypesImpl<C : ColumnSet>(
+  private val columnSet: C,
   private val statement: SQLiteStatement,
   private val expressionToIndexMap: ExpressionToIndexMap,
   private val types: List<PersistentType<*>>,
   private val logSql: Boolean
-) : StatementAndTypes {
+) : StatementAndTypes<C> {
   override val argCount: Int
     get() = types.size
   private val argRange: IntRange
@@ -100,24 +107,24 @@ private class StatementAndTypesImpl(
    */
   private val bindings: Array<Any?> = Array(argCount) { null }
 
-  override fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long {
+  override fun executeInsert(bindArgs: C.(ArgBindings) -> Unit): Long {
     bindArgsToStatement(bindArgs)
     return statement.executeInsert()
   }
 
-  override fun executeDelete(bindArgs: (ArgBindings) -> Unit): Long {
+  override fun executeDelete(bindArgs: C.(ArgBindings) -> Unit): Long {
     bindArgsToStatement(bindArgs)
     return statement.executeUpdateDelete().toLong()
   }
 
-  override fun executeUpdate(bindArgs: (ArgBindings) -> Unit): Long {
+  override fun executeUpdate(bindArgs: C.(ArgBindings) -> Unit): Long {
     bindArgsToStatement(bindArgs)
     return statement.executeUpdateDelete().toLong()
   }
 
-  private fun bindArgsToStatement(bindArgs: (ArgBindings) -> Unit) {
+  private fun bindArgsToStatement(bindArgs: C.(ArgBindings) -> Unit) {
     clearBindings()
-    bindArgs(this)
+    columnSet.bindArgs(this)
     if (logSql) LOG.i { it("%s args:%s", statement, bindings.contentToString()) }
   }
 

@@ -105,10 +105,10 @@ public class OffsetDateTimeColumnTest {
           it[other].bindArg()
         }
         actInsert.insert {
-          it[0] = OffsetDateTime.now()
-          it[1] = noonSomewhere.plusYears(2)
-          it[2] = "Motel 6"
-          it[3] = "Vending Machine"
+          it[offsetDate] = OffsetDateTime.now()
+          it[optOffsetDate] = noonSomewhere.plusYears(2)
+          it[name] = "Motel 6"
+          it[other] = "Vending Machine"
         }
         actInsert.insert {
           it[0] = LocalDateTime.now()
@@ -155,7 +155,6 @@ public class OffsetDateTimeColumnTest {
           it[0] = LocalDateTime.now()
           it[1] = "2007-12-03T10:15:30+01:00"
         }
-        setSuccessful()
       }
       query {
         expect(OffsetDt.selectAll().count()).toBe(1)
@@ -178,7 +177,6 @@ public class OffsetDateTimeColumnTest {
           it[0] = null
           it[1] = "2007-12-03"
         }
-        setSuccessful()
       }
       fail("bind of null should be exceptional")
     }
@@ -199,7 +197,6 @@ public class OffsetDateTimeColumnTest {
           it[0] = OffsetDateTime.now()
           it[1] = "20071203" // bad date format
         }
-        setSuccessful()
       }
       fail("bind of null should be exceptional")
     }
@@ -220,7 +217,6 @@ public class OffsetDateTimeColumnTest {
           it[0] = OffsetDateTime.now()
           it[1] = Date() // doesn't accept
         }
-        setSuccessful()
       }
       fail("bind of Date should be exceptional")
     }

@@ -612,7 +612,7 @@ private class OpenHelper private constructor(
   private fun dropAll() {
     database.ongoingTransaction {
       setSchemaWritable(true)
-      SQLiteMaster.delete { SQLiteMaster.type inList MasterType.knownTypes.map { it.value } }
+      SQLiteMaster.delete { type inList MasterType.knownTypes.map { it.value } }
       setSchemaWritable(false)
       vacuum()
       tegridyCheck()

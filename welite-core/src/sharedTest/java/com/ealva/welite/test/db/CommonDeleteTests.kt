@@ -50,7 +50,7 @@ public object CommonDeleteTests {
 
       transaction {
         expect(MediaFileTable.selectWhere(MediaFileTable.id eq mediaId).count()).toBe(1)
-        expect(MediaFileTable.delete { MediaFileTable.id eq mediaId }).toBe(1)
+        expect(MediaFileTable.delete { id eq mediaId }).toBe(1)
         setSuccessful()
       }
 
@@ -69,7 +69,7 @@ public object CommonDeleteTests {
         expect(Review.selectAll().count()).toBe(0)
         expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(1)
       }
-      transaction { Person.delete { Person.name like "%ber" } }
+      transaction { Person.delete { name like "%ber" } }
       query {
         expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(0)
       }
@@ -83,11 +83,12 @@ public object CommonDeleteTests {
       enableForeignKeyConstraints = false,
       testDispatcher = testDispatcher
     ) {
-      val deleteStmt = Person.deleteWhere { Person.name like bindString() }
+      val bindPersonName = bindString()
+      val deleteStmt = Person.deleteWhere { Person.name like bindPersonName }
       transaction {
         expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(1)
         expect(Person.select(Person.id).where { Person.name like "%lia" }.count()).toBe(1)
-        deleteStmt.delete { it[0] = "%ber" }
+        deleteStmt.delete { it[bindPersonName] = "%ber" }
         deleteStmt.delete { it[0] = "%lia" }
       }
       query {

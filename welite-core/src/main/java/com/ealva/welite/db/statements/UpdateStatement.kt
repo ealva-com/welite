@@ -40,7 +40,7 @@ public fun <T : Table> T.updateColumns(
 public fun <T : Table> T.updateAll(
   onConflict: OnConflict = OnConflict.Unspecified,
   assignColumns: T.(ColumnValues) -> Unit
-): UpdateStatement {
+): UpdateStatement<T> {
   return UpdateStatement(this, onConflict, assignColumns)
 }
 
@@ -56,18 +56,19 @@ public class UpdateBuilder<T : ColumnSet>(
   private val onConflict: OnConflict,
   private val assignColumns: T.(ColumnValues) -> Unit
 ) {
-  public fun where(where: T.() -> Op<Boolean>): UpdateStatement {
+  public fun where(where: T.() -> Op<Boolean>): UpdateStatement<T> {
     return UpdateStatement(table, onConflict, table.where(), assignColumns)
   }
 }
 
-public interface UpdateStatement : Statement {
+public interface UpdateStatement<C : ColumnSet> : Statement<C> {
   public companion object {
     public operator fun <T : ColumnSet> invoke(
       table: T,
       onConflict: OnConflict,
       assignColumns: T.(ColumnValues) -> Unit
-    ): UpdateStatement = UpdateStatementImpl(
+    ): UpdateStatement<T> = UpdateStatementImpl(
+      table,
       statementSeed(table, onConflict, null, assignColumns)
     )
 
@@ -76,7 +77,8 @@ public interface UpdateStatement : Statement {
       onConflict: OnConflict = OnConflict.Unspecified,
       where: Op<Boolean>,
       assignColumns: T.(ColumnValues) -> Unit
-    ): UpdateStatement = UpdateStatementImpl(
+    ): UpdateStatement<T> = UpdateStatementImpl(
+      table,
       statementSeed(table, onConflict, where, assignColumns)
     )
 
@@ -104,9 +106,10 @@ public interface UpdateStatement : Statement {
   }
 }
 
-private class UpdateStatementImpl(
+private class UpdateStatementImpl<C : ColumnSet>(
+  table: C,
   private val seed: StatementSeed
-) : BaseStatement(), UpdateStatement {
+) : BaseStatement<C>(table), UpdateStatement<C> {
   override val sql: String
     get() = seed.sql
   override val expressionToIndexMap: ExpressionToIndexMap
@@ -114,6 +117,6 @@ private class UpdateStatementImpl(
   override val types: List<PersistentType<*>>
     get() = seed.types
 
-  override fun doExecute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
+  override fun doExecute(db: SQLiteDatabase, bindArgs: C.(ArgBindings) -> Unit): Long =
     getStatementAndTypes(db).executeUpdate(bindArgs)
 }

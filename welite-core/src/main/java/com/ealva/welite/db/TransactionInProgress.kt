@@ -34,6 +34,7 @@ import com.ealva.welite.db.statements.InsertStatement
 import com.ealva.welite.db.statements.UpdateStatement
 import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.ColumnMetadata
+import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.CursorWrapper
@@ -41,7 +42,6 @@ import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.MasterType
-import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.OnConflict.Unspecified
 import com.ealva.welite.db.table.Query
@@ -78,7 +78,9 @@ public interface TransactionInProgress : Queryable {
    * provides for new bound parameters via [bindArgs], and executes the insert, returning the
    * row ID of the row inserted if successful else -1
    */
-  public fun InsertStatement.insert(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> InsertStatement<C>.insert(
+    bindArgs: C.(ArgBindings) -> Unit = {}
+  ): Long
 
   /**
    * Does a single insert into the table. Builds an [InsertStatement] and invokes
@@ -87,7 +89,7 @@ public interface TransactionInProgress : Queryable {
    */
   public fun <T : Table> T.insert(
     onConflict: OnConflict = Unspecified,
-    bindArgs: (ArgBindings) -> Unit = NO_ARGS,
+    bindArgs: T.(ArgBindings) -> Unit = { },
     assignColumns: T.(ColumnValues) -> Unit
   ): Long = InsertStatement(this, onConflict, assignColumns).insert(bindArgs)
 
@@ -95,25 +97,29 @@ public interface TransactionInProgress : Queryable {
    * Binds arguments to this DeleteStatement and perform a DELETE, returning the number of
    * rows removed.
    */
-  public fun DeleteStatement.delete(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> DeleteStatement<C>.delete(
+    bindArgs: C.(ArgBindings) -> Unit = { }
+  ): Long
 
   /**
    * Does a single delete on the table. Builds a [DeleteStatement] and calls
    * [DeleteStatement.delete]. The DeleteStatement is single use and not exposed to the client.
    */
   public fun <T : Table> T.delete(
-    bindArgs: (ArgBindings) -> Unit = NO_ARGS,
-    where: () -> Op<Boolean>
+    bindArgs: T.(ArgBindings) -> Unit = { },
+    where: T.() -> Op<Boolean>
   ): Long = DeleteStatement(this, where()).delete(bindArgs)
 
-  public fun <T : Table> T.deleteAll(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long =
+  public fun <T : Table> T.deleteAll(bindArgs: T.(ArgBindings) -> Unit = { }): Long =
     DeleteStatement(this, null).delete(bindArgs)
 
   /**
    * Clears bindings, binds arguments to this UpdateStatement, and execute the statement
    * returning the number of rows updated.
    */
-  public fun UpdateStatement.update(bindArgs: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> UpdateStatement<C>.update(
+    bindArgs: C.(ArgBindings) -> Unit = { }
+  ): Long
 
   /**
    * Create a Creatable database entity (Table, Index, View, ...)
@@ -249,13 +255,14 @@ private class TransactionInProgressImpl(
     append(" )")
   }
 
-  override fun InsertStatement.insert(bindArgs: (ArgBindings) -> Unit): Long =
+  override fun <C : ColumnSet> InsertStatement<C>.insert(bindArgs: C.(ArgBindings) -> Unit): Long =
     execute(this@TransactionInProgressImpl.db, bindArgs)
 
-  override fun DeleteStatement.delete(bindArgs: (ArgBindings) -> Unit): Long =
+  override fun <C : ColumnSet> DeleteStatement<C>.delete(bindArgs: C.(ArgBindings) -> Unit): Long =
     execute(this@TransactionInProgressImpl.db, bindArgs)
 
-  override fun UpdateStatement.update(bindArgs: (ArgBindings) -> Unit): Long = execute(db, bindArgs)
+  override fun <C : ColumnSet> UpdateStatement<C>.update(bindArgs: C.(ArgBindings) -> Unit): Long =
+    execute(db, bindArgs)
 
   override fun Creatable.create(temporary: Boolean) =
     create(this@TransactionInProgressImpl, temporary)
