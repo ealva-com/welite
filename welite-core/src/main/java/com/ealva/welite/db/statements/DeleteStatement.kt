@@ -65,6 +65,6 @@ private class DeleteStatementImpl(
   override val types: List<PersistentType<*>>
     get() = seed.types
 
-  override fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
+  override fun doExecute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long =
     getStatementAndTypes(db).executeDelete(bindArgs)
 }

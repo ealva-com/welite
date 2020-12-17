@@ -27,6 +27,9 @@ import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 private val LOG by lazyLogger(Statement::class, WeLiteLog.marker)
 
@@ -34,15 +37,45 @@ public interface Statement {
   public fun execute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
 }
 
+public interface StatementAndTypes : Bindable, ArgBindings {
+  public fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long
+  public fun executeDelete(bindArgs: (ArgBindings) -> Unit): Long
+  public fun executeUpdate(bindArgs: (ArgBindings) -> Unit): Long
+
+  public companion object {
+    public operator fun invoke(
+      statement: SQLiteStatement,
+      expressionToIndexMap: ExpressionToIndexMap,
+      types: List<PersistentType<*>>,
+      logSql: Boolean = WeLiteLog.logSql
+    ): StatementAndTypes {
+      return StatementAndTypesImpl(statement, expressionToIndexMap, types, logSql)
+    }
+  }
+}
+
 public abstract class BaseStatement : Statement {
   protected abstract val sql: String
   protected abstract val expressionToIndexMap: ExpressionToIndexMap
   protected abstract val types: List<PersistentType<*>>
+  private val executeLock: Lock = ReentrantLock(true) // fair lock
+
+  /**
+   * Execute binding arguments and execution of the statement under lock in case the same statement
+   * is used across threads. For performance it's encouraged to save pre-build statements and
+   * execute/bind when needed, so statements may be used across threads concurrently.
+   */
+  final override fun execute(
+    db: SQLiteDatabase,
+    bindArgs: (ArgBindings) -> Unit
+  ): Long = executeLock.withLock { doExecute(db, bindArgs) }
+
+  public abstract fun doExecute(db: SQLiteDatabase, bindArgs: (ArgBindings) -> Unit): Long
 
   override fun toString(): String = sql
 
-  private val _statementAndTypes: StatementAndTypes? = null
-  internal fun getStatementAndTypes(
+  private val _statementAndTypes: StatementAndTypesImpl? = null
+  protected fun getStatementAndTypes(
     db: SQLiteDatabase
   ): StatementAndTypes = _statementAndTypes ?: StatementAndTypes(
     db.compileStatement(sql),
@@ -51,12 +84,12 @@ public abstract class BaseStatement : Statement {
   )
 }
 
-internal class StatementAndTypes(
+private class StatementAndTypesImpl(
   private val statement: SQLiteStatement,
   private val expressionToIndexMap: ExpressionToIndexMap,
   private val types: List<PersistentType<*>>,
-  private val logSql: Boolean = WeLiteLog.logSql
-) : Bindable, ArgBindings {
+  private val logSql: Boolean
+) : StatementAndTypes {
   override val argCount: Int
     get() = types.size
   private val argRange: IntRange
@@ -67,17 +100,17 @@ internal class StatementAndTypes(
    */
   private val bindings: Array<Any?> = Array(argCount) { null }
 
-  fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long {
+  override fun executeInsert(bindArgs: (ArgBindings) -> Unit): Long {
     bindArgsToStatement(bindArgs)
     return statement.executeInsert()
   }
 
-  fun executeDelete(bindArgs: (ArgBindings) -> Unit): Long {
+  override fun executeDelete(bindArgs: (ArgBindings) -> Unit): Long {
     bindArgsToStatement(bindArgs)
     return statement.executeUpdateDelete().toLong()
   }
 
-  fun executeUpdate(bindArgs: (ArgBindings) -> Unit): Long {
+  override fun executeUpdate(bindArgs: (ArgBindings) -> Unit): Long {
     bindArgsToStatement(bindArgs)
     return statement.executeUpdateDelete().toLong()
   }
