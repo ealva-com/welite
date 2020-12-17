@@ -232,12 +232,13 @@ class QueryTests {
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
       .where { ArtistTable.artistName eq artist }
-      .sequence { cursor -> cursor[ArtistTable.id] }
+      .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
+    val bindAlbumName = albumName.bindArg()
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { albumName eq albumName.bindArg() and (AlbumTable.artistName eq artist) }
-      .sequence({ it[0] = album }) { it[AlbumTable.id] }
+      .where { albumName eq bindAlbumName and (AlbumTable.artistName eq artist) }
+      .sequence({ it[bindAlbumName] = album }) { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist

@@ -25,7 +25,6 @@ import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.log.WeLiteLog
-import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
 
@@ -34,7 +33,7 @@ internal interface CursorWrapper : Cursor, Row, AutoCloseable {
 
   companion object {
     fun select(seed: QuerySeed, db: SQLiteDatabase, bind: (ArgBindings) -> Unit): CursorWrapper =
-      CursorWrapperImpl(db.select(seed.sql, doBind(seed.types, bind)), seed.columns)
+      CursorWrapperImpl(db.select(seed.sql, doBind(seed, bind)), seed.columns)
   }
 }
 
@@ -99,7 +98,7 @@ internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String> = empt
 }
 
 internal fun SQLiteDatabase.longForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): Long =
-  longForQuery(seed.sql, doBind(seed.types, bind))
+  longForQuery(seed.sql, doBind(seed, bind))
 
 internal fun SQLiteDatabase.stringForQuery(
   sql: String,
@@ -110,7 +109,7 @@ internal fun SQLiteDatabase.stringForQuery(
 }
 
 internal fun SQLiteDatabase.stringForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): String =
-  stringForQuery(seed.sql, doBind(seed.types, bind))
+  stringForQuery(seed.sql, doBind(seed, bind))
 
 private val QP_LOG by lazyLogger("QueryPlan", WeLiteLog.marker)
 private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>) {
@@ -153,9 +152,9 @@ internal val ACursor.columnMetadata: ColumnMetadata
   )
 
 private fun doBind(
-  types: List<PersistentType<*>>,
+  seed: QuerySeed,
   bind: (ArgBindings) -> Unit
-): Array<String> = QueryArgs(types).let { queryArgs ->
+): Array<String> = QueryArgs(seed).let { queryArgs ->
   bind(queryArgs)
   check(queryArgs.allBound) {
     "Unbound indices:${queryArgs.unboundIndices} in QueryArgs:$queryArgs"
@@ -165,7 +164,9 @@ private fun doBind(
 
 private val LOG by lazyLogger(QueryArgs::class, WeLiteLog.marker)
 
-private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBindings {
+private class QueryArgs(seed: QuerySeed) : ArgBindings {
+  private val argTypes = seed.types
+  private val expressionToIndexMap = seed.expressionToIndexMap
   private val arguments = Array(argTypes.size) { UNBOUND }
 
   override operator fun <T> set(index: Int, value: T?) {
@@ -175,6 +176,10 @@ private class QueryArgs(private val argTypes: List<PersistentType<*>>) : ArgBind
       LOG.w { it("Arg at index:$index previously bound as ${arguments[index]}") }
     }
     arguments[index] = argTypes[index].valueToString(value, false)
+  }
+
+  override fun <T> set(expression: Expression<T>, value: T?) {
+    set(expressionToIndexMap[expression], value)
   }
 
   override val argCount: Int

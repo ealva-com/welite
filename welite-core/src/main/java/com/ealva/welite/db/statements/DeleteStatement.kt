@@ -19,6 +19,7 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.StatementSeed
@@ -59,7 +60,8 @@ private class DeleteStatementImpl(
 ) : BaseStatement(), DeleteStatement {
   override val sql: String
     get() = seed.sql
-
+  override val expressionToIndexMap: ExpressionToIndexMap
+    get() = seed.expressionToIndexMap
   override val types: List<PersistentType<*>>
     get() = seed.types
 

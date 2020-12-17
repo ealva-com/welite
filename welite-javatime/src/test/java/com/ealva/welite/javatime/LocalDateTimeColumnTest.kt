@@ -27,10 +27,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.ForeignKeyInfo
 import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.greaterEq
-import com.ealva.welite.javatime.VisitTime.localDate
-import com.ealva.welite.javatime.VisitTime.name
-import com.ealva.welite.javatime.VisitTime.optLocalDate
-import com.ealva.welite.javatime.VisitTime.other
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
@@ -62,7 +58,11 @@ private object VisitTime : Table() {
 }
 
 object HasVisitTimeRef : Table() {
-  val ref: Column<LocalDateTime?> = optReference("ref", localDate, ForeignKeyAction.CASCADE)
+  val ref: Column<LocalDateTime?> = optReference(
+    "ref",
+    VisitTime.localDate,
+    ForeignKeyAction.CASCADE
+  )
 }
 
 @ExperimentalCoroutinesApi
@@ -70,10 +70,12 @@ object HasVisitTimeRef : Table() {
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class LocalDateTimeColumnTest {
   @ExperimentalCoroutinesApi
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  @get:Rule
+  var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 
@@ -84,8 +86,8 @@ class LocalDateTimeColumnTest {
 
   @Test
   fun `test local date time column`() {
-    expect(localDate.descriptionDdl()).toBe(""""date" TEXT NOT NULL""")
-    expect(optLocalDate.descriptionDdl()).toBe(""""opt_date" TEXT""")
+    expect(VisitTime.localDate.descriptionDdl()).toBe(""""date" TEXT NOT NULL""")
+    expect(VisitTime.optLocalDate.descriptionDdl()).toBe(""""opt_date" TEXT""")
   }
 
   @Test
@@ -132,9 +134,16 @@ class LocalDateTimeColumnTest {
       )
       query {
         val results = VisitTime.select()
-          .where { optLocalDate greaterEq noon.plusYears(2) }
-          .orderBy(optLocalDate)
-          .sequence { AccomVisit(it[localDate], it[optLocalDate], it[name], it[other]) }
+          .where { VisitTime.optLocalDate greaterEq noon.plusYears(2) }
+          .orderBy(VisitTime.optLocalDate)
+          .sequence {
+            AccomVisit(
+              it[VisitTime.localDate],
+              it[VisitTime.optLocalDate],
+              it[VisitTime.name],
+              it[VisitTime.other]
+            )
+          }
           .toList()
         expect(results).toHaveSize(2)
         results.forEachIndexed { i, visit ->

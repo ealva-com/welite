@@ -16,6 +16,8 @@
 
 package com.ealva.welite.db.table
 
+import com.ealva.welite.db.expr.Expression
+
 /**
  * The interface presented to the client to bind arguments to the sql statement.
  */
@@ -27,6 +29,12 @@ public interface ArgBindings {
    * contain the equivalent of the null value and ultimately be bound as such.
    */
   public operator fun <T> set(index: Int, value: T?)
+
+  /**
+   * Bind the [value] at the index of [expression], which is typically a [Table][Table]
+   * [column][Column]
+   */
+  public operator fun <T> set(expression: Expression<T>, value: T?)
 
   /**
    * Total number of bindable arguments

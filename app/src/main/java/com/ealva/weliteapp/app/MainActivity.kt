@@ -30,9 +30,6 @@ import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
-import com.ealva.weliteapp.app.MediaFileTable.fileName
-import com.ealva.weliteapp.app.MediaFileTable.localDate
-import com.ealva.weliteapp.app.MediaFileTable.mediaTitle
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -73,15 +70,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         insertStatement.insert {
-          it[0] = "file.mpg"
-          it[1] = "/dir/Music/file.mpg"
-          it[2] = "A Title"
+          it[MediaFileTable.mediaUri] = "file.mpg"
+          it[MediaFileTable.fileName] = "/dir/Music/file.mpg"
+          it[MediaFileTable.mediaTitle] = "A Title"
         }
 
         insertStatement.insert {
-          it[0] = "/dir/Music/anotherFile.mpg"
-          it[1] = "anotherFile.mpg"
-          it[2] = "Another Title"
+          it[MediaFileTable.mediaUri] = "/dir/Music/anotherFile.mpg"
+          it[MediaFileTable.fileName] = "anotherFile.mpg"
+          it[MediaFileTable.mediaTitle] = "Another Title"
         }
 
         MediaFileTable.insert(OnConflict.Ignore) {
@@ -100,19 +97,21 @@ class MainActivity : AppCompatActivity() {
       }
 
       db.query {
-        val count = MediaFileTable.select(fileName).where { mediaTitle like "%Title%" }.count()
+        val count = MediaFileTable.select(MediaFileTable.fileName).where {
+          MediaFileTable.mediaTitle like "%Title%"
+        }.count()
         LOG.i { it("count=%d", count) }
 
         MediaFileTable
-          .select(mediaTitle, localDate)
-          .where { mediaTitle like "%Title%" }
-          .flow { Pair(it[mediaTitle], it[localDate]) }
+          .select(MediaFileTable.mediaTitle, MediaFileTable.localDate)
+          .where { MediaFileTable.mediaTitle like "%Title%" }
+          .flow { Pair(it[MediaFileTable.mediaTitle], it[MediaFileTable.localDate]) }
           .collect { (title, date) -> LOG.i { +it("collect %s %s", title, date) } }
 
         MediaFileTable
-          .select(mediaTitle, localDate)
-          .where { mediaTitle like "%Title%" }
-          .sequence { Pair(it[mediaTitle], it[localDate]) }
+          .select(MediaFileTable.mediaTitle, MediaFileTable.localDate)
+          .where { MediaFileTable.mediaTitle like "%Title%" }
+          .sequence { Pair(it[MediaFileTable.mediaTitle], it[MediaFileTable.localDate]) }
           .forEach { (title, date) ->
             LOG.i { +it("forEach %s %s", title, date) }
           }

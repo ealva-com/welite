@@ -16,6 +16,8 @@
 
 package com.ealva.welite.db.type
 
+import com.ealva.welite.db.expr.SqlTypeExpression
+import com.ealva.welite.db.table.ExpressionToIndexMap
 import java.util.Queue
 import java.util.concurrent.LinkedBlockingQueue
 
@@ -24,6 +26,7 @@ public interface AppendsToSqlBuilder {
 }
 
 public interface SqlBuilder : Appendable {
+  public val expressionToIndexMap: ExpressionToIndexMap
   public val types: List<PersistentType<*>>
   public fun <T> Iterable<T>.appendEach(
     separator: CharSequence = ", ",
@@ -36,7 +39,7 @@ public interface SqlBuilder : Appendable {
   public fun append(value: Long): SqlBuilder
   public fun append(value: AppendsToSqlBuilder): SqlBuilder
   public fun append(identity: Identity): SqlBuilder
-  public fun <T> registerBindable(sqlType: PersistentType<T>)
+  public fun <T> registerBindable(sqlType: SqlTypeExpression<T>)
   public fun <T> registerArgument(sqlType: PersistentType<T>, argument: T)
   public fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>)
 
@@ -56,6 +59,11 @@ public interface SqlBuilder : Appendable {
 private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
   private val strBuilder = StringBuilder(maxCapacity)
   private val _types = mutableListOf<PersistentType<*>>()
+  private val _expressionToIndexMap = ExpressionToIndexMap()
+
+  override val expressionToIndexMap: ExpressionToIndexMap
+    get() = _expressionToIndexMap.makeCopy()
+
   override val types: List<PersistentType<*>>
     get() = _types.toList()
 
@@ -63,6 +71,7 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
    * Indicates the builder is being returned to the pool and should clear types and check capacity
    */
   fun returnedToPool(): Boolean {
+    _expressionToIndexMap.clear()
     _types.clear()
     return ensureCapacity()
   }
@@ -119,8 +128,9 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
 
   override fun append(identity: Identity) = append(identity.value)
 
-  override fun <T> registerBindable(sqlType: PersistentType<T>) {
-    _types.add(sqlType)
+  override fun <T> registerBindable(sqlType: SqlTypeExpression<T>) {
+    _expressionToIndexMap[sqlType] = _types.size
+    _types.add(sqlType.persistentType)
     append("?")
   }
 
@@ -160,7 +170,8 @@ private const val DEFAULT_MAX_CACHE_ENTRIES = 4
 private const val MIN_BUILDER_CAPACITY = 1024
 private const val DEFAULT_BUILDER_CAPACITY = 2048
 private var queueCapacity = DEFAULT_MAX_CACHE_ENTRIES
-@Volatile private var queue: Queue<SqlBuilderImpl> = LinkedBlockingQueue(queueCapacity)
+@Volatile
+private var queue: Queue<SqlBuilderImpl> = LinkedBlockingQueue(queueCapacity)
 private var exceededCapacity = 0
 private var gets = 0
 private var puts = 0
@@ -253,6 +264,11 @@ public data class StatementSeed(
    * The full sql of the statement
    */
   val sql: String,
+
+  /**
+   * Map of bound expressions and the index where they occur in the SQL statement.
+   */
+  val expressionToIndexMap: ExpressionToIndexMap,
 )
 
 public fun SqlBuilder.append(seed: StatementSeed): SqlBuilder = apply {
@@ -263,8 +279,9 @@ public fun buildSql(builderAction: SqlBuilder.() -> Unit): StatementSeed {
   val builder = SqlBuilderCache.get()
   val sql = builder.apply(builderAction).toString()
   val types = builder.types
+  val expressionToIndexMap = builder.expressionToIndexMap
   SqlBuilderCache.put(builder)
-  return StatementSeed(types, sql)
+  return StatementSeed(types, sql, expressionToIndexMap)
 }
 
 public fun buildStr(builderAction: SqlBuilder.() -> Unit): String {

@@ -21,8 +21,10 @@ import android.database.sqlite.SQLiteStatement
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
+import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.type.Bindable
 import com.ealva.welite.db.type.PersistentType
 
@@ -34,18 +36,24 @@ public interface Statement {
 
 public abstract class BaseStatement : Statement {
   protected abstract val sql: String
+  protected abstract val expressionToIndexMap: ExpressionToIndexMap
   protected abstract val types: List<PersistentType<*>>
 
   override fun toString(): String = sql
 
   private val _statementAndTypes: StatementAndTypes? = null
-  internal fun getStatementAndTypes(db: SQLiteDatabase): StatementAndTypes {
-    return (_statementAndTypes ?: StatementAndTypes(db.compileStatement(sql), types))
-  }
+  internal fun getStatementAndTypes(
+    db: SQLiteDatabase
+  ): StatementAndTypes = _statementAndTypes ?: StatementAndTypes(
+    db.compileStatement(sql),
+    expressionToIndexMap,
+    types
+  )
 }
 
 internal class StatementAndTypes(
   private val statement: SQLiteStatement,
+  private val expressionToIndexMap: ExpressionToIndexMap,
   private val types: List<PersistentType<*>>,
   private val logSql: Boolean = WeLiteLog.logSql
 ) : Bindable, ArgBindings {
@@ -118,6 +126,10 @@ internal class StatementAndTypes(
   // PersistentType will call back on this to do the actual bind and the index should just be
   // passed through, so we won't check the index until one of the other bind functions are called.
   override fun <T> set(index: Int, value: T?) = types[index].bind(this, index, value)
+
+  override fun <T> set(expression: Expression<T>, value: T?) {
+    set(expressionToIndexMap[expression], value)
+  }
 
   private fun ensureIndexInBounds(index: Int) {
     require(index in argRange) { "Out of bounds index=$index indices=$argRange" }

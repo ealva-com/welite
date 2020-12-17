@@ -21,6 +21,7 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.ColumnSet
+import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.table.Join
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
@@ -108,6 +109,8 @@ private class UpdateStatementImpl(
 ) : BaseStatement(), UpdateStatement {
   override val sql: String
     get() = seed.sql
+  override val expressionToIndexMap: ExpressionToIndexMap
+    get() = seed.expressionToIndexMap
   override val types: List<PersistentType<*>>
     get() = seed.types
 

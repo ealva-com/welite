@@ -17,6 +17,7 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.Expression
+import it.unimi.dsi.fastutil.objects.Object2IntMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 
 /**
@@ -29,22 +30,53 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 public interface ExpressionToIndexMap {
   public operator fun get(expression: Expression<*>): Int
 
+  public operator fun set(expression: Expression<*>, index: Int)
+
+  public fun clear()
+
+  public fun makeCopy(): ExpressionToIndexMap
+
   public companion object {
-    public operator fun invoke(list: List<Expression<*>>): ExpressionToIndexMap =
-      ExpressionToIntMapImpl(list)
+    public operator fun invoke(list: List<Expression<*>> = emptyList()): ExpressionToIndexMap =
+      ExpressionToIndexMapImpl(list)
   }
 }
 
-private class ExpressionToIntMapImpl(list: List<Expression<*>>) : ExpressionToIndexMap {
-  val map = Object2IntOpenHashMap<Expression<*>>(list.size).apply {
-    defaultReturnValue(-1)
-    list.forEachIndexed { index, expression ->
+private typealias MapType = Object2IntMap<Expression<*>>
+private typealias ConcreteMap = Object2IntOpenHashMap<Expression<*>>
+
+private fun MapType.withDefaultReturn(): MapType = apply { defaultReturnValue(-1) }
+private fun makeMap(capacity: Int): MapType = ConcreteMap(capacity).withDefaultReturn()
+private fun makeMap(from: MapType): MapType = ConcreteMap(from).withDefaultReturn()
+
+private fun List<Expression<*>>.toMap(): MapType {
+  return makeMap(if (isNotEmpty()) size else DEFAULT_MAP_SIZE).apply {
+    forEachIndexed { index, expression ->
       put(expression, index)
       if (expression is SimpleDelegatingColumn) put(expression.original, index)
     }
   }
+}
+
+private const val DEFAULT_MAP_SIZE = 16
+
+private class ExpressionToIndexMapImpl(private val map: MapType) : ExpressionToIndexMap {
+  constructor(list: List<Expression<*>>) : this(list.toMap())
+
+  override fun makeCopy(): ExpressionToIndexMap {
+    return ExpressionToIndexMapImpl(makeMap(map))
+  }
 
   override fun get(expression: Expression<*>): Int {
     return map.getInt(expression)
+  }
+
+  override fun set(expression: Expression<*>, index: Int) {
+    @Suppress("ReplacePutWithAssignment") // don't want my Int boxed
+    map.put(expression, index)
+  }
+
+  override fun clear() {
+    map.clear()
   }
 }

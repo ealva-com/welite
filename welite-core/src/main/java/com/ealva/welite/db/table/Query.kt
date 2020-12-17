@@ -31,6 +31,8 @@ public interface QuerySeed {
    */
   public val types: List<PersistentType<*>>
 
+  public val expressionToIndexMap: ExpressionToIndexMap
+
   /**
    * The full sql of the query
    */
@@ -63,6 +65,8 @@ public interface QuerySeed {
 
         override val types: List<PersistentType<*>>
           get() = seed.types
+        override val expressionToIndexMap: ExpressionToIndexMap
+          get() = seed.expressionToIndexMap
         override val sql: String
           get() = seed.sql
       }

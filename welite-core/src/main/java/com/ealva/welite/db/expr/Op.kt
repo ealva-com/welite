@@ -200,9 +200,30 @@ public fun bindUint(): BindExpression<UInt> = BindExpression(UIntegerPersistentT
 @ExperimentalUnsignedTypes
 public fun bindUlong(): BindExpression<ULong> = BindExpression(ULongPersistentType())
 
-public class BindExpression<T>(private val sqlType: PersistentType<T>) : BaseExpression<T>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
-    sqlBuilder.apply { registerBindable(sqlType) }
+public class BindExpression<T>(
+  override val persistentType: PersistentType<T>
+) : BaseSqlTypeExpression<T>() {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    registerBindable(this@BindExpression)
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+
+    other as BindExpression<*>
+
+    if (persistentType != other.persistentType) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + persistentType.hashCode()
+    return result
+  }
 }
 
 private fun SqlBuilder.appendExpression(expr: Expression<*>) {

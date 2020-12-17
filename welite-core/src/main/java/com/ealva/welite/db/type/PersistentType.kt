@@ -105,13 +105,18 @@ public abstract class BasePersistentType<T>(
 
   private fun valueToStringQuotedAsLiteral(value: Any?): String = valueToString(value, true)
 
+  private fun valueToStringUnquoted(value: Any?): String = valueToString(value, false)
+
   override fun valueToString(value: Any?, quoteAsLiteral: Boolean): String = when (value) {
     null -> {
       require(nullable) { "NULL in non-nullable column" }
       "NULL"
     }
     DefaultValueMarker -> DefaultValueMarker.toString()
-    is Iterable<*> -> value.joinToString(",", transform = ::valueToStringQuotedAsLiteral)
+    is Iterable<*> -> value.joinToString(
+      ",",
+      transform = if (quoteAsLiteral) ::valueToStringQuotedAsLiteral else ::valueToStringUnquoted
+    )
     else -> nonNullValueToString(value, quoteAsLiteral)
   }
 

@@ -19,6 +19,7 @@ package com.ealva.welite.db.statements
 import android.database.sqlite.SQLiteDatabase
 import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.ExpressionToIndexMap
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
@@ -99,7 +100,8 @@ private class InsertStatementImpl(
 ) : BaseStatement(), InsertStatement {
   override val sql: String
     get() = seed.sql
-
+  override val expressionToIndexMap: ExpressionToIndexMap
+    get() = seed.expressionToIndexMap
   override val types: List<PersistentType<*>>
     get() = seed.types
 

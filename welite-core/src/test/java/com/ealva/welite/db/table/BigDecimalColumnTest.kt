@@ -28,9 +28,6 @@ import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.WeLiteUncaughtException
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.statements.insertValues
-import com.ealva.welite.db.table.BigTable.bigD
-import com.ealva.welite.db.table.BigTable.name
-import com.ealva.welite.db.table.BigTable.optBig
 import com.ealva.welite.test.shared.CoroutineRule
 import com.ealva.welite.test.shared.withTestDatabase
 import com.ealva.welite.test.db.table.withPlaceTestDatabase
@@ -68,8 +65,8 @@ class BigDecimalColumnTest {
 
   @Test
   fun `test BigDecimal column`() {
-    expect(bigD.descriptionDdl()).toBe(""""bigd" INTEGER NOT NULL""")
-    expect(optBig.descriptionDdl()).toBe(""""opt_big" INTEGER""")
+    expect(BigTable.bigD.descriptionDdl()).toBe(""""bigd" INTEGER NOT NULL""")
+    expect(BigTable.optBig.descriptionDdl()).toBe(""""opt_big" INTEGER""")
   }
 
   @Test
@@ -86,12 +83,12 @@ class BigDecimalColumnTest {
           it[optBig].bindArg()
         }
         insertBig.insert {
-          it[0] = "Bob"
-          it[1] = BigDecimal("1234.560")
-          it[2] = null
+          it[BigTable.name] = "Bob"
+          it[BigTable.bigD] = BigDecimal("1234.560")
+          it[BigTable.optBig] = null
         }
         insertBig.insert {
-          it[0] = "Mike"
+          it[BigTable.name] = "Mike"
           it[1] = BigDecimal("1234.567")
           it[2] = BigDecimal("2345.670")
         }
@@ -106,9 +103,9 @@ class BigDecimalColumnTest {
         fun bigScaled(value: String) = BigDecimal(value).setScale(scale)
 
         val result = BigTable.select()
-          .where { optBig greaterEq bigScaled("1234.567") }
-          .orderBy(optBig)
-          .sequence { Triple(it[name], it[bigD], it[optBig]) }
+          .where { BigTable.optBig greaterEq bigScaled("1234.567") }
+          .orderBy(BigTable.optBig)
+          .sequence { Triple(it[BigTable.name], it[BigTable.bigD], it[BigTable.optBig]) }
           .toList()
 
         expect(result).toHaveSize(2)
@@ -232,5 +229,5 @@ private object BigTable : Table() {
 }
 
 private object HasBigTableRef : Table() {
-  val ref = optReference("ref", bigD, ForeignKeyAction.CASCADE)
+  val ref = optReference("ref", BigTable.bigD, ForeignKeyAction.CASCADE)
 }

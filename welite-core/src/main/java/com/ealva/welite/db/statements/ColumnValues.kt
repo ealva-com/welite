@@ -61,17 +61,17 @@ private class ColumnValuesImpl : ColumnValues {
   override val columnValueList = mutableListOf<ColumnValue<*>>()
 
   override operator fun <S> set(column: Column<S>, value: S) {
-    columnValueList.add(ColumnValueWithValue(column, value))
+    columnValueList += ColumnValueWithValue(column, value)
   }
 
   override operator fun <T, E : Expression<T>> set(column: Column<T>, expression: E) {
-    columnValueList.add(ColumnValueWithExpression(column, expression))
+    columnValueList += ColumnValueWithExpression(column, expression)
   }
 
   override fun <T> get(column: Column<T>): BindArgument {
     return object : BindArgument {
       override fun bindArg() {
-        columnValueList.add(ColumnValueWithExpression(column, column.bindArg()))
+        columnValueList += BindableColumnValue(column)
       }
     }
   }
@@ -99,7 +99,7 @@ private fun <T> SqlBuilder.registerArgument(column: Column<T>, argument: T) {
   }
 }
 
-public class ColumnValueWithValue<S>(
+private class ColumnValueWithValue<S>(
   override val column: Column<S>,
   private val value: S
 ) : ColumnValue<S> {
@@ -108,12 +108,20 @@ public class ColumnValueWithValue<S>(
   }
 }
 
-public class ColumnValueWithExpression<S>(
+private class ColumnValueWithExpression<S>(
   override val column: Column<S>,
   private val expression: Expression<S>
 ) : ColumnValue<S> {
   override fun appendValueTo(builder: SqlBuilder): SqlBuilder = builder.apply {
     append(expression)
+  }
+}
+
+private class BindableColumnValue<S>(
+  override val column: Column<S>
+) : ColumnValue<S> {
+  override fun appendValueTo(builder: SqlBuilder): SqlBuilder = builder.apply {
+    registerBindable(column)
   }
 }
 
