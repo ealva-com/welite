@@ -75,7 +75,7 @@ public interface QuerySeed {
   }
 }
 
-public fun QueryBuilder.toQuery(): Query = Query(build())
+public fun <C : ColumnSet> QueryBuilder<C>.toQuery(): Query = Query(build())
 
 public interface Query {
   public val seed: QuerySeed
@@ -84,7 +84,8 @@ public interface Query {
     /**
      * Create a reusable [Query] from [queryBuilder]
      */
-    public operator fun invoke(queryBuilder: QueryBuilder): Query = queryBuilder.toQuery()
+    public operator fun <C : ColumnSet> invoke(queryBuilder: QueryBuilder<C>): Query =
+      queryBuilder.toQuery()
 
     /**
      * Make a Query instance. eg.

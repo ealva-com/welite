@@ -23,6 +23,10 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.orderBy
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.db.table.Doctors.degree
 import com.ealva.welite.test.db.table.Doctors.doctorName
 import com.ealva.welite.test.db.table.Specialty.description
@@ -47,7 +51,7 @@ public object CommonNaturalJoinTests {
         Doctors.naturalJoin(Visits)
           .select(Doctors.doctorId, doctorName, degree, patientName, visitDate)
           .where { degree eq "MD" }
-          .orderBy(Doctors.doctorId)
+          .orderByAsc { Doctors.doctorId }
           .sequence {
             DoctorsVisit(
               it[Doctors.doctorId],
@@ -108,7 +112,7 @@ public object CommonNaturalJoinTests {
         (Doctors naturalJoin Specialty naturalJoin Visits)
           .select(Doctors.doctorId, doctorName, degree, description, patientName, visitDate)
           .where { degree eq "MD" }
-          .orderBy(Doctors.doctorId, SortOrder.DESC)
+          .orderBy { Doctors.doctorId to SortOrder.DESC }
           .sequence {
             DoctorsVisit(
               it[Doctors.doctorId],

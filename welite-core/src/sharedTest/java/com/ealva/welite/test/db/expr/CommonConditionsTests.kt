@@ -25,6 +25,11 @@ import com.ealva.welite.db.expr.less
 import com.ealva.welite.db.expr.lessEq
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.all
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -41,8 +46,8 @@ public object CommonConditionsTests {
 
       query {
         val list = CondTable.selectAll().sequence { it[CondTable.id] }.toList()
-        expect(CondTable.select().where { Op.FALSE }.count()).toBe(0)
-        expect(CondTable.select().where { Op.TRUE }.count()).toBe(list.size.toLong())
+        expect(CondTable.selectWhere { Op.FALSE }.count()).toBe(0)
+        expect(CondTable.selectWhere { Op.TRUE }.count()).toBe(list.size.toLong())
       }
     }
   }
@@ -97,13 +102,14 @@ public object CommonConditionsTests {
 
         table
           .selectWhere { table.c1 lessEq table.c2 }
-          .orderBy(table.c1)
+          .orderByAsc { table.c1 }
           .sequence { it[table.c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(2)
             expect(list).toBe(listOf(0, 1))
           }
+
         table
           .selectWhere { table.c1 greater table.c2 }
           .sequence { it[table.c1] }
@@ -114,8 +120,8 @@ public object CommonConditionsTests {
           }
 
         table
-          .selectWhere { table.c1 greaterEq table.c2 }
-          .orderBy(table.c1)
+          .selectWhere { c1 greaterEq c2 }
+          .orderByAsc { c1 }
           .sequence { it[table.c1] }
           .toList()
           .let { list ->
@@ -134,7 +140,7 @@ public object CommonConditionsTests {
 
         table
           .selectWhere { table.c2 lessEq table.c1 }
-          .orderBy(table.c1)
+          .orderByAsc { c1 }
           .sequence { it[table.c1] }
           .toList()
           .let { list ->
@@ -151,8 +157,8 @@ public object CommonConditionsTests {
           }
 
         table
-          .selectWhere { table.c2 greaterEq table.c1 }
-          .orderBy(table.c1)
+          .selectWhere { c2 greaterEq c1 }
+          .orderByAsc { c1 }
           .sequence { it[table.c1] }
           .toList()
           .let { list ->

@@ -24,6 +24,10 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.statements.deleteWhere
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.db.table.Person
 import com.ealva.welite.test.db.table.Place
 import com.ealva.welite.test.db.table.Review
@@ -49,7 +53,7 @@ public object CommonDeleteTests {
       }
 
       transaction {
-        expect(MediaFileTable.selectWhere(MediaFileTable.id eq mediaId).count()).toBe(1)
+        expect(MediaFileTable.selectWhere { id eq mediaId }.count()).toBe(1)
         expect(MediaFileTable.delete { id eq mediaId }).toBe(1)
         setSuccessful()
       }
@@ -67,11 +71,11 @@ public object CommonDeleteTests {
       transaction { Review.deleteAll() }
       query {
         expect(Review.selectAll().count()).toBe(0)
-        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(1)
+        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(1)
       }
       transaction { Person.delete { name like "%ber" } }
       query {
-        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(0)
+        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(0)
       }
     }
   }
@@ -86,14 +90,14 @@ public object CommonDeleteTests {
       val bindPersonName = bindString()
       val deleteStmt = Person.deleteWhere { Person.name like bindPersonName }
       transaction {
-        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(1)
-        expect(Person.select(Person.id).where { Person.name like "%lia" }.count()).toBe(1)
+        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(1)
+        expect(Person.select(Person.id).where { name like "%lia" }.count()).toBe(1)
         deleteStmt.delete { it[bindPersonName] = "%ber" }
         deleteStmt.delete { it[0] = "%lia" }
       }
       query {
-        expect(Person.select(Person.id).where { Person.name like "%ber" }.count()).toBe(0)
-        expect(Person.select(Person.id).where { Person.name like "%lia" }.count()).toBe(0)
+        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(0)
+        expect(Person.select(Person.id).where { name like "%lia" }.count()).toBe(0)
       }
     }
   }
@@ -105,12 +109,12 @@ public object CommonDeleteTests {
     uri: Uri
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
-      .where { ArtistTable.artistName eq artist }
+      .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { AlbumTable.albumName eq album }
+      .where { albumName eq album }
       .sequence { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album

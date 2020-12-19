@@ -22,7 +22,15 @@ import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.count
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.substring
+import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
+import com.ealva.welite.db.table.groupBy
+import com.ealva.welite.db.table.orderBy
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.ordersBy
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
@@ -37,7 +45,7 @@ public object CommonOrderByTests {
       query {
         Person
           .selectAll()
-          .orderBy(Person.id)
+          .orderByAsc { id }
           .sequence { it[Person.id] }
           .toList().also { list -> expect(list).toHaveSize(5) }
           .forEachIndexed { index, id ->
@@ -69,8 +77,7 @@ public object CommonOrderByTests {
         val expectedList = others + withoutCities
         Person
           .selectAll()
-          .orderBy(Person.cityId, SortOrder.DESC)
-          .orderBy(Person.id)
+          .ordersBy { listOf(cityId to SortOrder.DESC, id to SortOrder.ASC) }
           .sequence { it[Person.id] }
           .toList()
           .let { list ->
@@ -96,7 +103,7 @@ public object CommonOrderByTests {
         val expectedList = others + withoutCities
         Person
           .selectAll()
-          .orderBy(listOf(Person.cityId to SortOrder.DESC, Person.id to SortOrder.ASC))
+          .ordersBy { listOf(cityId to SortOrder.DESC, id to SortOrder.ASC) }
           .sequence { it[Person.id] }
           .toList()
           .let { list ->
@@ -121,8 +128,8 @@ public object CommonOrderByTests {
           .innerJoin(Person)
           .select(Place.name, Person.id.count())
           .all()
-          .groupBy(Place.name)
-          .orderBy(Place.name)
+          .orderByAsc { Place.name }
+          .groupBy { Place.name }
           .sequence { Pair(it[Place.name], it[Person.id.count()]) }
           .toList()
           .let { list ->
@@ -147,7 +154,7 @@ public object CommonOrderByTests {
         val orderByExpr = Person.id.substring(2, 1) // 2nd letter in Person.id
         Person
           .selectAll()
-          .orderBy(orderByExpr to SortOrder.ASC) // sort by 2nd letter in Person.id
+          .orderByAsc { orderByExpr } // sort by 2nd letter in Person.id
           .sequence { it[Person.id] }
           .toList()
           .let { list ->
@@ -174,12 +181,12 @@ public object CommonOrderByTests {
       query {
         val orderByExpr: Expression<Int> = Person
           .select(Person.id.count())
-          .where { Place.id eq Person.cityId }
+          .where { Place.id eq cityId }
           .asExpression()
 
         Place
           .selectAll()
-          .orderBy(orderByExpr to SortOrder.DESC)
+          .orderBy { orderByExpr to SortOrder.DESC }
           .sequence { it[Place.name] }
           .toList()
           .let { list ->

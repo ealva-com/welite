@@ -25,11 +25,13 @@ import com.ealva.welite.db.statements.UpdateStatement
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.MasterType
+import com.ealva.welite.db.table.NoIdentityColumnSet
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.SelectFrom
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.WeLiteMarker
+import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StatementSeed
@@ -243,8 +245,16 @@ private class TriggerStatementsImpl(
     addWhere(where)
   }
 
+  /**
+   * If select later needs to be expanded to use WHERE or other parts of a query, a type of
+   * TriggerSelectFrom delegate and/or TriggerQueryBuilder delegate can be developed, each of which
+   * would contain a TriggerStatements instance so the eventual query StatementSeed can be added to
+   * the list of trigger statements
+   */
   override fun select(vararg columns: Expression<*>) {
-    statements += SelectFrom(columns.distinct(), null).where(null).statementSeed()
+    statements += SelectFrom<NoIdentityColumnSet>(columns.distinct(), NoIdentityColumnSet())
+      .where(null)
+      .statementSeed()
   }
 }
 

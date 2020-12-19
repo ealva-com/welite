@@ -19,11 +19,12 @@ package com.ealva.welite.db
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.ealva.welite.db.table.ArgBindings
+import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Cursor
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.Query
+import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker
@@ -46,7 +47,10 @@ public interface Queryable {
    * Same as [Query.forEach] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  public fun QueryBuilder.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
+  public fun <C : ColumnSet> QueryBuilder<C>.forEach(
+    bind: (ArgBindings) -> Unit = NO_ARGS,
+    action: (Cursor) -> Unit
+  )
 
   /**
    * Creates a flow, first doing any necessary [bind], execute the query, and emit a [T]
@@ -58,7 +62,7 @@ public interface Queryable {
    * Same as [Query.flow] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  public fun <T> QueryBuilder.flow(
+  public fun <C : ColumnSet, T> QueryBuilder<C>.flow(
     bind: (ArgBindings) -> Unit = NO_ARGS,
     factory: (Cursor) -> T
   ): Flow<T>
@@ -76,7 +80,7 @@ public interface Queryable {
    * Same as [Query.sequence] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  public fun <T> QueryBuilder.sequence(
+  public fun <C : ColumnSet, T> QueryBuilder<C>.sequence(
     bind: (ArgBindings) -> Unit = NO_ARGS,
     factory: (Cursor) -> T
   ): Sequence<T>
@@ -91,7 +95,9 @@ public interface Queryable {
    * Same as [Query.longForQuery] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  public fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> QueryBuilder<C>.longForQuery(
+    bind: (ArgBindings) -> Unit = NO_ARGS
+  ): Long
 
   /**
    * Do any necessary [bind], execute the query, and return the value in the first column of the
@@ -103,7 +109,9 @@ public interface Queryable {
    * Same as [Query.stringForQuery] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  public fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
+  public fun <C : ColumnSet> QueryBuilder<C>.stringForQuery(
+    bind: (ArgBindings) -> Unit = NO_ARGS
+  ): String
 
   /**
    * Do any necessary [bind], execute the query for count similar to
@@ -116,7 +124,7 @@ public interface Queryable {
    * Same as [Query.count] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  public fun QueryBuilder.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> QueryBuilder<C>.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
 
   /**
    * True if the Creatable, as known via [Creatable.identity], exists in the database, else false.

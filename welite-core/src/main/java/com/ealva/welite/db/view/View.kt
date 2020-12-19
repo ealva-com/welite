@@ -23,17 +23,17 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.log.WeLiteLog
-import com.ealva.welite.db.table.Alias
+import com.ealva.welite.db.table.BaseColumnSet
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.DuplicateColumnException
 import com.ealva.welite.db.table.ForeignKeyConstraint
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Join
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.Query
+import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.QuerySeed
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
@@ -132,7 +132,10 @@ private class ViewColumnImpl<T>(
     set(@Suppress("UNUSED_PARAMETER") value) {}
 
   override fun makeAlias(tableAlias: String?): Column<T> =
-    Column(name, Alias(table, tableAlias ?: "${view.viewName}_$name"), persistentType)
+    ViewColumnImpl(name, view, originalColumn.makeAlias(tableAlias))
+
+  override fun cloneFor(table: Table): Column<T> =
+    ViewColumnImpl(name, view, originalColumn.cloneFor(table))
 
   override val nullable: Boolean
     get() = originalColumn.nullable
@@ -200,11 +203,11 @@ private val LOG by lazyLogger(View::class, WeLiteLog.marker)
 public abstract class View private constructor(
   name: String = "",
   private val querySeed: QuerySeed
-) : ColumnSet, Creatable, Comparable<View> {
+) : BaseColumnSet(), Creatable, Comparable<View> {
 
   public constructor(name: String = "", query: Query) : this(name, query.seed)
 
-  public constructor(name: String = "", builder: QueryBuilder) : this(name, builder.build())
+  public constructor(name: String = "", builder: QueryBuilder<*>) : this(name, builder.build())
 
   public val viewName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
     require(!startsWith(Table.RESERVED_PREFIX)) {
@@ -237,7 +240,9 @@ public abstract class View private constructor(
   override val columns: List<ViewColumn<*>>
     get() = _columns
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply { append(identity) }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(identity)
+  }
 
   override fun join(
     joinTo: ColumnSet,

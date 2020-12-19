@@ -67,6 +67,11 @@ public interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
   public fun makeAlias(tableAlias: String? = null): Column<T>
 
   /**
+   * Clones this column substituting [table] for the original table
+   */
+  public fun cloneFor(table: Table): Column<T>
+
+  /**
    * True if null may be assigned to this column because either it's set nullable or
    * represents the row id (INTEGER PRIMARY KEY) without DESC
    */
@@ -143,6 +148,8 @@ private class ColumnImpl<T>(
 
   override fun makeAlias(tableAlias: String?): Column<T> =
     Column(name, Alias(table, tableAlias ?: "${table.tableName}_$name"), persistentType)
+
+  override fun cloneFor(table: Table): Column<T> = Column(name, table, persistentType)
 
   override val nullable: Boolean
     get() = persistentType.nullable || constraintList.isRowId(persistentType.isIntegerType)

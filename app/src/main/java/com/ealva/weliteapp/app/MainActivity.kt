@@ -30,6 +30,8 @@ import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.where
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -96,19 +98,19 @@ class MainActivity : AppCompatActivity() {
 
       db.query {
         val count = MediaFileTable.select(MediaFileTable.fileName).where {
-          MediaFileTable.mediaTitle like "%Title%"
+          mediaTitle like "%Title%"
         }.count()
         LOG.i { it("count=%d", count) }
 
         MediaFileTable
           .select(MediaFileTable.mediaTitle, MediaFileTable.localDate)
-          .where { MediaFileTable.mediaTitle like "%Title%" }
+          .where { mediaTitle like "%Title%" }
           .flow { Pair(it[MediaFileTable.mediaTitle], it[MediaFileTable.localDate]) }
           .collect { (title, date) -> LOG.i { +it("collect %s %s", title, date) } }
 
         MediaFileTable
           .select(MediaFileTable.mediaTitle, MediaFileTable.localDate)
-          .where { MediaFileTable.mediaTitle like "%Title%" }
+          .where { mediaTitle like "%Title%" }
           .sequence { Pair(it[MediaFileTable.mediaTitle], it[MediaFileTable.localDate]) }
           .forEach { (title, date) ->
             LOG.i { +it("forEach %s %s", title, date) }

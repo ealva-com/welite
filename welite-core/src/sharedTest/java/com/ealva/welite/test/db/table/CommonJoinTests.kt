@@ -21,14 +21,19 @@ import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.isNull
-import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.expr.literal
+import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.table.Alias
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.alias
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
@@ -91,7 +96,7 @@ public object CommonJoinTests {
       query {
         (Place innerJoin Person innerJoin Review)
           .selectAll()
-          .orderBy(Person.id)
+          .orderByAsc { Person.id }
           .flow { cursor ->
             Triple(cursor[Person.name], cursor[Review.post], cursor[Place.name])
           }.collectIndexed { index, (person, post, city) ->

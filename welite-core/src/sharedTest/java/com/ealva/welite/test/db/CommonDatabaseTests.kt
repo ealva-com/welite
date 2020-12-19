@@ -23,6 +23,7 @@ import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.FieldType
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.type.Blob
 import com.ealva.welite.test.db.trigger.DeleteAlbumTrigger
 import com.ealva.welite.test.db.trigger.DeleteArtistTrigger

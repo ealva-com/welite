@@ -56,6 +56,8 @@ import com.ealva.welite.db.table.asMasterType
 import com.ealva.welite.db.table.columnMetadata
 import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.where
+import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.buildStr
 import kotlinx.coroutines.flow.Flow
@@ -173,14 +175,15 @@ private class TransactionInProgressImpl(
     doForEach(seed, bind, action)
   }
 
-  override fun QueryBuilder.forEach(bind: (ArgBindings) -> Unit, action: (Cursor) -> Unit) {
-    this@TransactionInProgressImpl.doForEach(build(), bind, action)
-  }
+  override fun <C : ColumnSet> QueryBuilder<C>.forEach(
+    bind: (ArgBindings) -> Unit,
+    action: (Cursor) -> Unit
+  ) { this@TransactionInProgressImpl.doForEach(build(), bind, action) }
 
   override fun <T> Query.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
     doFlow(seed, bind, factory)
 
-  override fun <T> QueryBuilder.flow(
+  override fun <C : ColumnSet, T> QueryBuilder<C>.flow(
     bind: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Flow<T> = this@TransactionInProgressImpl.doFlow(build(), bind, factory)
@@ -190,7 +193,7 @@ private class TransactionInProgressImpl(
     factory: (Cursor) -> T
   ): Sequence<T> = doSequence(seed, bind, factory)
 
-  override fun <T> QueryBuilder.sequence(
+  override fun <C : ColumnSet, T> QueryBuilder<C>.sequence(
     bind: (ArgBindings) -> Unit,
     factory: (Cursor) -> T
   ): Sequence<T> = this@TransactionInProgressImpl.doSequence(build(), bind, factory)
@@ -225,18 +228,18 @@ private class TransactionInProgressImpl(
 
   override fun Query.longForQuery(bind: (ArgBindings) -> Unit): Long = db.longForQuery(seed, bind)
 
-  override fun QueryBuilder.longForQuery(bind: (ArgBindings) -> Unit): Long =
+  override fun <C : ColumnSet> QueryBuilder<C>.longForQuery(bind: (ArgBindings) -> Unit): Long =
     this@TransactionInProgressImpl.db.longForQuery(build(), bind)
 
   override fun Query.stringForQuery(bind: (ArgBindings) -> Unit): String =
     db.stringForQuery(seed, bind)
 
-  override fun QueryBuilder.stringForQuery(bind: (ArgBindings) -> Unit): String =
+  override fun <C : ColumnSet> QueryBuilder<C>.stringForQuery(bind: (ArgBindings) -> Unit): String =
     this@TransactionInProgressImpl.db.stringForQuery(build(), bind)
 
   override fun Query.count(bind: (ArgBindings) -> Unit): Long = doCount(seed, bind)
 
-  override fun QueryBuilder.count(bind: (ArgBindings) -> Unit): Long =
+  override fun <C : ColumnSet> QueryBuilder<C>.count(bind: (ArgBindings) -> Unit): Long =
     this@TransactionInProgressImpl.doCount(build(), bind)
 
   private fun doCount(seed: QuerySeed, bindArgs: (ArgBindings) -> Unit): Long {
@@ -278,14 +281,15 @@ private class TransactionInProgressImpl(
    * [QueryBuilder.count] on the result is equivalent. eg. ```table.selectAll().count()``` returns a
    * count of all rows in the table.
    */
-  fun SelectFrom.count(where: Op<Boolean>?): Query = Query(QueryBuilder(this, where, true))
+  fun <C : ColumnSet> SelectFrom<C>.count(
+    where: Op<Boolean>?
+  ): Query = Query(QueryBuilder(this, where, true))
 
   override val Creatable.exists
     get() = try {
-      val tableType = masterType.toString()
-      SQLiteMaster.selectWhere {
-        SQLiteMaster.type eq tableType and (SQLiteMaster.name eq identity.unquoted)
-      }.count() == 1L
+      val creatableType = masterType.toString()
+      val creatableName = identity.unquoted
+      SQLiteMaster.selectWhere { type eq creatableType and (name eq creatableName) }.count() == 1L
     } catch (e: Exception) {
       LOG.e(e) { it("Error checking table existence") }
       false
@@ -310,10 +314,11 @@ private class TransactionInProgressImpl(
       val triggers = mutableListOf<String>()
       val views = mutableListOf<String>()
 
+      val tableIdentity = identity.unquoted
       val sqlCol = SQLiteMaster.sql
       val typeCol = SQLiteMaster.type
       SQLiteMaster.select(sqlCol, typeCol)
-        .where { SQLiteMaster.tbl_name eq identity.unquoted }
+        .where { tbl_name eq tableIdentity }
         .forEach { cursor ->
           val sql = cursor[sqlCol, ""]
           if (sql.isNotEmpty()) {

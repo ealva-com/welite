@@ -27,14 +27,18 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.ForeignKeyInfo
 import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.greaterEq
-import com.ealva.welite.javatime.OffsetDt.name
-import com.ealva.welite.javatime.OffsetDt.offsetDate
-import com.ealva.welite.javatime.OffsetDt.optOffsetDate
-import com.ealva.welite.javatime.OffsetDt.other
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ForeignKeyAction
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.where
+import com.ealva.welite.javatime.OffsetDt.name
+import com.ealva.welite.javatime.OffsetDt.offsetDate
+import com.ealva.welite.javatime.OffsetDt.optOffsetDate
+import com.ealva.welite.javatime.OffsetDt.other
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
@@ -71,10 +75,12 @@ public object HasOffsetDtRef : Table() {
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 public class OffsetDateTimeColumnTest {
   @ExperimentalCoroutinesApi
-  @get:Rule public var coroutineRule = CoroutineRule()
+  @get:Rule
+  public var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  @get:Rule
+  var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 
@@ -129,7 +135,7 @@ public class OffsetDateTimeColumnTest {
       query {
         val results = OffsetDt.select()
           .where { offsetDate greaterEq noonSomewhere.plusYears(2) }
-          .orderBy(optOffsetDate)
+          .orderByAsc { optOffsetDate }
           .sequence { OffsetVisit(it[offsetDate], it[optOffsetDate], it[name], it[other]) }
           .toList()
         expect(results).toHaveSize(2)

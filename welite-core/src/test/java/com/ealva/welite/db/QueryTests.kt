@@ -30,7 +30,9 @@ import com.ealva.welite.db.expr.bindLong
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.toQuery
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.AlbumTable.albumName
 import com.ealva.welite.test.shared.ArtistAlbumTable
@@ -78,7 +80,7 @@ class QueryTests {
       }
       query {
         val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
-          .where { MediaFileTable.id greater 0L }
+          .where { id greater 0L }
           .toQuery()
 
         expect(query.seed.sql).toBe(
@@ -107,7 +109,7 @@ class QueryTests {
       }
       query {
         val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
-          .where { MediaFileTable.id greater bindLong() }
+          .where { id greater bindLong() }
           .toQuery()
 
         expect(query.seed.sql).toBe(
@@ -138,7 +140,7 @@ class QueryTests {
       }
       query {
         val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
-          .where { MediaFileTable.id greater bindLong() }
+          .where { id greater bindLong() }
           .toQuery()
 
         expect(query.seed.sql).toBe(
@@ -173,7 +175,7 @@ class QueryTests {
         expect(ids1.first).toBe(ids2.first) // same artist ID, different albums
 
         val query = MediaFileTable.select(MediaFileTable.id, MediaFileTable.mediaUri)
-          .where { MediaFileTable.id greater 0L }
+          .where { id greater 0L }
           .toQuery()
 
         expect(query.seed.sql).toBe(
@@ -193,7 +195,7 @@ class QueryTests {
 
         expect(
           ArtistAlbumTable.select(ArtistAlbumTable.id)
-            .where { ArtistAlbumTable.artistId eq ids1.first }
+            .where { artistId eq ids1.first }
             .count()
         )
           .toBe(2)
@@ -217,7 +219,7 @@ class QueryTests {
 
         expect(
           ArtistAlbumTable.select(ArtistAlbumTable.id)
-            .where { ArtistAlbumTable.artistId eq ids1.first }
+            .where { artistId eq ids1.first }
             .count()
         ).toBe(2)
         setSuccessful()
@@ -231,13 +233,13 @@ class QueryTests {
     uri: String
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
-      .where { ArtistTable.artistName eq artist }
+      .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val bindAlbumName = albumName.bindArg()
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { albumName eq bindAlbumName and (AlbumTable.artistName eq artist) }
+      .where { albumName eq bindAlbumName and (artistName eq artist) }
       .sequence({ it[bindAlbumName] = album }) { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album

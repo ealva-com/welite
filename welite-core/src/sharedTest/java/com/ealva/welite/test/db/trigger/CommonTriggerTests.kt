@@ -28,6 +28,10 @@ import com.ealva.welite.db.expr.notLike
 import com.ealva.welite.db.expr.raiseAbort
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.asExpression
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.selectCount
+import com.ealva.welite.db.table.where
 import com.ealva.welite.db.trigger.Trigger
 import com.ealva.welite.db.trigger.deleteTrigger
 import com.ealva.welite.db.trigger.insertTrigger
@@ -576,12 +580,12 @@ public object CommonTriggerTests {
     uri: Uri
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
-      .where { ArtistTable.artistName eq artist }
+      .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { AlbumTable.albumName eq album }
+      .where { albumName eq album }
       .sequence { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
@@ -634,13 +638,13 @@ public val DeleteMediaTrigger: Trigger<MediaFileTable> = MediaFileTable.deleteTr
   beforeAfter = Trigger.BeforeAfter.AFTER,
 ) {
   val mediaAlbumCount: Expression<Long> =
-    (MediaFileTable.selectCount { MediaFileTable.albumId eq old(MediaFileTable.albumId) })
+    (MediaFileTable.selectCount { albumId eq old(albumId) })
       .asExpression()
 
   AlbumTable.delete { mediaAlbumCount eq literal(0) }
 
   val mediaArtistCount: Expression<Long> =
-    (MediaFileTable.selectCount { MediaFileTable.artistId eq old(MediaFileTable.artistId) })
+    (MediaFileTable.selectCount { artistId eq old(artistId) })
       .asExpression()
 
   ArtistTable.delete { mediaArtistCount eq literal(0) }

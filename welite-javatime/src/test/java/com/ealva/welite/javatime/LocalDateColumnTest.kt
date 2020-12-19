@@ -27,13 +27,17 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.ForeignKeyInfo
 import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.expr.greaterEq
+import com.ealva.welite.db.statements.insertValues
+import com.ealva.welite.db.table.ForeignKeyAction
+import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.where
 import com.ealva.welite.javatime.Visit.localDate
 import com.ealva.welite.javatime.Visit.name
 import com.ealva.welite.javatime.Visit.optLocalDate
 import com.ealva.welite.javatime.Visit.other
-import com.ealva.welite.db.statements.insertValues
-import com.ealva.welite.db.table.ForeignKeyAction
-import com.ealva.welite.db.table.Table
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
@@ -68,10 +72,12 @@ object HasVisitRef : Table() {
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class LocalDateColumnTest {
   @ExperimentalCoroutinesApi
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  @get:Rule
+  var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 
@@ -125,7 +131,7 @@ class LocalDateColumnTest {
       query {
         val result = Visit.select()
           .where { optLocalDate greaterEq LocalDate.now().plusYears(2) }
-          .orderBy(optLocalDate)
+          .orderByAsc { optLocalDate }
           .sequence { Accom(it[localDate], it[optLocalDate], it[name], it[other]) }
           .toList()
 

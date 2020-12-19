@@ -24,15 +24,19 @@ import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.statements.deleteWhere
-import com.ealva.welite.db.table.CompoundSelect
 import com.ealva.welite.db.table.OnConflict
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
 import com.ealva.welite.db.table.except
 import com.ealva.welite.db.table.intersect
+import com.ealva.welite.db.table.orderBy
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.selectCount
 import com.ealva.welite.db.table.union
 import com.ealva.welite.db.table.unionAll
+import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
 import com.ealva.welite.test.shared.AlbumTable
 import com.ealva.welite.test.shared.ArtistAlbumTable
@@ -67,10 +71,10 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union: CompoundSelect = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
-          ArtistMediaTable.artistId eq artist1
+        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+          artistId eq artist1
         } union MediaFileTable.select(MediaFileTable.id).where {
-          MediaFileTable.artistId eq artist1
+          artistId eq artist1
         }
 
         val expectedUnion: String = buildStr { append(union) }
@@ -80,7 +84,7 @@ public object CommonCompoundSelectTests {
             """WHERE "MediaFile"."ArtistId" = 1)"""
         )
 
-        val selectCount: QueryBuilder = union.selectCount()
+        val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
           """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
@@ -113,10 +117,10 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union: CompoundSelect = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
-          ArtistMediaTable.artistId eq artist1
+        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+          artistId eq artist1
         } unionAll MediaFileTable.select(MediaFileTable.id).where {
-          MediaFileTable.artistId eq artist1
+          artistId eq artist1
         }
 
         val expectedUnion: String = buildStr { append(union) }
@@ -126,7 +130,7 @@ public object CommonCompoundSelectTests {
             """ "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
         )
 
-        val selectCount: QueryBuilder = union.selectCount()
+        val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
           """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
@@ -159,10 +163,10 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union: CompoundSelect = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
-          ArtistMediaTable.artistId eq artist1
+        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+          artistId eq artist1
         } intersect MediaFileTable.select(MediaFileTable.id).where {
-          MediaFileTable.artistId eq artist1
+          artistId eq artist1
         }
 
         val expectedUnion: String = buildStr { append(union) }
@@ -172,7 +176,7 @@ public object CommonCompoundSelectTests {
             """ "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
         )
 
-        val selectCount: QueryBuilder = union.selectCount()
+        val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
           """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
@@ -205,10 +209,10 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union: CompoundSelect = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
-          ArtistMediaTable.artistId eq artist1
+        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+          artistId eq artist1
         } except MediaFileTable.select(MediaFileTable.id).where {
-          MediaFileTable.artistId eq artist1
+          artistId eq artist1
         }
 
         val expectedUnion: String = buildStr { append(union) }
@@ -218,7 +222,7 @@ public object CommonCompoundSelectTests {
             """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
         )
 
-        val selectCount: QueryBuilder = union.selectCount()
+        val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
           """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
@@ -257,9 +261,9 @@ public object CommonCompoundSelectTests {
         }
       }
       query {
-        expect(ArtistTable.selectCount { ArtistTable.artistName eq artistBob }.longForQuery())
+        expect(ArtistTable.selectCount { artistName eq artistBob }.longForQuery())
           .toBe(1)
-        expect(ArtistTable.selectCount { ArtistTable.id eq bobId }.longForQuery()).toBe(1)
+        expect(ArtistTable.selectCount { id eq bobId }.longForQuery()).toBe(1)
       }
       transaction {
         // We can use ArtistTable.id in the expression because we're going to use it in a
@@ -267,9 +271,9 @@ public object CommonCompoundSelectTests {
         // in deleteWhere { literal(0) eq countExpression } but we want to build a string
         val countExpression = (
           ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
-            ArtistMediaTable.artistId eq ArtistTable.id
+            artistId eq ArtistTable.id
           } union MediaFileTable.select(MediaFileTable.id).where {
-            MediaFileTable.artistId eq ArtistTable.id
+            artistId eq ArtistTable.id
           }
           ).selectCount().asExpression<Long>()
 
@@ -285,9 +289,9 @@ public object CommonCompoundSelectTests {
         expect(deleted).toBe(1)
       }
       query {
-        expect(ArtistTable.selectCount { ArtistTable.artistName eq artistBob }.longForQuery())
+        expect(ArtistTable.selectCount { artistName eq artistBob }.longForQuery())
           .toBe(0)
-        expect(ArtistTable.selectCount { ArtistTable.id eq bobId }.longForQuery())
+        expect(ArtistTable.selectCount { id eq bobId }.longForQuery())
           .toBe(0)
       }
     }
@@ -308,7 +312,7 @@ public object CommonCompoundSelectTests {
 
         val unionList = compoundSelect
           .selectAll()
-          .orderBy(TableA.id, SortOrder.DESC)
+          .orderBy { id to SortOrder.DESC }
           .sequence { it[TableA.id] }
           .toList()
 
@@ -410,7 +414,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy(TableA.id, SortOrder.DESC)
+          .orderBy { id to SortOrder.DESC }
           .sequence { it[TableA.id] }
           .toList()
 
@@ -437,7 +441,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy(TableA.id, SortOrder.DESC)
+          .orderBy { id to SortOrder.DESC }
           .sequence { it[TableA.id] }
           .toList()
 
@@ -464,7 +468,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy(TableA.id, SortOrder.DESC)
+          .orderBy { id to SortOrder.DESC }
           .sequence { it[TableA.id] }
           .toList()
 
@@ -492,7 +496,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy(TableA.id, SortOrder.DESC)
+          .orderBy { id to SortOrder.DESC }
           .sequence { it[TableA.id] }
           .toList()
 
@@ -504,7 +508,7 @@ public object CommonCompoundSelectTests {
           .except(TableA.select(TableA.id).all())
           .select(TableC.id)
           .all()
-          .orderBy(TableC.id, SortOrder.DESC)
+          .orderBy { id to SortOrder.DESC }
           .sequence { it[TableC.id] }
           .toList()
 
@@ -521,12 +525,12 @@ public object CommonCompoundSelectTests {
     uri: Uri
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
-      .where { ArtistTable.artistName eq artist }
+      .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { AlbumTable.albumName eq album }
+      .where { albumName eq album }
       .sequence { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album

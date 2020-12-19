@@ -59,7 +59,7 @@ public fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
   otherColumn: C2.() -> Expression<*>
 ): Join = join(otherTable, JoinType.NATURAL, onColumn(), otherTable.otherColumn())
 
-public class Join(private val columnSet: ColumnSet) : ColumnSet {
+public class Join(private val columnSet: ColumnSet) : BaseColumnSet() {
 
   override val identity: Identity = columnSet.identity
 

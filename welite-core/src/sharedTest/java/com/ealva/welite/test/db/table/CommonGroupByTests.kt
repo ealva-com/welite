@@ -23,6 +23,11 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.groupConcat
 import com.ealva.welite.db.expr.max
 import com.ealva.welite.db.table.alias
+import com.ealva.welite.db.table.all
+import com.ealva.welite.db.table.groupBy
+import com.ealva.welite.db.table.groupsBy
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.select
 import com.ealva.welite.test.shared.expect
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -42,7 +47,7 @@ public object CommonGroupByTests {
         val list = (Place innerJoin Person)
           .select(Place.name, Person.id.count(), cAlias)
           .all()
-          .groupBy(Place.name)
+          .groupBy { Place.name }
           .sequence { Triple(it[Place.name], it[Person.id.count()], it[cAlias]) }
           .toList()
 
@@ -67,7 +72,7 @@ public object CommonGroupByTests {
         val list = (Place innerJoin Person)
           .select(Place.name, Person.id.count())
           .all()
-          .groupBy(Place.name)
+          .groupBy { Place.name }
           .having { Person.id.count() eq 1 }
           .sequence { Pair(it[Place.name], it[Person.id.count()]) }
           .toList()
@@ -92,9 +97,9 @@ public object CommonGroupByTests {
         val list = (Place innerJoin Person)
           .select(Place.name, Person.id.count(), maxExp)
           .all()
-          .groupBy(Place.name)
+          .orderByAsc { Place.name }
+          .groupBy { Place.name }
           .having { Person.id.count() eq maxExp }
-          .orderBy(Place.name)
           .sequence { Triple(it[Place.name], it[Person.id.count()], it[maxExp]) }
           .toList()
 
@@ -121,7 +126,7 @@ public object CommonGroupByTests {
           (Place leftJoin Person)
             .select(Place.name, this)
             .all()
-            .groupBy(listOf(Place.id, Place.name))
+            .groupsBy { listOf(Place.id, Place.name) }
             .forEach { map[it[Place.name]] = it.getOptional(this) }
           assertBlock(map)
         }

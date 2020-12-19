@@ -28,6 +28,10 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.statements.updateColumns
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.where
 import com.ealva.welite.test.db.table.Person
 import com.ealva.welite.test.db.table.Place
 import com.ealva.welite.test.db.table.Review
@@ -80,7 +84,7 @@ class UpdateTests {
         setSuccessful()
       }
       query {
-        expect(ArtistTable.selectWhere(ArtistTable.artistName eq goodName).count()).toBe(1)
+        expect(ArtistTable.selectWhere { artistName eq goodName }.count()).toBe(1)
       }
     }
   }
@@ -97,7 +101,7 @@ class UpdateTests {
         expect(
           Person
             .select(Person.name)
-            .where { Person.id eq nathaliaId }
+            .where { id eq nathaliaId }
             .sequence { it[Person.name] }
             .single()
         ).toBe("Nathalia")
@@ -115,7 +119,7 @@ class UpdateTests {
         expect(
           Person
             .select(Person.name)
-            .where { Person.id eq nathaliaId }
+            .where { id eq nathaliaId }
             .sequence { it[Person.name] }
             .single()
         ).toBe(newName)
@@ -152,12 +156,12 @@ class UpdateTests {
     uri: Uri
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select(ArtistTable.id)
-      .where { ArtistTable.artistName eq artist }
+      .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where { AlbumTable.albumName eq album }
+      .where { albumName eq album }
       .sequence { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album

@@ -46,6 +46,8 @@ public inline class Identity(public val value: String) {
     get() = value.trim(quoteChar)
 
   public companion object {
+    public val NO_IDENTITY: Identity = Identity("")
+
     @Suppress("MemberVisibilityCanBePrivate")
     public const val DEFAULT_QUOTE_CHAR: Char = '"'
 

@@ -25,8 +25,10 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.table.Table
-import com.ealva.welite.test.db.table.withPlaceTestDatabase
+import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.type.Blob
+import com.ealva.welite.test.db.table.withPlaceTestDatabase
 import com.ealva.welite.test.shared.CoroutineRule
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -43,7 +45,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class BindParameterTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 
@@ -78,7 +81,7 @@ class BindParameterTests {
         }
         val list = table
           .selectAll()
-          .orderBy(table.id)
+          .orderByAsc { table.id }
           .sequence { Pair(it[table.name], it[table.optName, "NULL"]) }
           .toList()
         expect(list).toHaveSize(2)
@@ -246,7 +249,7 @@ class BindParameterTests {
         expect(table.selectAll().count()).toBe(5)
         table
           .selectAll()
-          .orderBy(table.reqByte)
+          .orderByAsc { table.reqByte }
           .forEach { cursor ->
             val pos = cursor.position
             val floatPos = pos.toFloat()
@@ -368,7 +371,7 @@ class BindParameterTests {
       query {
         table
           .selectAll()
-          .orderBy(table.id)
+          .orderByAsc { id }
           .forEach { cursor ->
             when (val pos = cursor.position) {
               0 -> {

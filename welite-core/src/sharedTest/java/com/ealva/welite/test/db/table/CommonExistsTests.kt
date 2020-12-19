@@ -22,6 +22,7 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.table.exists
+import com.ealva.welite.db.table.selectWhere
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -35,7 +36,7 @@ public object CommonExistsTests {
       query {
         val result = Person
           .selectWhere {
-            exists(Review.selectWhere { Review.userId eq Person.id and (Review.post like "%McD%") })
+            exists(Review.selectWhere { userId eq id and (post like "%McD%") })
           }
           .sequence { it[Person.name] }
           .toList()
@@ -57,8 +58,7 @@ public object CommonExistsTests {
           .selectWhere {
             exists(
               Review.selectWhere {
-                Review.userId eq Person.id and
-                  ((Review.post like "%McD%") or (Review.post like "%ost"))
+                userId eq id and ((post like "%McD%") or (post like "%ost"))
               }
             )
           }
@@ -84,10 +84,10 @@ public object CommonExistsTests {
         val result = Person
           .selectWhere {
             exists(
-              Review.selectWhere { Review.userId eq Person.id and (Review.post like "%McD%") }
+              Review.selectWhere { userId eq id and (post like "%McD%") }
             ) or
               exists(
-                Review.selectWhere { Review.userId eq Person.id and (Review.post like "%ost") }
+                Review.selectWhere { userId eq id and (post like "%ost") }
               )
           }
           .sequence { it[Person.name] }

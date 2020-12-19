@@ -24,8 +24,13 @@ import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.QueryBuilderAlias
 import com.ealva.welite.db.table.SqlTypeExpressionAlias
 import com.ealva.welite.db.table.alias
+import com.ealva.welite.db.table.all
+import com.ealva.welite.db.table.groupBy
 import com.ealva.welite.db.table.joinQuery
 import com.ealva.welite.db.table.lastQueryBuilderAlias
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -43,7 +48,7 @@ public object CommonAliasTests {
         val expAlias = Person.name.max().alias("m")
 
         val query: Join = Join(Person).joinQuery({ it[expAlias] eq Person.name }) {
-          Person.select(Person.cityId, expAlias).all().groupBy(Person.cityId)
+          Person.select(Person.cityId, expAlias).all().groupBy { cityId }
         }
         val innerExp = checkNotNull(query.lastQueryBuilderAlias)[expAlias]
 
@@ -68,9 +73,9 @@ public object CommonAliasTests {
     ) {
       query {
         val expAlias: SqlTypeExpressionAlias<String> = Person.name.max().alias("pxa")
-        val personAlias: QueryBuilderAlias = Person.select(Person.cityId, expAlias)
+        val personAlias: QueryBuilderAlias<Person> = Person.select(Person.cityId, expAlias)
           .all()
-          .groupBy(Person.cityId)
+          .groupBy { cityId }
           .alias("pqa")
 
         expect(
@@ -97,7 +102,7 @@ public object CommonAliasTests {
         expect(
           personAlias.select(personAlias[Person.name], personAlias[Person.cityId])
             .where { personAlias[Person.name] eq "Rick" }
-            .groupBy(personAlias[Person.cityId])
+            .groupBy { personAlias[Person.cityId] }
             .sequence { it[personAlias[Person.name]] }
             .count()
         ).toBe(1)

@@ -77,7 +77,7 @@ private const val IGNORED_CONSTRAINT_WITH_SAME_NAME =
 public abstract class Table(
   name: String = "",
   systemTable: Boolean = false
-) : ColumnSet, Creatable {
+) : BaseColumnSet(), Creatable {
   public open val tableName: String = (if (name.isNotEmpty()) name else nameFromClass()).apply {
     require(systemTable || !startsWith(RESERVED_PREFIX)) {
       "Invalid Table name '$this', must not start with $RESERVED_PREFIX"
@@ -94,6 +94,10 @@ public abstract class Table(
   override val columns: List<Column<*>>
     get() = _columns
 
+  public fun cloneColumnsFor(table: Table): List<Column<*>> = _columns.map {
+    it.cloneFor(table)
+  }
+
   private val _indices = mutableListOf<Index>()
 
   /**
@@ -104,7 +108,9 @@ public abstract class Table(
 
   private val checkConstraints = mutableListOf<Pair<String, Op<Boolean>>>()
 
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply { append(identity) }
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(identity)
+  }
 
   override fun join(
     joinTo: ColumnSet,

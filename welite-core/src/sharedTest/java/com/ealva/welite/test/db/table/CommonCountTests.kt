@@ -19,6 +19,10 @@ package com.ealva.welite.test.db.table
 import android.content.Context
 import com.ealva.welite.db.expr.max
 import com.ealva.welite.db.table.alias
+import com.ealva.welite.db.table.all
+import com.ealva.welite.db.table.groupBy
+import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selectAll
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -80,7 +84,7 @@ public object CommonCountTests {
           Review
             .select(Review.value.max())
             .all()
-            .groupBy(Review.userId)
+            .groupBy { userId }
             .count()
         )
       }

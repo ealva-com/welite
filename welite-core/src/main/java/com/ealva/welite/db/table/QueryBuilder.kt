@@ -44,31 +44,83 @@ public inline val OrderByPair.expression: Expression<*>
 public inline val OrderByPair.ascDesc: SortOrder
   get() = second
 
-public interface QueryBuilder : AppendsToSqlBuilder {
+public interface QueryBuilder<C : ColumnSet> : AppendsToSqlBuilder {
+
+  /**
+   * Source of the query, typically a Table, Join, View, or Alias. This is carried from select
+   * through to the this builder to be used as a receiver to try to shorten references to columns.
+   * It usually alleviates the need to specify the Table. Doesn't work in other situations such
+   * as a [Join] or [CompoundSelect]
+   */
+  public val sourceSet: C
+
+  /**
+   * List representing the columns in the result of the query. [Cursor] supports getting the
+   * column value using the Expression. Expressions are typically table [Column]s but can be
+   * any range of expressions.
+   */
   public val resultColumns: List<Expression<*>>
+
+  /**
+   * If [distinct] is true duplicate rows are removed from the results
+   */
+  public fun distinct(distinct: Boolean = true): QueryBuilder<C>
+
+  /**
+   * Adds a column ([Expression<*>]) to group the results by.
+   *
+   * Prefer the extension functions [groupBy] and [groupsBy] as they have the original source set
+   * (typically a [Table]) as receiver and are inline
+   */
+  public fun addGroupBy(column: Expression<*>): QueryBuilder<C>
+
+  /**
+   * If a HAVING clause is specified, it is evaluated once for each group of rows as a boolean
+   * expression. If the result of evaluating the HAVING clause is false, the group is discarded. If
+   * the HAVING clause is an aggregate expression, it is evaluated across all rows in the group. If
+   * a HAVING clause is a non-aggregate expression, it is evaluated with respect to an arbitrarily
+   * selected row from the group. The HAVING expression may refer to values, even aggregate
+   * functions, that are not in the result.
+   */
+  public fun having(op: C.() -> Op<Boolean>): QueryBuilder<C>
+
+  /**
+   * Adds an OrderByPair (column to [SortOrder]) to sort the results by.
+   *
+   * Prefer the extension functions [orderByAsc], [orderBy], and [ordersBy] as they have the
+   * original source set (typically a [Table]) as the receiver and are inline
+   */
+  public fun addOrderBy(pair: OrderByPair): QueryBuilder<C>
+
+  /**
+   * Does this query contain 1 or more order by clause. Simple select statements do not have an
+   * order by clause.
+   */
+  public val hasOrderBy: Boolean
+
+  /**
+   * Add a [limit] and [offset] to this query. The [offset] defaults to 0
+   */
+  public fun limit(limit: Long, offset: Long = 0): QueryBuilder<C>
+
+  /**
+   * Does this query have a limit/offset clause. Simple select statements do not have a
+   * limit/offset.
+   */
+  public val hasLimit: Boolean
 
   /**
    * Changes where field of a Query.
    * @param body new WHERE condition builder, previous value used as a receiver
    */
-  public fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>): QueryBuilder
+  public fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>): QueryBuilder<C>
 
   /**
    * Build the QuerySeed as a basis for a Query instance or executing a query
    */
   public fun build(): QuerySeed
+
   public fun statementSeed(): StatementSeed
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder
-  public fun distinct(value: Boolean = true): QueryBuilder
-  public fun groupBy(column: Expression<*>): QueryBuilder
-  public fun groupBy(columnList: List<Expression<*>>): QueryBuilder
-  public fun having(op: () -> Op<Boolean>): QueryBuilder
-  public fun orderBy(column: Expression<*>, order: SortOrder = SortOrder.ASC): QueryBuilder
-  public fun orderBy(pair: OrderByPair): QueryBuilder
-  public fun orderBy(orderList: List<OrderByPair>): QueryBuilder
-  public val hasOrderBy: Boolean
-  public fun limit(limit: Long, offset: Long = 0): QueryBuilder
-  public val hasLimit: Boolean
 
   /**
    * Used in QueryBuilderAlias
@@ -88,50 +140,119 @@ public interface QueryBuilder : AppendsToSqlBuilder {
   ): SqlTypeExpressionAlias<T>?
 
   public companion object {
-    public operator fun invoke(
-      set: SelectFrom,
+    public operator fun <C : ColumnSet> invoke(
+      set: SelectFrom<C>,
       where: Op<Boolean>?,
       count: Boolean = false
-    ): QueryBuilder = QueryBuilderImpl(set, where, count)
+    ): QueryBuilder<C> = QueryBuilderImpl(set, where, count)
   }
 }
 
-public inline val QueryBuilder.hasNoOrderBy: Boolean
+/**
+ * Select all columns [where]
+ */
+public fun <C : ColumnSet> C.selectWhere(where: Op<Boolean>?): QueryBuilder<C> =
+  select().where(where)
+
+/**
+ * Select all columns of this [ColumnSet] and call [where] to make the where expression
+ */
+public fun <C : ColumnSet> C.selectWhere(
+  where: C.() -> Op<Boolean>
+): QueryBuilder<C> = selectWhere(where())
+
+/**
+ * Select all columns and all rows
+ */
+public fun <C : ColumnSet> C.selectAll(): QueryBuilder<C> = selectWhere(null)
+
+/**
+ * Select COUNT(*) (no columns) using optional [where]
+ */
+public fun <C : ColumnSet> C.selectCount(where: (C.() -> Op<Boolean>)? = null): QueryBuilder<C> =
+  QueryBuilder(set = select(emptyList()), where = where?.invoke(this), count = true)
+
+public fun <C : ColumnSet> SelectFrom<C>.where(where: Op<Boolean>?): QueryBuilder<C> =
+  QueryBuilder(this, where)
+
+public inline fun <C : ColumnSet> SelectFrom<C>.where(
+  where: C.() -> Op<Boolean>
+): QueryBuilder<C> = where(where(sourceSet))
+
+/** All rows will be returned */
+public fun <C : ColumnSet> SelectFrom<C>.all(): QueryBuilder<C> = where(null)
+
+public inline val <C : ColumnSet> QueryBuilder<C>.hasNoOrderBy: Boolean
   get() = !hasOrderBy
 
-public inline val QueryBuilder.hasNoLimit: Boolean
+public inline val <C : ColumnSet> QueryBuilder<C>.hasNoLimit: Boolean
   get() = !hasLimit
 
 @WeLiteMarker
-private class QueryBuilderImpl(
-  private var selectFrom: SelectFrom,
+private class QueryBuilderImpl<C : ColumnSet>(
+  private var selectFrom: SelectFrom<C>,
   private var where: Op<Boolean>?,
   private var count: Boolean = false
-) : QueryBuilder {
+) : QueryBuilder<C> {
   private var groupBy: MutableSet<Expression<*>> = LinkedHashSet()
   private var orderBy: MutableSet<OrderByPair> = LinkedHashSet()
   private var having: Op<Boolean>? = null
   private var distinct: Boolean = false
   private var limitOffset: LimitOffset? = null
 
+  override val sourceSet: C
+    get() = selectFrom.sourceSet
+
   override val resultColumns: List<Expression<*>>
     get() = selectFrom.resultColumns
+
+  override fun distinct(distinct: Boolean): QueryBuilder<C> = apply { this.distinct = distinct }
+
+  override fun addGroupBy(column: Expression<*>): QueryBuilder<C> = apply {
+    groupBy.add(column)
+  }
+
+  override fun having(op: C.() -> Op<Boolean>): QueryBuilder<C> = apply {
+    val newHaving = Op.build { sourceSet.op() }
+    if (having != null) {
+      error("""HAVING specified twice. Old value = '$having', new value = '$newHaving'""")
+    }
+    having = newHaving
+  }
+
+  override fun addOrderBy(pair: OrderByPair): QueryBuilder<C> = apply {
+    orderBy.add(pair)
+  }
+
+  override val hasOrderBy: Boolean
+    get() = orderBy.isNotEmpty()
+
+  override fun limit(limit: Long, offset: Long): QueryBuilder<C> = apply {
+    limitOffset = LimitOffset(limit, offset)
+  }
+
+  override val hasLimit: Boolean
+    get() = limitOffset != null
 
   /**
    * Changes [where] field of a Query.
    * @param body new WHERE condition builder, previous value used as a receiver
    */
-  override fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>): QueryBuilder =
+  override fun adjustWhere(body: Op<Boolean>?.() -> Op<Boolean>): QueryBuilder<C> =
     apply { where = where.body() }
 
   /**
-   * Build the QuerySeed as a basis for a Query instance or executing a query
+   * Build the QuerySeed as a basis for a Query. Query's are reusable and are executed within the
+   * scope of a Queryable or Transaction, using sequence, flow, or a forEach to convert rows from
+   * a cursor to an object. QueryBuilder may be executed directly and uses a Query at a lower level.
+   * Typically building a Query then binding any parameters at execution time is more efficient.
    */
-  override fun build(): QuerySeed = makeQuerySeed()
+  override fun build(): QuerySeed = QuerySeed(statementSeed(), selectFrom.resultColumns)
 
+  /**
+   * Statement seed for a Select statement used typically within a Trigger
+   */
   override fun statementSeed(): StatementSeed = buildSql { append(this@QueryBuilderImpl) }
-
-  private fun makeQuerySeed(): QuerySeed = QuerySeed(statementSeed(), selectFrom.resultColumns)
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("SELECT ")
@@ -182,44 +303,6 @@ private class QueryBuilderImpl(
     }
   }
 
-  override fun distinct(value: Boolean): QueryBuilder = apply { distinct = value }
-
-  override fun groupBy(column: Expression<*>): QueryBuilder = apply {
-    groupBy.add(column)
-  }
-
-  override fun groupBy(columnList: List<Expression<*>>): QueryBuilder = apply {
-    columnList.forEach { column -> groupBy(column) }
-  }
-
-  override fun having(op: () -> Op<Boolean>): QueryBuilder = apply {
-    if (having != null) {
-      error("""HAVING specified twice. Old value = '$having', new value = '${Op.build { op() }}'""")
-    }
-    having = Op.build { op() }
-  }
-
-  override fun orderBy(column: Expression<*>, order: SortOrder): QueryBuilder =
-    orderBy(column to order)
-
-  override fun orderBy(pair: OrderByPair): QueryBuilder = apply {
-    orderBy.add(pair)
-  }
-
-  override fun orderBy(orderList: List<OrderByPair>): QueryBuilder = apply {
-    orderList.forEach { pair -> orderBy(pair) }
-  }
-
-  override val hasOrderBy: Boolean
-    get() = orderBy.isNotEmpty()
-
-  override fun limit(limit: Long, offset: Long): QueryBuilder = apply {
-    limitOffset = LimitOffset(limit, offset)
-  }
-
-  override val hasLimit: Boolean
-    get() = limitOffset != null
-
   /**
    * Used in QueryBuilderAlias
    */
@@ -239,11 +322,43 @@ private class QueryBuilderImpl(
   ): SqlTypeExpressionAlias<T>? = selectFrom.findResultColumnExpressionAlias(original)
 }
 
+public inline fun <C : ColumnSet> QueryBuilder<C>.groupBy(
+  column: C.() -> Expression<*>
+): QueryBuilder<C> = apply {
+  addGroupBy(sourceSet.column())
+}
+
+public inline fun <C : ColumnSet> QueryBuilder<C>.groupsBy(
+  list: C.() -> List<Expression<*>>
+): QueryBuilder<C> = apply {
+  sourceSet.list().forEach { column -> addGroupBy(column) }
+}
+
+public inline fun <C : ColumnSet> QueryBuilder<C>.ordersBy(
+  orderList: C.() -> List<OrderByPair>
+): QueryBuilder<C> = apply {
+  sourceSet.orderList().forEach { pair -> addOrderBy(pair) }
+}
+
+public inline fun <C : ColumnSet> QueryBuilder<C>.orderBy(
+  pair: C.() -> OrderByPair
+): QueryBuilder<C> = apply {
+  addOrderBy(sourceSet.pair())
+}
+
+public inline fun <C : ColumnSet> QueryBuilder<C>.orderByAsc(
+  column: C.() -> Expression<*>
+): QueryBuilder<C> = apply {
+  addOrderBy(sourceSet.column() to SortOrder.ASC)
+}
+
 /**
  * In this QueryBuilder add `andPart` to where condition with `and` operator, and return the same
  * QueryBuilder.
  */
-public fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>): QueryBuilder = adjustWhere {
+public fun <C : ColumnSet> QueryBuilder<C>.andWhere(
+  andPart: () -> Op<Boolean>
+): QueryBuilder<C> = adjustWhere {
   val expr = Op.build { andPart() }
   if (this == null) expr else this and expr
 }
@@ -253,7 +368,9 @@ public fun QueryBuilder.andWhere(andPart: () -> Op<Boolean>): QueryBuilder = adj
  * QueryBuilder.
  */
 @Suppress("unused")
-public fun QueryBuilder.orWhere(orPart: () -> Op<Boolean>): QueryBuilder = adjustWhere {
+public fun <C : ColumnSet> QueryBuilder<C>.orWhere(
+  orPart: () -> Op<Boolean>
+): QueryBuilder<C> = adjustWhere {
   val expr = Op.build { orPart() }
   if (this == null) expr else this or expr
 }
@@ -261,11 +378,13 @@ public fun QueryBuilder.orWhere(orPart: () -> Op<Boolean>): QueryBuilder = adjus
 /**
  * Use this query builder as an expression
  */
-public fun <T : Any> QueryBuilder.asExpression(): Expression<T> {
+public fun <T : Any> QueryBuilder<*>.asExpression(): Expression<T> {
   return wrapAsExpression(this)
 }
 
-public fun <T : Any> wrapAsExpression(queryBuilder: QueryBuilder): BaseExpression<T> =
+public fun <T : Any> wrapAsExpression(
+  queryBuilder: QueryBuilder<*>
+): BaseExpression<T> =
   object : BaseExpression<T>() {
     override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
       append("(")

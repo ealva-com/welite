@@ -20,9 +20,9 @@ import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.type.SqlBuilder
 
-public fun exists(queryBuilder: QueryBuilder): Op<Boolean> = Exists(queryBuilder)
+public fun <C : ColumnSet> exists(queryBuilder: QueryBuilder<C>): Op<Boolean> = Exists(queryBuilder)
 
-public class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
+public class Exists<C : ColumnSet>(private val queryBuilder: QueryBuilder<C>) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("EXISTS (")
     this@Exists.queryBuilder.appendTo(this)
@@ -31,9 +31,10 @@ public class Exists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
 }
 
 @Suppress("unused")
-public fun notExists(queryBuilder: QueryBuilder): Op<Boolean> = NotExists(queryBuilder)
+public fun <C : ColumnSet> notExists(queryBuilder: QueryBuilder<C>): Op<Boolean> =
+  NotExists(queryBuilder)
 
-public class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
+public class NotExists<C : ColumnSet>(private val queryBuilder: QueryBuilder<C>) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("NOT EXISTS (")
     this@NotExists.queryBuilder.appendTo(this)
@@ -41,12 +42,14 @@ public class NotExists(private val queryBuilder: QueryBuilder) : Op<Boolean>() {
   }
 }
 
-public infix fun <T> Expression<T>.inSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
+public infix fun <C : ColumnSet, T> Expression<T>.inSubQuery(
+  queryBuilder: QueryBuilder<C>
+): Op<Boolean> =
   InSubQueryOp(this, queryBuilder)
 
-public class InSubQueryOp<T>(
+public class InSubQueryOp<C : ColumnSet, T>(
   private val expr: Expression<T>,
-  private val queryBuilder: QueryBuilder
+  private val queryBuilder: QueryBuilder<C>
 ) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(expr)
@@ -57,12 +60,14 @@ public class InSubQueryOp<T>(
 }
 
 @Suppress("unused")
-public infix fun <T> Expression<T>.notInSubQuery(queryBuilder: QueryBuilder): Op<Boolean> =
+public infix fun <C : ColumnSet, T> Expression<T>.notInSubQuery(
+  queryBuilder: QueryBuilder<C>
+): Op<Boolean> =
   NotInSubQueryOp(this, queryBuilder)
 
-public class NotInSubQueryOp<T>(
+public class NotInSubQueryOp<C : ColumnSet, T>(
   private val expr: Expression<T>,
-  private val queryBuilder: QueryBuilder
+  private val queryBuilder: QueryBuilder<C>
 ) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(expr)

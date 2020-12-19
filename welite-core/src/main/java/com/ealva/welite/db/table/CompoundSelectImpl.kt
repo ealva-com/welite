@@ -19,7 +19,7 @@ package com.ealva.welite.db.table
 import com.ealva.welite.db.expr.BaseExpression
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SortOrder
+import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
@@ -53,7 +53,7 @@ public enum class CompoundSelectOp(private val op: String) : AppendsToSqlBuilder
 }
 
 public interface SelectColumnToResultColumnMap {
-  public operator fun get(column: Expression<*>): Expression<*>
+  public operator fun get(column: Expression<*>): Expression<*>?
 }
 
 /**
@@ -93,8 +93,10 @@ public interface SelectColumnToResultColumnMap {
  *
  * [SQLite Compound Select](https://sqlite.org/lang_select.html#compound_select_statements)
  */
-public interface CompoundSelect : ColumnSet {
-  public fun add(op: CompoundSelectOp, builder: QueryBuilder)
+public interface CompoundSelect<C : ColumnSet> : ColumnSet {
+  public val originalSourceSet: C
+
+  public fun add(op: CompoundSelectOp, builder: QueryBuilder<*>)
 
   public val resultColumns: List<Expression<*>>
 
@@ -110,26 +112,28 @@ public interface CompoundSelect : ColumnSet {
   public val mapSelectToResult: SelectColumnToResultColumnMap
 
   public companion object {
-    public operator fun invoke(
+    public operator fun <C : ColumnSet> invoke(
       op: CompoundSelectOp,
-      first: QueryBuilder,
-      second: QueryBuilder
-    ): CompoundSelect = CompoundSelectImpl(op, first, second)
+      first: QueryBuilder<C>,
+      second: QueryBuilder<*>
+    ): CompoundSelect<C> = CompoundSelectImpl(op, first, second)
   }
 }
 
 private const val SIZE_ERROR =
   "In a compound SELECT, all the constituent SELECTs must return the same number of result columns."
 
-private fun QueryBuilder.requireSimpleSelect() {
+private fun QueryBuilder<*>.requireSimpleSelect() {
   require(hasNoOrderBy && hasNoLimit) { "Simple SELECT must have no ORDER BY or LIMIT" }
 }
 
-private class CompoundSelectImpl(
+private class CompoundSelectImpl<C : ColumnSet>(
   op: CompoundSelectOp,
-  first: QueryBuilder,
-  second: QueryBuilder
-) : CompoundSelect, SelectColumnToResultColumnMap {
+  first: QueryBuilder<C>,
+  second: QueryBuilder<*>
+) : BaseColumnSet(), CompoundSelect<C>, SelectColumnToResultColumnMap {
+  override val originalSourceSet: C = first.sourceSet
+
   private val builderList = mutableListOf(first, second).also {
     val sizeFirst = first.resultColumns.size
     val sizeSecond = second.resultColumns.size
@@ -157,7 +161,7 @@ private class CompoundSelectImpl(
     .resultColumns
     .map { expression -> mapSelectColumnToResult(expression) }
 
-  override fun add(op: CompoundSelectOp, builder: QueryBuilder) {
+  override fun add(op: CompoundSelectOp, builder: QueryBuilder<*>) {
     builder.requireSimpleSelect()
     val sizeAdd = builder.resultColumns.size
     val sizeCurrent = resultColumns.size
@@ -172,8 +176,7 @@ private class CompoundSelectImpl(
   override val mapSelectToResult: SelectColumnToResultColumnMap
     get() = this
 
-  override fun get(column: Expression<*>): Expression<*> =
-    checkNotNull(selectToResultMap[column]) { "Column:'$column' does not appear in result columns" }
+  override fun get(column: Expression<*>): Expression<*>? = selectToResultMap[column]
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     check(builderList.size == operatorList.size + 1)
@@ -198,92 +201,119 @@ private class CompoundSelectImpl(
   override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
   override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
   override fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
-
-  /**
-   * All selected columns should refer to columns of the first simple select of this
-   * CompoundSelect.
-   *
-   * All other ColumnSet select functions eventually call here to build the SelectFrom.
-   * If a column is of type Column, wrap it so that the select result columns are known by
-   * their simple name
-   */
-  override fun select(columns: List<Expression<*>>): SelectFrom {
-    val selectColumns = columns.distinct().map { column -> selectToResultMap[column] ?: column }
-    return CompoundSelectFrom(SelectFrom(selectColumns, this), selectToResultMap)
-  }
-
-  override fun select(vararg columns: Expression<*>): SelectFrom {
-    return select(columns.distinct())
-  }
-
-  override fun selectCount(where: (() -> Op<Boolean>)?): QueryBuilder = CompoundQueryBuilder(
-    QueryBuilder(select(emptyList()), where?.invoke(), count = true),
-    selectToResultMap
-  )
-
-  override fun selectAll(): QueryBuilder {
-    return selectWhere(null)
-  }
-
-  override fun selectWhere(where: () -> Op<Boolean>): QueryBuilder {
-    return selectWhere(where())
-  }
-
-  override fun selectWhere(where: Op<Boolean>?): QueryBuilder {
-    return CompoundSelectFrom(SelectFrom(resultColumns, this), selectToResultMap).where(where)
-  }
 }
 
-private class CompoundSelectFrom(
-  private val original: SelectFrom,
-  private val selectToResultMap: MutableMap<Expression<*>, Expression<*>>
-) : SelectFrom by original {
-  override fun where(where: Op<Boolean>?): QueryBuilder {
-    return CompoundQueryBuilder(original.where(where), selectToResultMap)
+/**
+ * All selected columns should refer to columns of the first simple select of this
+ * CompoundSelect.
+ *
+ * All other ColumnSet select functions eventually call here to build the SelectFrom.
+ * If a column is of type Column, wrap it so that the select result columns are known by
+ * their simple name
+ */
+public fun <C : ColumnSet> CompoundSelect<C>.select(
+  columns: List<Expression<*>> = this.columns
+): CompoundSelectFrom<C> {
+  val resultColumns = columns.distinct().map { column -> mapSelectToResult[column] ?: column }
+  return CompoundSelectFrom(resultColumns, originalSourceSet, this, mapSelectToResult)
+}
+
+public fun <C : ColumnSet> CompoundSelect<C>.select(
+  vararg columns: Expression<*>
+): CompoundSelectFrom<C> {
+  return select(columns.distinct())
+}
+
+public class CompoundSelectFrom<C : ColumnSet>(
+  override val resultColumns: List<Expression<*>>,
+  override val sourceSet: C,
+  private val compoundSelect: CompoundSelect<C>,
+  internal val selectToResultMap: SelectColumnToResultColumnMap
+) : SelectFrom<C> {
+
+  override fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    compoundSelect.appendFromTo(this)
   }
 
-  override fun where(where: () -> Op<Boolean>): QueryBuilder {
-    return where(where())
+  override fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    resultColumns.appendEach { append(it) }
   }
 
-  override fun subset(vararg columns: Expression<*>): SelectFrom {
+  override fun sourceSetColumnsInResult(): List<Column<*>> =
+    compoundSelect.columnsIntersect(resultColumns)
+
+  override fun <T> findSourceSetOriginal(original: Column<T>): Column<*>? =
+    compoundSelect.find(original)
+
+  override fun subset(vararg columns: Expression<*>): SelectFrom<C> {
     return subset(columns.asList())
   }
 
-  override fun subset(columns: List<Expression<*>>): SelectFrom =
-    CompoundSelectFrom(original.subset(columns), selectToResultMap)
+  override fun subset(columns: List<Expression<*>>): SelectFrom<C> =
+    CompoundSelectFrom(
+      columns
+        .asSequence()
+        .distinct()
+        .mapNotNull { column -> resultColumns.find { it == column } }
+        .toList(),
+      sourceSet,
+      compoundSelect,
+      selectToResultMap
+    )
 
-  override fun all(): QueryBuilder {
-    return where(null)
+  override fun <T> findResultColumnExpressionAlias(
+    original: SqlTypeExpression<T>
+  ): SqlTypeExpressionAlias<T>? {
+    @Suppress("UNCHECKED_CAST")
+    return resultColumns.find { it == original } as? SqlTypeExpressionAlias<T>
   }
-
-  override val resultColumns: List<Expression<*>>
-    get() = original.resultColumns.map { column -> selectToResultMap[column] ?: column }
 }
 
-private class CompoundQueryBuilder(
-  private val original: QueryBuilder,
-  private val selectToResultMap: MutableMap<Expression<*>, Expression<*>>
-) : QueryBuilder by original {
-  override fun groupBy(column: Expression<*>): QueryBuilder = apply {
-    original.groupBy(selectToResultMap[column] ?: column)
+/**
+ * Select all columns and all rows
+ */
+public fun <C : ColumnSet> CompoundSelect<C>.selectAll(): QueryBuilder<C> =
+  select().where(null)
+
+/**
+ * Select COUNT(*) (no columns) using optional [where]
+ */
+public fun <C : ColumnSet> CompoundSelect<C>.selectCount(
+  where: (C.() -> Op<Boolean>)? = null
+): QueryBuilder<C> =
+  QueryBuilder(set = select(emptyList()), where = where?.invoke(originalSourceSet), count = true)
+
+public fun <C : ColumnSet> CompoundSelectFrom<C>.where(
+  where: Op<Boolean>?
+): CompoundQueryBuilder<C> =
+  CompoundQueryBuilder(QueryBuilder(this, where), selectToResultMap)
+
+public inline fun <C : ColumnSet> CompoundSelectFrom<C>.where(
+  where: C.() -> Op<Boolean>
+): QueryBuilder<C> = where(where(sourceSet))
+
+public fun <C : ColumnSet> CompoundSelect<C>.selectCount(
+  where: (() -> Op<Boolean>)?
+): CompoundQueryBuilder<C> =
+  CompoundQueryBuilder(
+    QueryBuilder(select(emptyList()), where?.invoke(), count = true),
+    mapSelectToResult
+  )
+
+/** All rows will be returned */
+public fun <C : ColumnSet> CompoundSelectFrom<C>.all(): QueryBuilder<C> = where(null)
+
+public class CompoundQueryBuilder<C : ColumnSet>(
+  private val original: QueryBuilder<C>,
+  private val selectToResultMap: SelectColumnToResultColumnMap
+) : QueryBuilder<C> by original {
+  override fun addGroupBy(column: Expression<*>): QueryBuilder<C> = apply {
+    original.addGroupBy(selectToResultMap[column] ?: column)
   }
 
-  override fun groupBy(columnList: List<Expression<*>>): QueryBuilder = apply {
-    columnList.forEach { column -> groupBy(column) }
-  }
-
-  override fun orderBy(pair: OrderByPair): QueryBuilder = apply {
+  override fun addOrderBy(pair: OrderByPair): QueryBuilder<C> = apply {
     val expression = pair.expression
-    original.orderBy(selectToResultMap[expression] ?: expression, pair.ascDesc)
-  }
-
-  override fun orderBy(column: Expression<*>, order: SortOrder): QueryBuilder = apply {
-    orderBy(OrderByPair(column, order))
-  }
-
-  override fun orderBy(orderList: List<OrderByPair>): QueryBuilder = apply {
-    orderList.forEach { orderByPair -> orderBy(orderByPair) }
+    original.addOrderBy((selectToResultMap[expression] ?: expression) to pair.ascDesc)
   }
 }
 
@@ -291,70 +321,74 @@ private class CompoundQueryBuilder(
  * Apply the [Union][CompoundSelectOp.Union] operator to this simple select with another
  * simple select
  */
-public infix fun QueryBuilder.union(other: QueryBuilder): CompoundSelect =
-  CompoundSelect(CompoundSelectOp.Union, this, other)
+public infix fun <C : ColumnSet> QueryBuilder<C>.union(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = CompoundSelect(CompoundSelectOp.Union, this, other)
 
 /**
  * Apply the [UnionAll][CompoundSelectOp.UnionAll] operator to this simple select with another
  * simple select
  */
-public infix fun QueryBuilder.unionAll(other: QueryBuilder): CompoundSelect =
-  CompoundSelect(CompoundSelectOp.UnionAll, this, other)
+public infix fun <C : ColumnSet> QueryBuilder<C>.unionAll(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = CompoundSelect(CompoundSelectOp.UnionAll, this, other)
 
 /**
  * Apply the [Intersect][CompoundSelectOp.Intersect] operator to this simple select with another
  * simple select
  */
-public infix fun QueryBuilder.intersect(other: QueryBuilder): CompoundSelect =
-  CompoundSelect(CompoundSelectOp.Intersect, this, other)
+public infix fun <C : ColumnSet> QueryBuilder<C>.intersect(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = CompoundSelect(CompoundSelectOp.Intersect, this, other)
 
 /**
  * Apply the [Except][CompoundSelectOp.Except] operator to this simple select with another
  * simple select
  */
-public infix fun QueryBuilder.except(other: QueryBuilder): CompoundSelect =
-  CompoundSelect(CompoundSelectOp.Except, this, other)
+public infix fun <C : ColumnSet> QueryBuilder<C>.except(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = CompoundSelect(CompoundSelectOp.Except, this, other)
 
 /**
  * Apply the [Union][CompoundSelectOp.Union] operator adding another simple select to this
  * CompoundSelect
  */
-public infix fun CompoundSelect.union(other: QueryBuilder): CompoundSelect = apply {
-  add(CompoundSelectOp.Union, other)
-}
+public infix fun <C : ColumnSet> CompoundSelect<C>.union(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = apply { add(CompoundSelectOp.Union, other) }
 
 /**
  * Apply the [UnionAll][CompoundSelectOp.UnionAll] operator adding another simple select to this
  * CompoundSelect
  */
-public infix fun CompoundSelect.unionAll(other: QueryBuilder): CompoundSelect = apply {
-  add(CompoundSelectOp.UnionAll, other)
-}
+public infix fun <C : ColumnSet> CompoundSelect<C>.unionAll(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = apply { add(CompoundSelectOp.UnionAll, other) }
 
 /**
  * Apply the [Intersect][CompoundSelectOp.Intersect] operator adding another simple select to this
  * CompoundSelect
  */
-public infix fun CompoundSelect.intersect(other: QueryBuilder): CompoundSelect = apply {
-  add(CompoundSelectOp.Intersect, other)
-}
+public infix fun <C : ColumnSet> CompoundSelect<C>.intersect(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = apply { add(CompoundSelectOp.Intersect, other) }
 
 /**
  * Apply the [Except][CompoundSelectOp.Except] operator adding another simple select to this
  * CompoundSelect
  */
-public infix fun CompoundSelect.except(other: QueryBuilder): CompoundSelect = apply {
-  add(CompoundSelectOp.Except, other)
-}
+public infix fun <C : ColumnSet> CompoundSelect<C>.except(
+  other: QueryBuilder<*>
+): CompoundSelect<C> = apply { add(CompoundSelectOp.Except, other) }
 
 /**
  * Use this CompoundSelect as an expression
  */
-public fun <T : Any> CompoundSelect.asExpression(): Expression<T> {
+public fun <C : ColumnSet, T : Any> CompoundSelect<C>.asExpression(): Expression<T> {
   return wrapAsExpression(this)
 }
 
-public fun <T : Any> wrapAsExpression(select: CompoundSelect): BaseExpression<T> =
+public fun <C : ColumnSet, T : Any> wrapAsExpression(select: CompoundSelect<C>): BaseExpression<T> =
   object : BaseExpression<T>() {
     override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
       select.appendTo(this)

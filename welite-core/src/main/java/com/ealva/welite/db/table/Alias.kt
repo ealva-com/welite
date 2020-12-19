@@ -52,7 +52,7 @@ public class Alias<out T : Table>(private val delegate: T, private val alias: St
   public fun <R> originalColumn(column: Column<R>): Column<R>? =
     delegate.columns.firstOrNull { column.name == it.name } as? Column<R>
 
-  override val columns: List<Column<*>> = delegate.columns.map { it.clone() }
+  override val columns: List<Column<*>> = delegate.cloneColumnsFor(this)
 
   override fun equals(other: Any?): Boolean =
     if (other !is Alias<*>) false else tableNameWithAlias == other.tableNameWithAlias
@@ -61,7 +61,7 @@ public class Alias<out T : Table>(private val delegate: T, private val alias: St
 
   @Suppress("UNCHECKED_CAST")
   public operator fun <T : Any?> get(original: Column<T>): Column<T> =
-    delegate.columns.find { it == original }
+    delegate.find(original)
       ?.let { it.clone() as? Column<T> }
       ?: error("Column not found in original table")
 }
@@ -132,10 +132,10 @@ public class SqlTypeExpressionAlias<T>(
     get() = delegate.persistentType
 }
 
-public class QueryBuilderAlias(
-  private val queryBuilder: QueryBuilder,
+public class QueryBuilderAlias<C : ColumnSet>(
+  private val queryBuilder: QueryBuilder<C>,
   public val alias: String
-) : ColumnSet {
+) : BaseColumnSet() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("(")
     append(queryBuilder)
@@ -146,12 +146,12 @@ public class QueryBuilderAlias(
   override val identity: Identity = alias.asIdentity()
 
   override val columns: List<Column<*>>
-    get() = queryBuilder.sourceSetColumnsInResult().map { it.clone() }
+    get() = queryBuilder.sourceSetColumnsInResult().map { it.makeAlias(alias) }
 
   @Suppress("UNCHECKED_CAST")
   public operator fun <T : Any?> get(original: Column<T>): Column<T> =
     queryBuilder.findSourceSetOriginal(original)
-      ?.clone() as? Column<T>
+      ?.makeAlias(alias) as? Column<T>
       ?: error("Column not found in original table")
 
   @Suppress("UNCHECKED_CAST")
@@ -174,34 +174,34 @@ public class QueryBuilderAlias(
   override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
   override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
   override fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
-
-  private fun <T : Any?> Column<T>.clone(): Column<T> = makeAlias(alias)
 }
 
 public fun <T : Table> T.alias(alias: String): Alias<T> = Alias(this, alias)
-public fun QueryBuilder.alias(alias: String): QueryBuilderAlias = QueryBuilderAlias(this, alias)
+public fun <C : ColumnSet> QueryBuilder<C>.alias(alias: String): QueryBuilderAlias<C> =
+  QueryBuilderAlias(this, alias)
+
 public fun <T> SqlTypeExpression<T>.alias(alias: String): SqlTypeExpressionAlias<T> =
   SqlTypeExpressionAlias(this, alias)
 
-public fun Join.joinQuery(
-  on: ((QueryBuilderAlias) -> Op<Boolean>),
+public fun <C : ColumnSet> Join.joinQuery(
+  on: ((QueryBuilderAlias<C>) -> Op<Boolean>),
   joinType: JoinType = JoinType.INNER,
-  joinPart: () -> QueryBuilder
+  joinPart: () -> QueryBuilder<C>
 ): Join {
-  val qAlias = joinPart().alias("q${joinParts.count { it.joinPart is QueryBuilderAlias }}")
+  val qAlias = joinPart().alias("q${joinParts.count { it.joinPart is QueryBuilderAlias<*> }}")
   return join(qAlias, joinType, additionalConstraint = { on(qAlias) })
 }
 
 @Suppress("unused")
 public fun Table.joinQuery(
-  on: (QueryBuilderAlias) -> Op<Boolean>,
+  on: (QueryBuilderAlias<Table>) -> Op<Boolean>,
   joinType: JoinType = JoinType.INNER,
-  joinPart: () -> QueryBuilder
+  joinPart: () -> QueryBuilder<Table>
 ): Join = Join(this).joinQuery(on, joinType, joinPart)
 
-public val Join.lastQueryBuilderAlias: QueryBuilderAlias?
+public val Join.lastQueryBuilderAlias: QueryBuilderAlias<*>?
   get() = lastPartAsQueryBuilderAlias()
 
 private fun Join.lastPartAsQueryBuilderAlias() = joinParts.map {
-  it.joinPart as? QueryBuilderAlias
+  it.joinPart as? QueryBuilderAlias<*>
 }.firstOrNull()

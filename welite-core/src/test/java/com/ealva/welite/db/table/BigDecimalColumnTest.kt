@@ -28,9 +28,9 @@ import com.ealva.welite.db.WeLiteException
 import com.ealva.welite.db.WeLiteUncaughtException
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.statements.insertValues
+import com.ealva.welite.test.db.table.withPlaceTestDatabase
 import com.ealva.welite.test.shared.CoroutineRule
 import com.ealva.welite.test.shared.withTestDatabase
-import com.ealva.welite.test.db.table.withPlaceTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,10 +51,12 @@ private const val scale = 5
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class BigDecimalColumnTest {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
-  @get:Rule var thrown: ExpectedException = ExpectedException.none()
+  @get:Rule
+  var thrown: ExpectedException = ExpectedException.none()
 
   private lateinit var appCtx: Context
 
@@ -103,8 +105,8 @@ class BigDecimalColumnTest {
         fun bigScaled(value: String) = BigDecimal(value).setScale(scale)
 
         val result = BigTable.select()
-          .where { BigTable.optBig greaterEq bigScaled("1234.567") }
-          .orderBy(BigTable.optBig)
+          .where { optBig greaterEq bigScaled("1234.567") }
+          .orderByAsc { optBig }
           .sequence { Triple(it[BigTable.name], it[BigTable.bigD], it[BigTable.optBig]) }
           .toList()
 
