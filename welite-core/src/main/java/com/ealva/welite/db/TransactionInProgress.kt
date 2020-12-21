@@ -58,6 +58,7 @@ import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.selects
 import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.buildStr
 import kotlinx.coroutines.flow.Flow
@@ -317,7 +318,7 @@ private class TransactionInProgressImpl(
       val tableIdentity = identity.unquoted
       val sqlCol = SQLiteMaster.sql
       val typeCol = SQLiteMaster.type
-      SQLiteMaster.select(sqlCol, typeCol)
+      SQLiteMaster.selects { listOf(sqlCol, typeCol) }
         .where { tbl_name eq tableIdentity }
         .forEach { cursor ->
           val sql = cursor[sqlCol, ""]

@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package com.ealva.welite.test.db.table
+package com.ealva.welite.test.db.compound
 
 import android.content.Context
 import android.net.Uri
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.Transaction
+import com.ealva.welite.db.compound.CompoundSelect
+import com.ealva.welite.db.compound.all
+import com.ealva.welite.db.compound.except
+import com.ealva.welite.db.compound.intersect
+import com.ealva.welite.db.compound.select
+import com.ealva.welite.db.compound.selectAll
+import com.ealva.welite.db.compound.union
+import com.ealva.welite.db.compound.unionAll
 import com.ealva.welite.db.expr.SortOrder
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.literal
@@ -28,14 +36,9 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
-import com.ealva.welite.db.table.except
-import com.ealva.welite.db.table.intersect
 import com.ealva.welite.db.table.orderBy
 import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.selectCount
-import com.ealva.welite.db.table.union
-import com.ealva.welite.db.table.unionAll
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
 import com.ealva.welite.test.shared.AlbumTable
@@ -71,9 +74,9 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+        val union = ArtistMediaTable.select { mediaId }.where {
           artistId eq artist1
-        } union MediaFileTable.select(MediaFileTable.id).where {
+        } union MediaFileTable.select { id }.where {
           artistId eq artist1
         }
 
@@ -117,9 +120,9 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+        val union = ArtistMediaTable.select { mediaId }.where {
           artistId eq artist1
-        } unionAll MediaFileTable.select(MediaFileTable.id).where {
+        } unionAll MediaFileTable.select { id }.where {
           artistId eq artist1
         }
 
@@ -163,9 +166,9 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+        val union = ArtistMediaTable.select { mediaId }.where {
           artistId eq artist1
-        } intersect MediaFileTable.select(MediaFileTable.id).where {
+        } intersect MediaFileTable.select { id }.where {
           artistId eq artist1
         }
 
@@ -209,9 +212,9 @@ public object CommonCompoundSelectTests {
           it[mediaId] = media2
         }
 
-        val union = ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+        val union = ArtistMediaTable.select { mediaId }.where {
           artistId eq artist1
-        } except MediaFileTable.select(MediaFileTable.id).where {
+        } except MediaFileTable.select { id }.where {
           artistId eq artist1
         }
 
@@ -270,12 +273,14 @@ public object CommonCompoundSelectTests {
         // deleteWhere on ArtistTable. Typically you would just put the expression directly
         // in deleteWhere { literal(0) eq countExpression } but we want to build a string
         val countExpression = (
-          ArtistMediaTable.select(ArtistMediaTable.mediaId).where {
+          ArtistMediaTable.select { mediaId }.where {
             artistId eq ArtistTable.id
-          } union MediaFileTable.select(MediaFileTable.id).where {
+          } union MediaFileTable.select { id }.where {
             artistId eq ArtistTable.id
           }
-          ).selectCount().asExpression<Long>()
+          )
+          .selectCount()
+          .asExpression<Long>()
 
         val expression = buildStr { append(countExpression) }
         expect(expression).toBe(
@@ -302,7 +307,7 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect = TableA.select(TableA.id).all() union TableB.select(TableB.id).all()
+        val compoundSelect = TableA.select { id }.all() union TableB.select { id }.all()
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -327,7 +332,7 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect = TableA.select(TableA.id).all() unionAll TableB.select(TableB.id).all()
+        val compoundSelect = TableA.select { id }.all() unionAll TableB.select { id }.all()
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -352,7 +357,7 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect = TableA.select(TableA.id).all() intersect TableB.select(TableB.id).all()
+        val compoundSelect = TableA.select { id }.all() intersect TableB.select { id }.all()
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -377,7 +382,7 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect = TableA.select(TableA.id).all() except TableB.select(TableB.id).all()
+        val compoundSelect = TableA.select { id }.all() except TableB.select { id }.all()
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -402,8 +407,8 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect = (TableA.select(TableA.id).all() union TableB.select(TableB.id).all())
-          .union(TableC.select(TableC.id).all())
+        val compoundSelect = (TableA.select { id }.all() union TableB.select { id }.all())
+          .union(TableC.select { id }.all())
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -429,8 +434,8 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect = (TableA.select(TableA.id).all() union TableB.select(TableB.id).all())
-          .unionAll(TableC.select(TableC.id).all())
+        val compoundSelect = (TableA.select { id }.all() union TableB.select { id }.all())
+          .unionAll(TableC.select { id }.all())
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -456,8 +461,8 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect = (TableA.select(TableA.id).all() union TableB.select(TableB.id).all())
-          .intersect(TableC.select(TableC.id).all())
+        val compoundSelect = (TableA.select { id }.all() union TableB.select { id }.all())
+          .intersect(TableC.select { id }.all())
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -483,9 +488,9 @@ public object CommonCompoundSelectTests {
       insertUnionData()
 
       query {
-        val compoundSelect =
-          (TableA.select(TableA.id).all() unionAll TableB.select(TableB.id).all())
-            .except(TableC.select(TableC.id).all())
+        val compoundSelect: CompoundSelect<TableA> = (
+          TableA.select { id }.all() unionAll TableB.select { id }.all()
+          ) except TableC.select { id }.all()
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
@@ -503,9 +508,9 @@ public object CommonCompoundSelectTests {
         expect(unionList).toHaveSize(2)
         expect(unionList).toBe(listOf(2, 1))
 
-        val cAllBExceptA = TableC.select(TableC.id).all()
-          .unionAll(TableB.select(TableB.id).all())
-          .except(TableA.select(TableA.id).all())
+        val cAllBExceptA = TableC.select { id }.all()
+          .unionAll(TableB.select { id }.all())
+          .except(TableA.select { id }.all())
           .select(TableC.id)
           .all()
           .orderBy { id to SortOrder.DESC }
@@ -524,12 +529,12 @@ public object CommonCompoundSelectTests {
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    val idArtist: Long = ArtistTable.select(ArtistTable.id)
+    val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
+    val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq album }
       .sequence { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {

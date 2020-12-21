@@ -19,7 +19,7 @@
   "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING"
 )
 
-package com.ealva.welite.db.table
+package com.ealva.welite.db.compound
 
 import android.content.Context
 import android.os.Build
@@ -32,7 +32,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.ealva.welite.test.db.table.CommonCompoundSelectTests as Common
+import com.ealva.welite.test.db.compound.CommonCompoundSelectTests as Common
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)

@@ -19,12 +19,12 @@
   "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING"
 )
 
-package com.ealva.welite.db.android.table
+package com.ealva.welite.db.android.compound
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.ealva.welite.test.db.table.CommonCompoundSelectTests
+import com.ealva.welite.test.db.compound.CommonCompoundSelectTests
 import com.ealva.welite.test.shared.CoroutineRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before

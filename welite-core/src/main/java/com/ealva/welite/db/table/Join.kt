@@ -40,6 +40,7 @@ public fun <C1 : ColumnSet, C2 : ColumnSet> C1.innerJoin(
   otherColumn: C2.() -> Expression<*>
 ): Join = join(otherTable, JoinType.INNER, onColumn(), otherTable.otherColumn())
 
+@Suppress("unused")
 public fun <C1 : ColumnSet, C2 : ColumnSet> C1.leftJoin(
   otherTable: C2,
   onColumn: C1.() -> Expression<*>,

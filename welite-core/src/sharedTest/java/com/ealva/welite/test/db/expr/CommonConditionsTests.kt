@@ -27,9 +27,9 @@ import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.orderByAsc
-import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.selectWhere
+import com.ealva.welite.db.table.selects
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,7 +63,7 @@ public object CommonConditionsTests {
 
       query {
         val list = CondTable
-          .select(CondTable.id, CondTable.name, CondTable.name, CondTable.id).all()
+          .selects { listOf(id, name, name, id) }.all()
           .sequence {
             expect(it.columnCount).toBe(2)
             it[CondTable.id]

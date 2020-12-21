@@ -124,7 +124,7 @@ public object CommonGroupByTests {
         fun <T : String?> GroupConcat<T>.check(assertBlock: (Map<String, String?>) -> Unit) {
           val map = mutableMapOf<String, String?>()
           (Place leftJoin Person)
-            .select(Place.name, this)
+            .select(Place.name, this@check)
             .all()
             .groupsBy { listOf(Place.id, Place.name) }
             .forEach { map[it[Place.name]] = it.getOptional(this) }

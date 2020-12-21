@@ -26,7 +26,7 @@ import com.ealva.welite.db.android.DeleteTests
 import com.ealva.welite.db.android.ForeignKeySchemaTests
 import com.ealva.welite.db.android.expr.ConditionsTests
 import com.ealva.welite.db.android.expr.FunctionTests
-import com.ealva.welite.db.android.table.CompoundSelectTests
+import com.ealva.welite.db.android.compound.CompoundSelectTests
 import com.ealva.welite.db.android.table.CountTests
 import com.ealva.welite.db.android.table.ExistsTests
 import com.ealva.welite.db.android.table.GroupByTests

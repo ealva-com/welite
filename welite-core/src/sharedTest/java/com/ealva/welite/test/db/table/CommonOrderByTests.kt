@@ -180,7 +180,7 @@ public object CommonOrderByTests {
     ) {
       query {
         val orderByExpr: Expression<Int> = Person
-          .select(Person.id.count())
+          .select { id.count() }
           .where { Place.id eq cityId }
           .asExpression()
 

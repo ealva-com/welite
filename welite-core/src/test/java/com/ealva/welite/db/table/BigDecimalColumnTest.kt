@@ -104,7 +104,7 @@ class BigDecimalColumnTest {
       query {
         fun bigScaled(value: String) = BigDecimal(value).setScale(scale)
 
-        val result = BigTable.select()
+        val result = BigTable.selects()
           .where { optBig greaterEq bigScaled("1234.567") }
           .orderByAsc { optBig }
           .sequence { Triple(it[BigTable.name], it[BigTable.bigD], it[BigTable.optBig]) }

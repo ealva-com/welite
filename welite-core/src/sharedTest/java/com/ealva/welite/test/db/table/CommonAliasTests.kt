@@ -30,6 +30,7 @@ import com.ealva.welite.db.table.joinQuery
 import com.ealva.welite.db.table.lastQueryBuilderAlias
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.selects
 import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -48,14 +49,14 @@ public object CommonAliasTests {
         val expAlias = Person.name.max().alias("m")
 
         val query: Join = Join(Person).joinQuery({ it[expAlias] eq Person.name }) {
-          Person.select(Person.cityId, expAlias).all().groupBy { cityId }
+          Person.selects { listOf(cityId, expAlias) }.all().groupBy { cityId }
         }
         val innerExp = checkNotNull(query.lastQueryBuilderAlias)[expAlias]
 
         val actual = query.lastQueryBuilderAlias?.alias
         expect(actual).toBe("q0")
         expect(query.selectAll().count()).toBe(3L)
-        query.select(Person.columns + innerExp).all().sequence {
+        query.selects { Person.columns + innerExp }.all().sequence {
           expect(it[innerExp]).toNotBeNull()
         }
       }
@@ -73,7 +74,7 @@ public object CommonAliasTests {
     ) {
       query {
         val expAlias: SqlTypeExpressionAlias<String> = Person.name.max().alias("pxa")
-        val personAlias: QueryBuilderAlias<Person> = Person.select(Person.cityId, expAlias)
+        val personAlias: QueryBuilderAlias<Person> = Person.selects { listOf(cityId, expAlias) }
           .all()
           .groupBy { cityId }
           .alias("pqa")

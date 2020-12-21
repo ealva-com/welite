@@ -49,13 +49,13 @@ public object CommonFunctionTests {
 
       query {
         val sumColumn = DataTable.data.sum()
-        val list = DataTable.select(sumColumn).all().sequence { it[sumColumn] }.toList()
+        val list = DataTable.select { sumColumn }.all().sequence { it[sumColumn] }.toList()
         expect(list).toHaveSize(1)
         expect(list[0]).toBe(60)
-        expect(DataTable.select(sumColumn).all().longForQuery()).toBe(60)
+        expect(DataTable.select { sumColumn }.all().longForQuery()).toBe(60)
 
         val modulo = sumColumn % 7
-        expect(DataTable.select(modulo).all().longForQuery()).toBe(4)
+        expect(DataTable.select { modulo }.all().longForQuery()).toBe(4)
       }
     }
   }
@@ -71,9 +71,9 @@ public object CommonFunctionTests {
       }
 
       query {
-        expect(DataTable.select(DataTable.data.avg()).all().longForQuery()).toBe(20)
-        expect(DataTable.select(DataTable.data.min()).all().longForQuery()).toBe(10)
-        expect(DataTable.select(DataTable.data.max()).all().longForQuery()).toBe(30)
+        expect(DataTable.select { data.avg() }.all().longForQuery()).toBe(20)
+        expect(DataTable.select { data.min() }.all().longForQuery()).toBe(10)
+        expect(DataTable.select { data.max() }.all().longForQuery()).toBe(30)
       }
     }
   }
@@ -91,7 +91,7 @@ public object CommonFunctionTests {
       query {
         val substringColumn = DataTable.name.substring(2, 2)
         val list = DataTable
-          .select(substringColumn)
+          .select { substringColumn }
           .all()
           .orderBy { data to SortOrder.DESC }
           .sequence { it[substringColumn] }
@@ -120,7 +120,7 @@ public object CommonFunctionTests {
       query {
         val lowerCaseCol = DataTable.name.lowerCase()
         val list = DataTable
-          .select(lowerCaseCol)
+          .select { lowerCaseCol }
           .all()
           .orderBy { data to SortOrder.DESC }
           .sequence { it[lowerCaseCol] }
@@ -132,7 +132,7 @@ public object CommonFunctionTests {
 
         val upperCaseCol = DataTable.name.upperCase()
         val upperList = DataTable
-          .select(upperCaseCol)
+          .select { upperCaseCol }
           .all()
           .orderByAsc { name }
           .sequence { it[upperCaseCol] }

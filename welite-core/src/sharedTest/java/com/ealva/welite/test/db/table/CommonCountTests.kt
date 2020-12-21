@@ -76,13 +76,13 @@ public object CommonCountTests {
       query {
         expect(
           Review
-            .select(Review.userId)
+            .select { userId }
             .all()
             .distinct()
             .count()
         ).toBe(
           Review
-            .select(Review.value.max())
+            .select { value.max() }
             .all()
             .groupBy { userId }
             .count()

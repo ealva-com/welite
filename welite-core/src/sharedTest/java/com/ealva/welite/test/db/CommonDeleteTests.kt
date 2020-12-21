@@ -71,11 +71,11 @@ public object CommonDeleteTests {
       transaction { Review.deleteAll() }
       query {
         expect(Review.selectAll().count()).toBe(0)
-        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(1)
+        expect(Person.select { id }.where { name like "%ber" }.count()).toBe(1)
       }
       transaction { Person.delete { name like "%ber" } }
       query {
-        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(0)
+        expect(Person.select { id }.where { name like "%ber" }.count()).toBe(0)
       }
     }
   }
@@ -90,14 +90,14 @@ public object CommonDeleteTests {
       val bindPersonName = bindString()
       val deleteStmt = Person.deleteWhere { Person.name like bindPersonName }
       transaction {
-        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(1)
-        expect(Person.select(Person.id).where { name like "%lia" }.count()).toBe(1)
+        expect(Person.select { id }.where { name like "%ber" }.count()).toBe(1)
+        expect(Person.select { id }.where { name like "%lia" }.count()).toBe(1)
         deleteStmt.delete { it[bindPersonName] = "%ber" }
         deleteStmt.delete { it[0] = "%lia" }
       }
       query {
-        expect(Person.select(Person.id).where { name like "%ber" }.count()).toBe(0)
-        expect(Person.select(Person.id).where { name like "%lia" }.count()).toBe(0)
+        expect(Person.select { id }.where { name like "%ber" }.count()).toBe(0)
+        expect(Person.select { id }.where { name like "%lia" }.count()).toBe(0)
       }
     }
   }
@@ -108,12 +108,12 @@ public object CommonDeleteTests {
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    val idArtist: Long = ArtistTable.select(ArtistTable.id)
+    val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
+    val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq album }
       .sequence { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {

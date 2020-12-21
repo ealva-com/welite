@@ -100,7 +100,7 @@ class UpdateTests {
       query {
         expect(
           Person
-            .select(Person.name)
+            .select { name }
             .where { id eq nathaliaId }
             .sequence { it[Person.name] }
             .single()
@@ -118,7 +118,7 @@ class UpdateTests {
       query {
         expect(
           Person
-            .select(Person.name)
+            .select { name }
             .where { id eq nathaliaId }
             .sequence { it[Person.name] }
             .single()
@@ -155,12 +155,12 @@ class UpdateTests {
     album: String,
     uri: Uri
   ): Triple<Long, Long, Long> {
-    val idArtist: Long = ArtistTable.select(ArtistTable.id)
+    val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
       .sequence { it[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
+    val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq album }
       .sequence { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {

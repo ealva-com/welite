@@ -44,13 +44,13 @@ public inline val OrderByPair.expression: Expression<*>
 public inline val OrderByPair.ascDesc: SortOrder
   get() = second
 
-public interface QueryBuilder<C : ColumnSet> : AppendsToSqlBuilder {
+public interface QueryBuilder<out C : ColumnSet> : AppendsToSqlBuilder {
 
   /**
    * Source of the query, typically a Table, Join, View, or Alias. This is carried from select
-   * through to the this builder to be used as a receiver to try to shorten references to columns.
-   * It usually alleviates the need to specify the Table. Doesn't work in other situations such
-   * as a [Join] or [CompoundSelect]
+   * through to this builder to be used as a receiver to try to shorten references to columns. It
+   * usually alleviates the need to specify the Table. Not useful in other situations such as a
+   * [Join] or CompoundSelect
    */
   public val sourceSet: C
 
@@ -152,7 +152,7 @@ public interface QueryBuilder<C : ColumnSet> : AppendsToSqlBuilder {
  * Select all columns [where]
  */
 public fun <C : ColumnSet> C.selectWhere(where: Op<Boolean>?): QueryBuilder<C> =
-  select().where(where)
+  selects().where(where)
 
 /**
  * Select all columns of this [ColumnSet] and call [where] to make the where expression
@@ -170,7 +170,7 @@ public fun <C : ColumnSet> C.selectAll(): QueryBuilder<C> = selectWhere(null)
  * Select COUNT(*) (no columns) using optional [where]
  */
 public fun <C : ColumnSet> C.selectCount(where: (C.() -> Op<Boolean>)? = null): QueryBuilder<C> =
-  QueryBuilder(set = select(emptyList()), where = where?.invoke(this), count = true)
+  QueryBuilder(set = selects { emptyList() }, where = where?.invoke(this), count = true)
 
 public fun <C : ColumnSet> SelectFrom<C>.where(where: Op<Boolean>?): QueryBuilder<C> =
   QueryBuilder(this, where)
@@ -189,7 +189,7 @@ public inline val <C : ColumnSet> QueryBuilder<C>.hasNoLimit: Boolean
   get() = !hasLimit
 
 @WeLiteMarker
-private class QueryBuilderImpl<C : ColumnSet>(
+private class QueryBuilderImpl<out C : ColumnSet>(
   private var selectFrom: SelectFrom<C>,
   private var where: Op<Boolean>?,
   private var count: Boolean = false

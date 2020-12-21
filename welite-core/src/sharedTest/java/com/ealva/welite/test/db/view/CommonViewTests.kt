@@ -28,6 +28,7 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.ordersBy
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.selects
 import com.ealva.welite.db.table.toQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.view.View
@@ -47,7 +48,7 @@ public object CommonViewTests {
   public fun testCreateView() {
     val view = object : View(
       "FullMedia",
-      MediaFileTable.select(MediaFileTable.id).where(MediaFileTable.id eq 1)
+      MediaFileTable.select { id }.where { id eq 1 }
     ) {
       @Suppress("unused")
       val mediaId = column("mediaFileId", MediaFileTable.id)
@@ -143,7 +144,7 @@ public object CommonViewTests {
       }
       query {
         val result = FullMediaView
-          .select()
+          .selects()
           .where { mediaId greaterEq 1 }
           .ordersBy {
             listOf(
@@ -172,15 +173,13 @@ public object CommonViewTests {
     album: String,
     uri: String
   ): Triple<Long, Long, Long> {
-    val idArtist: Long = ArtistTable.select(ArtistTable.id)
+    val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
       .sequence { cursor -> cursor[ArtistTable.id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
-    val idAlbum: Long = AlbumTable.select(AlbumTable.id)
-      .where {
-        albumName eq albumName.bindArg() and (artistName eq artist)
-      }
+    val idAlbum: Long = AlbumTable.select { id }
+      .where { albumName eq albumName.bindArg() and (artistName eq artist) }
       .sequence({ it[0] = album }) { it[AlbumTable.id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
