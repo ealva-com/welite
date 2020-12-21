@@ -84,7 +84,7 @@ class QueryTests {
           .where { id greater 0L }
           .toQuery()
 
-        expect(query.seed.sql).toBe(
+        expect(query.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
             """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
         )
@@ -92,9 +92,8 @@ class QueryTests {
         var count = 0
         query.forEach { cursor ->
           count++
-          val id = cursor[MediaFileTable.id]
-          expect(id).toBe(mediaId)
-          expect(cursor[MediaFileTable.mediaUri]).toBe(uri)
+          expect(cursor[id]).toBe(mediaId)
+          expect(cursor[mediaUri]).toBe(uri)
         }
         expect(count).toBe(1)
       }
@@ -113,7 +112,7 @@ class QueryTests {
           .where { id greater bindLong() }
           .toQuery()
 
-        expect(query.seed.sql).toBe(
+        expect(query.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
             """ "MediaFile" WHERE "MediaFile"."_id" > ?"""
         )
@@ -121,9 +120,8 @@ class QueryTests {
         var count = 0
         query.forEach({ it[0] = 0 }) { cursor ->
           count++
-          val id = cursor[MediaFileTable.id]
-          expect(id).toBe(mediaId)
-          expect(cursor[MediaFileTable.mediaUri]).toBe(uri)
+          expect(cursor[id]).toBe(mediaId)
+          expect(cursor[mediaUri]).toBe(uri)
         }
         expect(count).toBe(1)
       }
@@ -144,7 +142,7 @@ class QueryTests {
           .where { id greater bindLong() }
           .toQuery()
 
-        expect(query.seed.sql).toBe(
+        expect(query.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
             """ "MediaFile" WHERE "MediaFile"."_id" > ?"""
         )
@@ -152,9 +150,8 @@ class QueryTests {
         var count = 0
         query.forEach { cursor ->
           count++
-          val id = cursor[MediaFileTable.id]
-          expect(id).toBe(mediaId)
-          expect(cursor[MediaFileTable.mediaUri]).toBe(uri)
+          expect(cursor[id]).toBe(mediaId)
+          expect(cursor[mediaUri]).toBe(uri)
         }
         expect(count).toBe(1)
       }
@@ -179,14 +176,14 @@ class QueryTests {
           .where { id greater 0L }
           .toQuery()
 
-        expect(query.seed.sql).toBe(
+        expect(query.sql).toBe(
           """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
             """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
         )
 
         val results = mutableListOf<String>()
         query.forEach { cursor ->
-          results.add(cursor[MediaFileTable.mediaUri])
+          results.add(cursor[mediaUri])
         }
 
         expect(results.size).toBe(3)
@@ -235,13 +232,13 @@ class QueryTests {
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
-      .sequence { it[ArtistTable.id] }
+      .sequence { it[id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val bindAlbumName = albumName.bindArg()
     val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq bindAlbumName and (artistName eq artist) }
-      .sequence({ it[bindAlbumName] = album }) { it[AlbumTable.id] }
+      .sequence({ it[bindAlbumName] = album }) { it[id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist

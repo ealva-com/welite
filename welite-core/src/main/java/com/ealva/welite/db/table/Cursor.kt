@@ -42,11 +42,11 @@ public interface Cursor {
 
   /**
    * Get value [T] of the column [expression] at the current cursor [position] or return
-   * [defaultValue] if the value in the DB is null. Typically accessed
+   * [valueIfNull] if the value in the DB is null. Typically accessed
    * as ```cursor[Table.column, valueIfNull]```
    */
-  public operator fun <T> get(expression: SqlTypeExpression<T>, defaultValue: T): T =
-    getOptional(expression) ?: defaultValue
+  public operator fun <T> get(expression: SqlTypeExpression<T>, valueIfNull: T): T =
+    getOptional(expression) ?: valueIfNull
 
   /**
    * Get value [T], which is possibly null, of the column [expression] at the current

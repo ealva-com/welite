@@ -35,10 +35,8 @@ import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
-import com.ealva.welite.javatime.OffsetDt.name
 import com.ealva.welite.javatime.OffsetDt.offsetDate
 import com.ealva.welite.javatime.OffsetDt.optOffsetDate
-import com.ealva.welite.javatime.OffsetDt.other
 import com.ealva.welite.test.common.CoroutineRule
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect

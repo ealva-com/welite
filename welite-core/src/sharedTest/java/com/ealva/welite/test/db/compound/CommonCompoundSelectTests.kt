@@ -264,8 +264,7 @@ public object CommonCompoundSelectTests {
         }
       }
       query {
-        expect(ArtistTable.selectCount { artistName eq artistBob }.longForQuery())
-          .toBe(1)
+        expect(ArtistTable.selectCount { artistName eq artistBob }.longForQuery()).toBe(1)
         expect(ArtistTable.selectCount { id eq bobId }.longForQuery()).toBe(1)
       }
       transaction {
@@ -294,10 +293,8 @@ public object CommonCompoundSelectTests {
         expect(deleted).toBe(1)
       }
       query {
-        expect(ArtistTable.selectCount { artistName eq artistBob }.longForQuery())
-          .toBe(0)
-        expect(ArtistTable.selectCount { id eq bobId }.longForQuery())
-          .toBe(0)
+        expect(ArtistTable.selectCount { artistName eq artistBob }.longForQuery()).toBe(0)
+        expect(ArtistTable.selectCount { id eq bobId }.longForQuery()).toBe(0)
       }
     }
   }
@@ -318,7 +315,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .selectAll()
           .orderBy { id to SortOrder.DESC }
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(3)
@@ -343,7 +340,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(4)
@@ -368,7 +365,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(1)
@@ -393,7 +390,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(1)
@@ -420,7 +417,7 @@ public object CommonCompoundSelectTests {
           .select(TableA.id)
           .all()
           .orderBy { id to SortOrder.DESC }
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(4)
@@ -447,7 +444,7 @@ public object CommonCompoundSelectTests {
           .select(TableA.id)
           .all()
           .orderBy { id to SortOrder.DESC }
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(5)
@@ -474,7 +471,7 @@ public object CommonCompoundSelectTests {
           .select(TableA.id)
           .all()
           .orderBy { id to SortOrder.DESC }
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(1)
@@ -502,7 +499,7 @@ public object CommonCompoundSelectTests {
           .select(TableA.id)
           .all()
           .orderBy { id to SortOrder.DESC }
-          .sequence { it[TableA.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(unionList).toHaveSize(2)
@@ -514,7 +511,7 @@ public object CommonCompoundSelectTests {
           .select(TableC.id)
           .all()
           .orderBy { id to SortOrder.DESC }
-          .sequence { it[TableC.id] }
+          .sequence { it[id] }
           .toList()
 
         expect(cAllBExceptA).toHaveSize(2)
@@ -531,12 +528,12 @@ public object CommonCompoundSelectTests {
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
-      .sequence { it[ArtistTable.id] }
+      .sequence { it[id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq album }
-      .sequence { it[AlbumTable.id] }
+      .sequence { it[id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist

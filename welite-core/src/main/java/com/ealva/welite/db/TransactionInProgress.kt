@@ -172,88 +172,97 @@ private class TransactionInProgressImpl(
     check(db.inTransaction()) { "Transaction must be in progress" }
   }
 
-  override fun Query.forEach(bind: (ArgBindings) -> Unit, action: (Cursor) -> Unit) {
-    doForEach(seed, bind, action)
-  }
+  override fun <C : ColumnSet> Query<C>.forEach(
+    bind: C.(ArgBindings) -> Unit,
+    action: C.(Cursor) -> Unit
+  ) = doForEach(seed, bind, action)
 
   override fun <C : ColumnSet> QueryBuilder<C>.forEach(
-    bind: (ArgBindings) -> Unit,
-    action: (Cursor) -> Unit
+    bind: C.(ArgBindings) -> Unit,
+    action: C.(Cursor) -> Unit
   ) { this@TransactionInProgressImpl.doForEach(build(), bind, action) }
 
-  override fun <T> Query.flow(bind: (ArgBindings) -> Unit, factory: (Cursor) -> T): Flow<T> =
-    doFlow(seed, bind, factory)
+  override fun <C : ColumnSet, T> Query<C>.flow(
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
+  ): Flow<T> = doFlow(seed, bind, factory)
 
   override fun <C : ColumnSet, T> QueryBuilder<C>.flow(
-    bind: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
   ): Flow<T> = this@TransactionInProgressImpl.doFlow(build(), bind, factory)
 
-  override fun <T> Query.sequence(
-    bind: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
+  override fun <C : ColumnSet, T> Query<C>.sequence(
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
   ): Sequence<T> = doSequence(seed, bind, factory)
 
   override fun <C : ColumnSet, T> QueryBuilder<C>.sequence(
-    bind: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
   ): Sequence<T> = this@TransactionInProgressImpl.doSequence(build(), bind, factory)
 
-  private fun doForEach(
-    seed: QuerySeed,
-    bind: (ArgBindings) -> Unit,
-    action: (Cursor) -> Unit
+  private fun <C : ColumnSet> doForEach(
+    seed: QuerySeed<C>,
+    bind: C.(ArgBindings) -> Unit,
+    action: C.(Cursor) -> Unit
   ) = CursorWrapper.select(seed, db, bind).use { cursor ->
-    while (cursor.moveToNext()) action(cursor)
+    while (cursor.moveToNext()) seed.sourceSet.action(cursor)
   }
 
-  private fun <T> doFlow(
-    seed: QuerySeed,
-    bind: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
+  private fun <C : ColumnSet, T> doFlow(
+    seed: QuerySeed<C>,
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
   ): Flow<T> = flow {
     CursorWrapper.select(seed, db, bind).use { cursor ->
-      while (cursor.moveToNext()) emit(factory(cursor))
+      while (cursor.moveToNext()) emit(seed.sourceSet.factory(cursor))
     }
   }.flowOn(dbConfig.dispatcher)
 
-  private fun <T> doSequence(
-    seed: QuerySeed,
-    bind: (ArgBindings) -> Unit,
-    factory: (Cursor) -> T
+  private fun <C : ColumnSet, T> doSequence(
+    seed: QuerySeed<C>,
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
   ): Sequence<T> = sequence {
     CursorWrapper.select(seed, db, bind).use { cursor ->
-      while (cursor.moveToNext()) yield(factory(cursor))
+      while (cursor.moveToNext()) yield(seed.sourceSet.factory(cursor))
     }
   }
 
-  override fun Query.longForQuery(bind: (ArgBindings) -> Unit): Long = db.longForQuery(seed, bind)
+  override fun <C : ColumnSet> Query<C>.longForQuery(
+    bind: C.(ArgBindings) -> Unit
+  ): Long = db.longForQuery(seed, bind)
 
-  override fun <C : ColumnSet> QueryBuilder<C>.longForQuery(bind: (ArgBindings) -> Unit): Long =
+  override fun <C : ColumnSet> QueryBuilder<C>.longForQuery(bind: C.(ArgBindings) -> Unit): Long =
     this@TransactionInProgressImpl.db.longForQuery(build(), bind)
 
-  override fun Query.stringForQuery(bind: (ArgBindings) -> Unit): String =
-    db.stringForQuery(seed, bind)
+  override fun <C : ColumnSet> Query<C>.stringForQuery(
+    bind: C.(ArgBindings) -> Unit
+  ): String = db.stringForQuery(seed, bind)
 
-  override fun <C : ColumnSet> QueryBuilder<C>.stringForQuery(bind: (ArgBindings) -> Unit): String =
-    this@TransactionInProgressImpl.db.stringForQuery(build(), bind)
+  override fun <C : ColumnSet> QueryBuilder<C>.stringForQuery(
+    bind: C.(ArgBindings) -> Unit
+  ): String = this@TransactionInProgressImpl.db.stringForQuery(build(), bind)
 
-  override fun Query.count(bind: (ArgBindings) -> Unit): Long = doCount(seed, bind)
+  override fun <C : ColumnSet> Query<C>.count(
+    bind: C.(ArgBindings) -> Unit
+  ): Long = doCount(seed, bind)
 
-  override fun <C : ColumnSet> QueryBuilder<C>.count(bind: (ArgBindings) -> Unit): Long =
+  override fun <C : ColumnSet> QueryBuilder<C>.count(bind: C.(ArgBindings) -> Unit): Long =
     this@TransactionInProgressImpl.doCount(build(), bind)
 
-  private fun doCount(seed: QuerySeed, bindArgs: (ArgBindings) -> Unit): Long {
+  private fun <C : ColumnSet> doCount(seed: QuerySeed<C>, bindArgs: C.(ArgBindings) -> Unit): Long {
     return db.longForQuery(maybeModifyCountSeed(seed), bindArgs)
   }
 
-  private fun maybeModifyCountSeed(seed: QuerySeed): QuerySeed =
+  private fun <C : ColumnSet> maybeModifyCountSeed(seed: QuerySeed<C>): QuerySeed<C> =
     if (isCountSelect(seed)) seed else seed.copy(sql = wrapSqlWithSelectCount(seed))
 
-  private fun isCountSelect(seed: QuerySeed) =
+  private fun <C : ColumnSet> isCountSelect(seed: QuerySeed<C>) =
     seed.sql.trim().startsWith("SELECT COUNT(*)", ignoreCase = true)
 
-  private fun wrapSqlWithSelectCount(seed: QuerySeed): String = buildStr {
+  private fun <C : ColumnSet> wrapSqlWithSelectCount(seed: QuerySeed<C>): String = buildStr {
     append("SELECT COUNT(*) FROM ( ")
     append(seed.sql)
     append(" )")
@@ -284,7 +293,7 @@ private class TransactionInProgressImpl(
    */
   fun <C : ColumnSet> SelectFrom<C>.count(
     where: Op<Boolean>?
-  ): Query = Query(QueryBuilder(this, where, true))
+  ): Query<C> = Query(QueryBuilder(this, where, true))
 
   override val Creatable.exists
     get() = try {

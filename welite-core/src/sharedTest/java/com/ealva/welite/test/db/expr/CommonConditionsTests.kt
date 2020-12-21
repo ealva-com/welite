@@ -45,7 +45,7 @@ public object CommonConditionsTests {
       }
 
       query {
-        val list = CondTable.selectAll().sequence { it[CondTable.id] }.toList()
+        val list = CondTable.selectAll().sequence { it[id] }.toList()
         expect(CondTable.selectWhere { Op.FALSE }.count()).toBe(0)
         expect(CondTable.selectWhere { Op.TRUE }.count()).toBe(list.size.toLong())
       }
@@ -64,9 +64,9 @@ public object CommonConditionsTests {
       query {
         val list = CondTable
           .selects { listOf(id, name, name, id) }.all()
-          .sequence {
-            expect(it.columnCount).toBe(2)
-            it[CondTable.id]
+          .sequence { cursor ->
+            expect(cursor.columnCount).toBe(2)
+            cursor[id]
           }
           .toList()
         expect(list).toHaveSize(3)
@@ -92,8 +92,8 @@ public object CommonConditionsTests {
       }
       query {
         table
-          .selectWhere { table.c1 less table.c2 }
-          .sequence { it[table.c1] }
+          .selectWhere { c1 less c2 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(1)
@@ -101,9 +101,9 @@ public object CommonConditionsTests {
           }
 
         table
-          .selectWhere { table.c1 lessEq table.c2 }
-          .orderByAsc { table.c1 }
-          .sequence { it[table.c1] }
+          .selectWhere { c1 lessEq c2 }
+          .orderByAsc { c1 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(2)
@@ -111,8 +111,8 @@ public object CommonConditionsTests {
           }
 
         table
-          .selectWhere { table.c1 greater table.c2 }
-          .sequence { it[table.c1] }
+          .selectWhere { c1 greater c2 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(1)
@@ -122,7 +122,7 @@ public object CommonConditionsTests {
         table
           .selectWhere { c1 greaterEq c2 }
           .orderByAsc { c1 }
-          .sequence { it[table.c1] }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(2)
@@ -130,8 +130,8 @@ public object CommonConditionsTests {
           }
 
         table
-          .selectWhere { table.c2 less table.c1 }
-          .sequence { it[table.c1] }
+          .selectWhere { c2 less c1 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(1)
@@ -139,17 +139,17 @@ public object CommonConditionsTests {
           }
 
         table
-          .selectWhere { table.c2 lessEq table.c1 }
+          .selectWhere { c2 lessEq c1 }
           .orderByAsc { c1 }
-          .sequence { it[table.c1] }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(2)
             expect(list).toBe(listOf(0, 2))
           }
         table
-          .selectWhere { table.c2 greater table.c1 }
-          .sequence { it[table.c1] }
+          .selectWhere { c2 greater c1 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(1)
@@ -159,7 +159,7 @@ public object CommonConditionsTests {
         table
           .selectWhere { c2 greaterEq c1 }
           .orderByAsc { c1 }
-          .sequence { it[table.c1] }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(2)
@@ -167,40 +167,40 @@ public object CommonConditionsTests {
           }
 
         table
-          .selectWhere { table.c1 lessEq table.c3 }
-          .sequence { it[table.c1] }
+          .selectWhere { c1 lessEq c3 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(0)
           }
 
         table
-          .selectWhere { table.c1 greaterEq table.c3 }
-          .sequence { it[table.c1] }
+          .selectWhere { c1 greaterEq c3 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(0)
           }
 
         table
-          .selectWhere { table.c1 greaterEq table.c3 }
-          .sequence { it[table.c1] }
+          .selectWhere { c1 greaterEq c3 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(0)
           }
 
         table
-          .selectWhere { table.c1 lessEq table.c3 }
-          .sequence { it[table.c1] }
+          .selectWhere { c1 lessEq c3 }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(0)
           }
 
         table
-          .selectWhere { (table.c1 lessEq table.c3).isNull() }
-          .sequence { it[table.c1] }
+          .selectWhere { (c1 lessEq c3).isNull() }
+          .sequence { it[c1] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(3)

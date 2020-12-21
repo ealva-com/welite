@@ -28,21 +28,27 @@ import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
 
-internal interface CursorWrapper : Cursor, Row, AutoCloseable {
+internal interface CursorWrapper<C : ColumnSet> : Cursor, Row, AutoCloseable {
   fun moveToNext(): Boolean
 
   companion object {
-    fun select(seed: QuerySeed, db: SQLiteDatabase, bind: (ArgBindings) -> Unit): CursorWrapper =
-      CursorWrapperImpl(db.select(seed.sql, doBind(seed, bind)), seed.columns)
+    fun <C : ColumnSet> select(
+      seed: QuerySeed<C>,
+      db: SQLiteDatabase,
+      bind: C.(ArgBindings) -> Unit
+    ): CursorWrapper<C> = CursorWrapperImpl(
+      db.select(seed.sql, doBind(seed, bind)),
+      seed.columns
+    )
   }
 }
 
 private typealias ACursor = android.database.Cursor
 
-private class CursorWrapperImpl(
+private class CursorWrapperImpl<C : ColumnSet> (
   private val cursor: ACursor,
   columns: List<Expression<*>>
-) : CursorWrapper {
+) : CursorWrapper<C> {
   private val exprMap = ExpressionToIndexMap(columns)
 
   override val count: Int
@@ -97,8 +103,10 @@ internal fun SQLiteDatabase.longForQuery(sql: String, args: Array<String> = empt
   return DatabaseUtils.longForQuery(this, sql, args)
 }
 
-internal fun SQLiteDatabase.longForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): Long =
-  longForQuery(seed.sql, doBind(seed, bind))
+internal fun <C : ColumnSet> SQLiteDatabase.longForQuery(
+  seed: QuerySeed<C>,
+  bind: C.(ArgBindings) -> Unit
+): Long = longForQuery(seed.sql, doBind(seed, bind))
 
 internal fun SQLiteDatabase.stringForQuery(
   sql: String,
@@ -108,8 +116,10 @@ internal fun SQLiteDatabase.stringForQuery(
   return DatabaseUtils.stringForQuery(this, sql, args)
 }
 
-internal fun SQLiteDatabase.stringForQuery(seed: QuerySeed, bind: (ArgBindings) -> Unit): String =
-  stringForQuery(seed.sql, doBind(seed, bind))
+internal fun <C : ColumnSet> SQLiteDatabase.stringForQuery(
+  seed: QuerySeed<C>,
+  bind: C.(ArgBindings) -> Unit
+): String = stringForQuery(seed.sql, doBind(seed, bind))
 
 private val QP_LOG by lazyLogger("QueryPlan", WeLiteLog.marker)
 private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>) {
@@ -151,11 +161,11 @@ internal val ACursor.columnMetadata: ColumnMetadata
     getInt(PK_COLUMN)
   )
 
-private fun doBind(
-  seed: QuerySeed,
-  bind: (ArgBindings) -> Unit
+private fun <C : ColumnSet> doBind(
+  seed: QuerySeed<C>,
+  bind: C.(ArgBindings) -> Unit
 ): Array<String> = QueryArgs(seed).let { queryArgs ->
-  bind(queryArgs)
+  seed.sourceSet.bind(queryArgs)
   check(queryArgs.allBound) {
     "Unbound indices:${queryArgs.unboundIndices} in QueryArgs:$queryArgs"
   }
@@ -164,7 +174,7 @@ private fun doBind(
 
 private val LOG by lazyLogger(QueryArgs::class, WeLiteLog.marker)
 
-private class QueryArgs(seed: QuerySeed) : ArgBindings {
+private class QueryArgs<C : ColumnSet> (seed: QuerySeed<C>) : ArgBindings {
   private val argTypes = seed.types
   private val expressionToIndexMap = seed.expressionToIndexMap
   private val arguments = Array(argTypes.size) { UNBOUND }

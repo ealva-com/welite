@@ -42,8 +42,8 @@ public class NoIdentityColumnSet : BaseColumnSet() {
   override fun join(
     joinTo: ColumnSet,
     joinType: JoinType,
-    thisColumn: Expression<*>?,
-    otherColumn: Expression<*>?,
+    column: Expression<*>?,
+    joinToColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
   ): Join {
     TODO("Not yet implemented")

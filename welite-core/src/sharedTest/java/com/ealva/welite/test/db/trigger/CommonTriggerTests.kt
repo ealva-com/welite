@@ -581,12 +581,12 @@ public object CommonTriggerTests {
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
-      .sequence { it[ArtistTable.id] }
+      .sequence { it[id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq album }
-      .sequence { it[AlbumTable.id] }
+      .sequence { it[id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist

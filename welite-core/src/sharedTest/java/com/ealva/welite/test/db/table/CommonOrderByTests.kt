@@ -46,7 +46,7 @@ public object CommonOrderByTests {
         Person
           .selectAll()
           .orderByAsc { id }
-          .sequence { it[Person.id] }
+          .sequence { it[id] }
           .toList().also { list -> expect(list).toHaveSize(5) }
           .forEachIndexed { index, id ->
             when (index) {
@@ -78,7 +78,7 @@ public object CommonOrderByTests {
         Person
           .selectAll()
           .ordersBy { listOf(cityId to SortOrder.DESC, id to SortOrder.ASC) }
-          .sequence { it[Person.id] }
+          .sequence { it[id] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(5)
@@ -104,7 +104,7 @@ public object CommonOrderByTests {
         Person
           .selectAll()
           .ordersBy { listOf(cityId to SortOrder.DESC, id to SortOrder.ASC) }
-          .sequence { it[Person.id] }
+          .sequence { it[id] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(5)
@@ -155,7 +155,7 @@ public object CommonOrderByTests {
         Person
           .selectAll()
           .orderByAsc { orderByExpr } // sort by 2nd letter in Person.id
-          .sequence { it[Person.id] }
+          .sequence { it[id] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(5)
@@ -187,7 +187,7 @@ public object CommonOrderByTests {
         Place
           .selectAll()
           .orderBy { orderByExpr to SortOrder.DESC }
-          .sequence { it[Place.name] }
+          .sequence { it[name] }
           .toList()
           .let { list ->
             expect(list).toHaveSize(3)

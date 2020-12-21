@@ -35,45 +35,45 @@ public inline val JoinType.hasNoCondition: Boolean
   get() = !hasCondition
 
 public fun <C1 : ColumnSet, C2 : ColumnSet> C1.innerJoin(
-  otherTable: C2,
-  onColumn: C1.() -> Expression<*>,
-  otherColumn: C2.() -> Expression<*>
-): Join = join(otherTable, JoinType.INNER, onColumn(), otherTable.otherColumn())
+  column: C1.() -> Expression<*>,
+  joinTo: C2,
+  joinToColumn: C2.() -> Expression<*>
+): Join = join(joinTo, JoinType.INNER, column(), joinTo.joinToColumn())
 
 @Suppress("unused")
 public fun <C1 : ColumnSet, C2 : ColumnSet> C1.leftJoin(
-  otherTable: C2,
-  onColumn: C1.() -> Expression<*>,
-  otherColumn: C2.() -> Expression<*>
-): Join = join(otherTable, JoinType.LEFT, onColumn(), otherTable.otherColumn())
+  column: C1.() -> Expression<*>,
+  joinTo: C2,
+  joinToColumn: C2.() -> Expression<*>
+): Join = join(joinTo, JoinType.LEFT, column(), joinTo.joinToColumn())
 
 public fun <C1 : ColumnSet, C2 : ColumnSet> C1.crossJoin(
-  otherTable: C2,
-  onColumn: C1.() -> Expression<*>,
+  column: C1.() -> Expression<*>,
+  other: C2,
   otherColumn: C2.() -> Expression<*>
-): Join = join(otherTable, JoinType.CROSS, onColumn(), otherTable.otherColumn())
+): Join = join(other, JoinType.CROSS, column(), other.otherColumn())
 
 @Suppress("unused")
 public fun <C1 : ColumnSet, C2 : ColumnSet> C1.naturalJoin(
-  otherTable: C2,
-  onColumn: C1.() -> Expression<*>,
-  otherColumn: C2.() -> Expression<*>
-): Join = join(otherTable, JoinType.NATURAL, onColumn(), otherTable.otherColumn())
+  column: C1.() -> Expression<*>,
+  joinTo: C2,
+  joinToColumn: C2.() -> Expression<*>
+): Join = join(joinTo, JoinType.NATURAL, column(), joinTo.joinToColumn())
 
 public class Join(private val columnSet: ColumnSet) : BaseColumnSet() {
 
   override val identity: Identity = columnSet.identity
 
   override val columns: List<Column<*>>
-    get() = _joinParts.flatMapTo(columnSet.columns.toMutableList()) { it.joinPart.columns }
+    get() = _parts.flatMapTo(columnSet.columns.toMutableList()) { it.joinPart.columns }
 
-  private val _joinParts: MutableList<JoinPart> = mutableListOf()
-  internal val joinParts: List<JoinPart>
-    get() = _joinParts.toList()
+  private val _parts: MutableList<JoinPart> = mutableListOf()
+  internal val parts: List<JoinPart>
+    get() = _parts.toList()
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     columnSet.appendTo(this)
-    _joinParts.forEach { p ->
+    _parts.forEach { p ->
       append(" ")
       append(p.joinType.toString())
       append(" JOIN ")
@@ -104,11 +104,11 @@ public class Join(private val columnSet: ColumnSet) : BaseColumnSet() {
   override fun join(
     joinTo: ColumnSet,
     joinType: JoinType,
-    thisColumn: Expression<*>?,
-    otherColumn: Expression<*>?,
+    column: Expression<*>?,
+    joinToColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
   ): Join {
-    return doJoin(joinTo, joinType, asJoinCondition(thisColumn, otherColumn), additionalConstraint)
+    return doJoin(joinTo, joinType, asJoinCondition(column, joinToColumn), additionalConstraint)
   }
 
   override infix fun innerJoin(joinTo: ColumnSet): Join = doJoin(joinTo, JoinType.INNER)
@@ -146,9 +146,9 @@ public class Join(private val columnSet: ColumnSet) : BaseColumnSet() {
     joinType: JoinType,
     cond: List<JoinCondition>,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join = Join(columnSet).also {
-    it._joinParts.addAll(this._joinParts)
-    it._joinParts.add(JoinPart(joinType, joinTo, cond, additionalConstraint))
+  ): Join = Join(columnSet).also { newJoin ->
+    newJoin._parts.addAll(this._parts)
+    newJoin._parts.add(JoinPart(joinType, joinTo, cond, additionalConstraint))
   }
 
   private fun findKeys(a: ColumnSet, b: ColumnSet): List<Pair<Column<*>, List<Column<*>>>>? =
@@ -192,22 +192,22 @@ public class Join(private val columnSet: ColumnSet) : BaseColumnSet() {
 
   public companion object {
     /**
-     * Make a Join from [table] to [otherTable] of type [joinType], which defaults to
-     * [JoinType.INNER], from [onColumn] to [otherColumn], adding any [additionalConstraint]
+     * Make a Join [from]/[fromColumn] to [joinTo]/[joinToColumn] of type [joinType], which defaults
+     * to [JoinType.INNER], adding any [additionalConstraint]
      */
     public operator fun invoke(
-      table: ColumnSet,
-      otherTable: ColumnSet,
+      from: ColumnSet,
+      joinTo: ColumnSet,
+      fromColumn: Expression<*>? = null,
+      joinToColumn: Expression<*>? = null,
       joinType: JoinType = JoinType.INNER,
-      onColumn: Expression<*>? = null,
-      otherColumn: Expression<*>? = null,
       additionalConstraint: (() -> Op<Boolean>)? = null
     ): Join {
-      return Join(table).run {
-        if (onColumn != null && otherColumn != null) {
-          join(otherTable, joinType, onColumn, otherColumn, additionalConstraint)
+      return Join(from).run {
+        if (fromColumn != null && joinToColumn != null) {
+          join(joinTo, joinType, fromColumn, joinToColumn, additionalConstraint)
         } else {
-          doJoin(otherTable, joinType, additionalConstraint)
+          doJoin(joinTo, joinType, additionalConstraint)
         }
       }
     }

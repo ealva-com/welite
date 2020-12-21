@@ -118,7 +118,7 @@ public interface QueryBuilder<out C : ColumnSet> : AppendsToSqlBuilder {
   /**
    * Build the QuerySeed as a basis for a Query instance or executing a query
    */
-  public fun build(): QuerySeed
+  public fun build(): QuerySeed<C>
 
   public fun statementSeed(): StatementSeed
 
@@ -247,7 +247,7 @@ private class QueryBuilderImpl<out C : ColumnSet>(
    * a cursor to an object. QueryBuilder may be executed directly and uses a Query at a lower level.
    * Typically building a Query then binding any parameters at execution time is more efficient.
    */
-  override fun build(): QuerySeed = QuerySeed(statementSeed(), selectFrom.resultColumns)
+  override fun build(): QuerySeed<C> = QuerySeed(statementSeed(), selectFrom)
 
   /**
    * Statement seed for a Select statement used typically within a Trigger

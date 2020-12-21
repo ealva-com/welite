@@ -38,7 +38,7 @@ public object CommonExistsTests {
           .selectWhere {
             exists(Review.selectWhere { userId eq id and (post like "%McD%") })
           }
-          .sequence { it[Person.name] }
+          .sequence { it[name] }
           .toList()
 
         expect(result).toHaveSize(1)
@@ -62,7 +62,7 @@ public object CommonExistsTests {
               }
             )
           }
-          .sequence { it[Person.name] }
+          .sequence { it[name] }
           .toList()
 
         expect(result).toHaveSize(2)
@@ -90,7 +90,7 @@ public object CommonExistsTests {
                 Review.selectWhere { userId eq id and (post like "%ost") }
               )
           }
-          .sequence { it[Person.name] }
+          .sequence { it[name] }
           .toList()
 
         expect(result).toHaveSize(2)

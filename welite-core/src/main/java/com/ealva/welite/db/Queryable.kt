@@ -22,7 +22,6 @@ import com.ealva.welite.db.table.ArgBindings
 import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Cursor
-import com.ealva.welite.db.table.NO_ARGS
 import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Table
@@ -41,39 +40,45 @@ public interface Queryable {
    * Do any necessary [bind], execute the query, and invoke [action] for each row in the
    * results.
    */
-  public fun Query.forEach(bind: (ArgBindings) -> Unit = NO_ARGS, action: (Cursor) -> Unit)
+  public fun <C : ColumnSet> Query<C>.forEach(
+    bind: C.(ArgBindings) -> Unit = { },
+    action: C.(Cursor) -> Unit
+  )
 
   /**
    * Same as [Query.forEach] except the resulting Query is not reusable as it's not
    * visible to the client
    */
   public fun <C : ColumnSet> QueryBuilder<C>.forEach(
-    bind: (ArgBindings) -> Unit = NO_ARGS,
-    action: (Cursor) -> Unit
+    bind: C.(ArgBindings) -> Unit = { },
+    action: C.(Cursor) -> Unit
   )
 
   /**
    * Creates a flow, first doing any necessary [bind], execute the query, and emit a [T]
    * created using [factory] for each row in the query results
    */
-  public fun <T> Query.flow(bind: (ArgBindings) -> Unit = NO_ARGS, factory: (Cursor) -> T): Flow<T>
+  public fun <C : ColumnSet, T> Query<C>.flow(
+    bind: C.(ArgBindings) -> Unit = { },
+    factory: C.(Cursor) -> T
+  ): Flow<T>
 
   /**
    * Same as [Query.flow] except the resulting Query is not reusable as it's not
    * visible to the client
    */
   public fun <C : ColumnSet, T> QueryBuilder<C>.flow(
-    bind: (ArgBindings) -> Unit = NO_ARGS,
-    factory: (Cursor) -> T
+    bind: C.(ArgBindings) -> Unit = { },
+    factory: C.(Cursor) -> T
   ): Flow<T>
 
   /**
    * After any necessary [bind] generate a [Sequence] of [T] using [factory] for each Cursor
    * row and yields a [T] into the [Sequence]
    */
-  public fun <T> Query.sequence(
-    bind: (ArgBindings) -> Unit = NO_ARGS,
-    factory: (Cursor) -> T
+  public fun <C : ColumnSet, T> Query<C>.sequence(
+    bind: C.(ArgBindings) -> Unit = { },
+    factory: C.(Cursor) -> T
   ): Sequence<T>
 
   /**
@@ -81,36 +86,38 @@ public interface Queryable {
    * visible to the client
    */
   public fun <C : ColumnSet, T> QueryBuilder<C>.sequence(
-    bind: (ArgBindings) -> Unit = NO_ARGS,
-    factory: (Cursor) -> T
+    bind: C.(ArgBindings) -> Unit = { },
+    factory: C.(Cursor) -> T
   ): Sequence<T>
 
   /**
    * Do any necessary [bind], execute the query, and return the value in the first column of the
    * first row. Especially useful for ```COUNT``` queries
    */
-  public fun Query.longForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> Query<C>.longForQuery(
+    bind: C.(ArgBindings) -> Unit = { }
+  ): Long
 
   /**
    * Same as [Query.longForQuery] except the resulting Query is not reusable as it's not
    * visible to the client
    */
   public fun <C : ColumnSet> QueryBuilder<C>.longForQuery(
-    bind: (ArgBindings) -> Unit = NO_ARGS
+    bind: C.(ArgBindings) -> Unit = { }
   ): Long
 
   /**
    * Do any necessary [bind], execute the query, and return the value in the first column of the
    * first row.
    */
-  public fun Query.stringForQuery(bind: (ArgBindings) -> Unit = NO_ARGS): String
+  public fun <C : ColumnSet> Query<C>.stringForQuery(bind: C.(ArgBindings) -> Unit = { }): String
 
   /**
    * Same as [Query.stringForQuery] except the resulting Query is not reusable as it's not
    * visible to the client
    */
   public fun <C : ColumnSet> QueryBuilder<C>.stringForQuery(
-    bind: (ArgBindings) -> Unit = NO_ARGS
+    bind: C.(ArgBindings) -> Unit = { }
   ): String
 
   /**
@@ -118,13 +125,13 @@ public interface Queryable {
    * ```COUNT(*) FROM ( $thisQuery )```, and return the value in the first column of the
    * first row
    */
-  public fun Query.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> Query<C>.count(bind: C.(ArgBindings) -> Unit = { }): Long
 
   /**
    * Same as [Query.count] except the resulting Query is not reusable as it's not
    * visible to the client
    */
-  public fun <C : ColumnSet> QueryBuilder<C>.count(bind: (ArgBindings) -> Unit = NO_ARGS): Long
+  public fun <C : ColumnSet> QueryBuilder<C>.count(bind: C.(ArgBindings) -> Unit = { }): Long
 
   /**
    * True if the Creatable, as known via [Creatable.identity], exists in the database, else false.

@@ -165,15 +165,19 @@ public class QueryBuilderAlias<C : ColumnSet>(
   override fun join(
     joinTo: ColumnSet,
     joinType: JoinType,
-    thisColumn: Expression<*>?,
-    otherColumn: Expression<*>?,
+    column: Expression<*>?,
+    joinToColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join = Join(this, joinTo, joinType, thisColumn, otherColumn, additionalConstraint)
+  ): Join = Join(this, joinTo, column, joinToColumn, joinType, additionalConstraint)
 
-  override infix fun innerJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.INNER)
-  override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
-  override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
-  override fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
+  override infix fun innerJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.INNER)
+  override infix fun leftJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.LEFT)
+  override infix fun crossJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.CROSS)
+  override fun naturalJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.NATURAL)
 }
 
 public fun <T : Table> T.alias(alias: String): Alias<T> = Alias(this, alias)
@@ -188,8 +192,8 @@ public fun <C : ColumnSet> Join.joinQuery(
   joinType: JoinType = JoinType.INNER,
   joinPart: () -> QueryBuilder<C>
 ): Join {
-  val qAlias = joinPart().alias("q${joinParts.count { it.joinPart is QueryBuilderAlias<*> }}")
-  return join(qAlias, joinType, additionalConstraint = { on(qAlias) })
+  val qAlias = joinPart().alias("q${parts.count { it.joinPart is QueryBuilderAlias<*> }}")
+  return join(joinTo = qAlias, joinType = joinType) { on(qAlias) }
 }
 
 @Suppress("unused")
@@ -202,6 +206,6 @@ public fun Table.joinQuery(
 public val Join.lastQueryBuilderAlias: QueryBuilderAlias<*>?
   get() = lastPartAsQueryBuilderAlias()
 
-private fun Join.lastPartAsQueryBuilderAlias() = joinParts.map {
+private fun Join.lastPartAsQueryBuilderAlias() = parts.map {
   it.joinPart as? QueryBuilderAlias<*>
 }.firstOrNull()

@@ -127,7 +127,7 @@ public object CommonGroupByTests {
             .select(Place.name, this@check)
             .all()
             .groupsBy { listOf(Place.id, Place.name) }
-            .forEach { map[it[Place.name]] = it.getOptional(this) }
+            .forEach { map[it[Place.name]] = it.getOptional(this@check) }
           assertBlock(map)
         }
 

@@ -102,7 +102,7 @@ class UpdateTests {
           Person
             .select { name }
             .where { id eq nathaliaId }
-            .sequence { it[Person.name] }
+            .sequence { it[name] }
             .single()
         ).toBe("Nathalia")
       }
@@ -120,7 +120,7 @@ class UpdateTests {
           Person
             .select { name }
             .where { id eq nathaliaId }
-            .sequence { it[Person.name] }
+            .sequence { it[name] }
             .single()
         ).toBe(newName)
       }
@@ -157,12 +157,12 @@ class UpdateTests {
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
-      .sequence { it[ArtistTable.id] }
+      .sequence { it[id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq album }
-      .sequence { it[AlbumTable.id] }
+      .sequence { it[id] }
       .singleOrNull() ?: AlbumTable.insert {
       it[albumName] = album
       it[artistName] = artist

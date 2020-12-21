@@ -41,5 +41,3 @@ public interface ArgBindings {
    */
   public val argCount: Int
 }
-
-public val NO_ARGS: (ArgBindings) -> Unit = {}

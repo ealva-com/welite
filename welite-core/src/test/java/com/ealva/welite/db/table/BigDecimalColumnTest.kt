@@ -107,7 +107,7 @@ class BigDecimalColumnTest {
         val result = BigTable.selects()
           .where { optBig greaterEq bigScaled("1234.567") }
           .orderByAsc { optBig }
-          .sequence { Triple(it[BigTable.name], it[BigTable.bigD], it[BigTable.optBig]) }
+          .sequence { Triple(it[name], it[bigD], it[optBig]) }
           .toList()
 
         expect(result).toHaveSize(2)

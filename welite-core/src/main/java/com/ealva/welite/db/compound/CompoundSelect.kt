@@ -213,13 +213,17 @@ private class CompoundSelectImpl<out C : ColumnSet>(
   override fun join(
     joinTo: ColumnSet,
     joinType: JoinType,
-    thisColumn: Expression<*>?,
-    otherColumn: Expression<*>?,
+    column: Expression<*>?,
+    joinToColumn: Expression<*>?,
     additionalConstraint: (() -> Op<Boolean>)?
-  ): Join = Join(this, joinTo, joinType, thisColumn, otherColumn, additionalConstraint)
+  ): Join = Join(this, joinTo, column, joinToColumn, joinType, additionalConstraint)
 
-  override infix fun innerJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.INNER)
-  override infix fun leftJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.LEFT)
-  override infix fun crossJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.CROSS)
-  override fun naturalJoin(joinTo: ColumnSet): Join = Join(this, joinTo, JoinType.NATURAL)
+  override infix fun innerJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.INNER)
+  override infix fun leftJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.LEFT)
+  override infix fun crossJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.CROSS)
+  override fun naturalJoin(joinTo: ColumnSet): Join =
+    Join(this, joinTo, joinType = JoinType.NATURAL)
 }

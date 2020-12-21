@@ -23,7 +23,7 @@ import com.ealva.welite.db.type.StatementSeed
 /**
  * QuerySeed contains all the info to build a Query
  */
-public interface QuerySeed {
+public interface QuerySeed<out C : ColumnSet> {
   /**
    * The list of the types of arguments which need to be bound for each query execution. This is
    * each place a "?" appears in the [sql]. The [PersistentType] is responsible for accepting
@@ -43,48 +43,58 @@ public interface QuerySeed {
    */
   public val columns: List<Expression<*>>
 
+  public val sourceSet: C
+
   /**
    * Make a copy but update the sql
    */
-  public fun copy(sql: String): QuerySeed
+  public fun copy(sql: String): QuerySeed<C>
 
   public companion object {
     /**
      * Create a QuerySeed from the [StatementSeed] [seed] and the [columns] to be read from the
      * query result
      */
-    public operator fun invoke(seed: StatementSeed, columns: List<Expression<*>>): QuerySeed {
-      class QuerySeedImpl(
-        private val statementSeed: StatementSeed,
-        override val columns: List<Expression<*>>
-      ) : QuerySeed {
-
-        override fun copy(sql: String): QuerySeed {
-          return QuerySeed(statementSeed.copy(sql = sql), columns)
-        }
-
-        override val types: List<PersistentType<*>>
-          get() = seed.types
-        override val expressionToIndexMap: ExpressionToIndexMap
-          get() = seed.expressionToIndexMap
-        override val sql: String
-          get() = seed.sql
-      }
-      return QuerySeedImpl(seed, columns)
-    }
+    public operator fun <C : ColumnSet> invoke(
+      seed: StatementSeed,
+      selectFrom: SelectFrom<C>
+    ): QuerySeed<C> = QuerySeedImpl(seed, selectFrom)
   }
 }
 
-public fun <C : ColumnSet> QueryBuilder<C>.toQuery(): Query = Query(build())
+private class QuerySeedImpl<out C : ColumnSet>(
+  private val seed: StatementSeed,
+  private val selectFrom: SelectFrom<C>
+) : QuerySeed<C> {
 
-public interface Query {
-  public val seed: QuerySeed
+  override fun copy(sql: String): QuerySeed<C> {
+    return QuerySeedImpl(seed.copy(sql = sql), selectFrom)
+  }
+
+  override val types: List<PersistentType<*>>
+    get() = seed.types
+  override val expressionToIndexMap: ExpressionToIndexMap
+    get() = seed.expressionToIndexMap
+  override val sql: String
+    get() = seed.sql
+  override val sourceSet: C
+    get() = selectFrom.sourceSet
+  override val columns: List<Expression<*>>
+    get() = selectFrom.resultColumns
+}
+
+public fun <C : ColumnSet> QueryBuilder<C>.toQuery(): Query<C> = Query(build())
+
+public interface Query<C : ColumnSet> {
+  public val seed: QuerySeed<C>
+
+  public val sql: String
 
   public companion object {
     /**
      * Create a reusable [Query] from [queryBuilder]
      */
-    public operator fun <C : ColumnSet> invoke(queryBuilder: QueryBuilder<C>): Query =
+    public operator fun <C : ColumnSet> invoke(queryBuilder: QueryBuilder<C>): Query<C> =
       queryBuilder.toQuery()
 
     /**
@@ -93,8 +103,12 @@ public interface Query {
      * val query = Query(querySeed)
      * ```
      */
-    internal operator fun invoke(querySeed: QuerySeed): Query = QueryImpl(querySeed)
+    internal operator fun <C : ColumnSet> invoke(querySeed: QuerySeed<C>): Query<C> =
+      QueryImpl(querySeed)
   }
 }
 
-private class QueryImpl(override val seed: QuerySeed) : Query
+private class QueryImpl<C : ColumnSet>(override val seed: QuerySeed<C>) : Query<C> {
+  override val sql: String
+    get() = seed.sql
+}

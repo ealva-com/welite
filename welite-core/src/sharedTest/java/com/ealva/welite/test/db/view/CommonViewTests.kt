@@ -146,19 +146,9 @@ public object CommonViewTests {
         val result = FullMediaView
           .selects()
           .where { mediaId greaterEq 1 }
-          .ordersBy {
-            listOf(
-              artistName to SortOrder.DESC,
-              albumName to SortOrder.ASC
-            )
-          }
-          .sequence { cursor ->
-            Triple(
-              cursor[FullMediaView.mediaTitle],
-              cursor[FullMediaView.artistName],
-              cursor[FullMediaView.albumName]
-            )
-          }.toList()
+          .ordersBy { listOf(artistName to SortOrder.DESC, albumName to SortOrder.ASC) }
+          .sequence { cursor -> Triple(cursor[mediaTitle], cursor[artistName], cursor[albumName]) }
+          .toList()
         expect(result).toHaveSize(3)
         expect(result[0]).toBe(tomorrow)
         expect(result[1]).toBe(dyer)
@@ -175,16 +165,17 @@ public object CommonViewTests {
   ): Triple<Long, Long, Long> {
     val idArtist: Long = ArtistTable.select { id }
       .where { artistName eq artist }
-      .sequence { cursor -> cursor[ArtistTable.id] }
+      .sequence { cursor -> cursor[id] }
       .singleOrNull() ?: ArtistTable.insert { it[artistName] = artist }
 
     val idAlbum: Long = AlbumTable.select { id }
       .where { albumName eq albumName.bindArg() and (artistName eq artist) }
-      .sequence({ it[0] = album }) { it[AlbumTable.id] }
-      .singleOrNull() ?: AlbumTable.insert {
-      it[albumName] = album
-      it[artistName] = artist
-    }
+      .sequence({ it[0] = album }) { it[id] }
+      .singleOrNull()
+      ?: AlbumTable.insert {
+        it[albumName] = album
+        it[artistName] = artist
+      }
 
     ArtistAlbumTable.insert(OnConflict.Ignore) {
       it[artistId] = idArtist

@@ -55,8 +55,8 @@ public interface ColumnSet : AppendsToSqlBuilder {
   public fun join(
     joinTo: ColumnSet,
     joinType: JoinType,
-    thisColumn: Expression<*>? = null,
-    otherColumn: Expression<*>? = null,
+    column: Expression<*>? = null,
+    joinToColumn: Expression<*>? = null,
     additionalConstraint: (() -> Op<Boolean>)? = null
   ): Join
 

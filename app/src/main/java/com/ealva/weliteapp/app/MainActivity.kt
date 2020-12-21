@@ -104,13 +104,13 @@ class MainActivity : AppCompatActivity() {
         MediaFileTable
           .selects { listOf(mediaTitle, localDate) }
           .where { mediaTitle like "%Title%" }
-          .flow { Pair(it[MediaFileTable.mediaTitle], it[MediaFileTable.localDate]) }
+          .flow { Pair(it[mediaTitle], it[localDate]) }
           .collect { (title, date) -> LOG.i { +it("collect %s %s", title, date) } }
 
         MediaFileTable
           .selects { listOf(mediaTitle, localDate) }
           .where { mediaTitle like "%Title%" }
-          .sequence { Pair(it[MediaFileTable.mediaTitle], it[MediaFileTable.localDate]) }
+          .sequence { Pair(it[mediaTitle], it[localDate]) }
           .forEach { (title, date) ->
             LOG.i { +it("forEach %s %s", title, date) }
           }

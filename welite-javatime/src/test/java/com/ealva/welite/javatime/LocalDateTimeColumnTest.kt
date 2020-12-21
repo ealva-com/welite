@@ -138,14 +138,7 @@ class LocalDateTimeColumnTest {
         val results = VisitTime.select()
           .where { optLocalDate greaterEq noon.plusYears(2) }
           .orderByAsc { optLocalDate }
-          .sequence {
-            AccomVisit(
-              it[VisitTime.localDate],
-              it[VisitTime.optLocalDate],
-              it[VisitTime.name],
-              it[VisitTime.other]
-            )
-          }
+          .sequence { AccomVisit(it[localDate], it[optLocalDate], it[name], it[other]) }
           .toList()
         expect(results).toHaveSize(2)
         results.forEachIndexed { i, visit ->
