@@ -52,7 +52,7 @@ public interface DeleteStatement<C : ColumnSet> : Statement<C> {
 /**
  * Build a DeleteStatement which can be reused binding args each time
  */
-public fun <T : Table> T.deleteWhere(where: () -> Op<Boolean>): DeleteStatement<T> {
+public fun <T : Table> T.deleteWhere(where: T.() -> Op<Boolean>): DeleteStatement<T> {
   return DeleteStatement(this, where())
 }
 

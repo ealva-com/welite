@@ -57,7 +57,7 @@ public class UpdateBuilder<T : ColumnSet>(
   private val assignColumns: T.(ColumnValues) -> Unit
 ) {
   public fun where(where: T.() -> Op<Boolean>): UpdateStatement<T> {
-    return UpdateStatement(table, onConflict, table.where(), assignColumns)
+    return UpdateStatement(table, onConflict, where, assignColumns)
   }
 }
 
@@ -75,11 +75,11 @@ public interface UpdateStatement<C : ColumnSet> : Statement<C> {
     public operator fun <T : ColumnSet> invoke(
       table: T,
       onConflict: OnConflict = OnConflict.Unspecified,
-      where: Op<Boolean>,
+      where: T.() -> Op<Boolean>,
       assignColumns: T.(ColumnValues) -> Unit
     ): UpdateStatement<T> = UpdateStatementImpl(
       table,
-      statementSeed(table, onConflict, where, assignColumns)
+      statementSeed(table, onConflict, table.where(), assignColumns)
     )
 
     public fun <T : ColumnSet> statementSeed(

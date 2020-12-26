@@ -88,7 +88,7 @@ public object CommonDeleteTests {
       testDispatcher = testDispatcher
     ) {
       val bindPersonName = bindString()
-      val deleteStmt = Person.deleteWhere { Person.name like bindPersonName }
+      val deleteStmt = Person.deleteWhere { name like bindPersonName }
       transaction {
         expect(Person.select { id }.where { name like "%ber" }.count()).toBe(1)
         expect(Person.select { id }.where { name like "%lia" }.count()).toBe(1)
