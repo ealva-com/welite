@@ -33,7 +33,7 @@ import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.MasterType
-import com.ealva.welite.db.table.SQLiteMaster
+import com.ealva.welite.db.table.SQLiteSchema
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDependencies
@@ -612,7 +612,7 @@ private class OpenHelper private constructor(
   private fun dropAll() {
     database.ongoingTransaction {
       setSchemaWritable(true)
-      SQLiteMaster.delete { type inList MasterType.knownTypes.map { it.value } }
+      SQLiteSchema.delete { type inList MasterType.knownTypes.map { it.value } }
       setSchemaWritable(false)
       vacuum()
       tegridyCheck()

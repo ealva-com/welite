@@ -76,7 +76,7 @@ private const val IGNORED_CONSTRAINT_WITH_SAME_NAME =
  */
 public abstract class Table(
   name: String = "",
-  systemTable: Boolean = false
+  private val systemTable: Boolean = false
 ) : BaseColumnSet(), Creatable {
   public open val tableName: String = (if (name.isNotEmpty()) name else nameFromClass()).apply {
     require(systemTable || !startsWith(RESERVED_PREFIX)) {
@@ -584,6 +584,7 @@ public abstract class Table(
   }
 
   override fun create(executor: SqlExecutor, temporary: Boolean) {
+    check(!systemTable) { "Cannot create system table $tableName" }
     preCreate()
     LOG.i { it("Creating %s", tableName) }
     executor.exec(createStatement(temporary))
@@ -591,6 +592,7 @@ public abstract class Table(
   }
 
   override fun drop(executor: SqlExecutor) {
+    check(!systemTable) { "Cannot drop system table $tableName" }
     LOG.i { it("Dropping %s", tableName) }
     executor.exec(dropStatement())
   }

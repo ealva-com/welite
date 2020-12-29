@@ -39,34 +39,42 @@ public fun String?.asMasterType(): MasterType {
 }
 
 /**
- * The sqlite_master table contains one row for each table, index, view, and trigger (collectively
- * "objects") in the database schema, except there is no entry for the sqlite_master table itself.
- * The sqlite_master table contains entries for internal schema objects in addition to application-
+ * The [SQLiteSchema] table contains one row for each table, index, view, and trigger (collectively
+ * "objects") in the database schema, except there is no entry for the sqlite_schema table itself.
+ * The sqlite_schema table contains entries for internal schema objects in addition to application-
  * and programmer-defined objects.
+ *
+ * This table is a system table and cannot be created or dropped.
+ *
+ * The underlying table is referred to as sqlite_schema, though current documentation references
+ * sqlite_schema. sqlite_schema is supported and still used in some places within SQLite and
+ * what was chosen to use here.
+ *
+ * [SQLite documentation](https://www.sqlite.org/schematab.html)
  */
-public object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
+public object SQLiteSchema : Table(name = "sqlite_master", systemTable = true) {
   /**
-   * The sqlite_master.type column will be one of the following text strings: 'table', 'index',
+   * The sqlite_schema.type column will be one of the following text strings: 'table', 'index',
    * 'view', or 'trigger' according to the type of object defined. The 'table' string is used for
    * both ordinary and virtual tables.
    */
   public val type: Column<String> = text("type")
 
   /**
-   * The sqlite_master.name column will hold the name of the object. UNIQUE and PRIMARY KEY
+   * The sqlite_schema.name column will hold the name of the object. UNIQUE and PRIMARY KEY
    * constraints on tables cause SQLite to create internal indexes with names of the form
    * "sqlite_autoindex_TABLE_N" where TABLE is replaced by the name of the table that contains the
    * constraint and N is an integer beginning with 1 and increasing by one with each constraint seen
-   * in the table definition. In a WITHOUT ROWID table, there is no sqlite_master entry for the
+   * in the table definition. In a WITHOUT ROWID table, there is no sqlite_schema entry for the
    * PRIMARY KEY, but the "sqlite_autoindex_TABLE_N" name is set aside for the PRIMARY KEY as if the
-   * sqlite_master entry did exist. This will affect the numbering of subsequent UNIQUE constraints.
+   * sqlite_schema entry did exist. This will affect the numbering of subsequent UNIQUE constraints.
    * The "sqlite_autoindex_TABLE_N" name is never allocated for an INTEGER PRIMARY KEY, either in
    * rowid tables or WITHOUT ROWID tables.
    */
   public val name: Column<String> = text("name")
 
   /**
-   * The sqlite_master.tbl_name column holds the name of a table or view that the object is
+   * The sqlite_schema.tbl_name column holds the name of a table or view that the object is
    * associated with. For a table or view, the tbl_name column is a copy of the name column. For an
    * index, the tbl_name is the name of the table that is indexed. For a trigger, the tbl_name
    * column stores the name of the table or view that causes the trigger to fire.
@@ -74,7 +82,7 @@ public object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
   public val tbl_name: Column<String> = text("tbl_name")
 
   /**
-   * The sqlite_master.rootpage column stores the page number of the root b-tree page for tables and
+   * The sqlite_schema.rootpage column stores the page number of the root b-tree page for tables and
    * indexes. For rows that define views, triggers, and virtual tables, the rootpage column is 0 or
    * NULL.
    */
@@ -82,7 +90,7 @@ public object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
   public val rootpage: Column<Int> = integer("rootpage")
 
   /**
-   * The sqlite_master.sql column stores SQL text that describes the object. This SQL text is a
+   * The sqlite_schema.sql column stores SQL text that describes the object. This SQL text is a
    * CREATE TABLE, CREATE VIRTUAL TABLE, CREATE INDEX, CREATE VIEW, or CREATE TRIGGER statement that
    * if evaluated against the database file when it is the main database of a database connection
    * would recreate the object. The text is usually a copy of the original statement used to create
@@ -96,14 +104,10 @@ public object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
    * * Leading spaces are removed.
    * * All spaces following the first two keywords are converted into a single space.
    *
-   * The text in the sqlite_master.sql column is a copy of the original CREATE statement text that
+   * The text in the sqlite_schema.sql column is a copy of the original CREATE statement text that
    * created the object, except normalized as described above and as modified by subsequent ALTER
-   * TABLE statements. The sqlite_master.sql is NULL for the internal indexes that are automatically
+   * TABLE statements. The sqlite_schema.sql is NULL for the internal indexes that are automatically
    * created by UNIQUE or PRIMARY KEY constraints.
    */
   public val sql: Column<String> = text("sql")
-
-  override fun preCreate() {
-    error("Cannot create system table sqlite_master. It is available after database creation")
-  }
 }

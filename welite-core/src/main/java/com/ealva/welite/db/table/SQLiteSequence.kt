@@ -29,7 +29,7 @@ package com.ealva.welite.db.table
  *
  * There is a single row in the sqlite_sequence table for each ordinary table that uses
  * AUTOINCREMENT. The name of the table (as it appears in sqlite_schema.name) is in the
- * sqlite_sequence.main field and the largest INTEGER PRIMARY KEY ever inserted into that table is
+ * sqlite_sequence.name field and the largest INTEGER PRIMARY KEY ever inserted into that table is
  * in the sqlite_sequence.seq field. New automatically generated integer primary keys for
  * AUTOINCREMENT tables are guaranteed to be larger than the sqlite_sequence.seq field for that
  * table. If the sqlite_sequence.seq field of an AUTOINCREMENT table is already at the largest
@@ -51,8 +51,4 @@ package com.ealva.welite.db.table
 public object SQLiteSequence : Table(name = "sqlite_sequence", systemTable = true) {
   public val name: Column<String> = text("name")
   public val seq: Column<Long> = long("seq")
-
-  override fun preCreate() {
-    error("Cannot create system table sqlite_sequence. It is available after database creation")
-  }
 }

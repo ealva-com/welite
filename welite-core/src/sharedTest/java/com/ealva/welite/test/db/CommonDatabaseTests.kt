@@ -25,7 +25,7 @@ import com.ealva.welite.db.statements.updateColumns
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.FieldType
-import com.ealva.welite.db.table.SQLiteMaster
+import com.ealva.welite.db.table.SQLiteSchema
 import com.ealva.welite.db.table.SQLiteSequence
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
@@ -467,9 +467,9 @@ public object CommonDatabaseTests {
     }
   }
 
-  public fun testCreateSQLiteMaster() {
+  public fun testCreateSQLiteScheme() {
     SqlExecutorSpy().let { spy ->
-      SQLiteMaster.create(spy)
+      SQLiteSchema.create(spy)
     }
   }
 

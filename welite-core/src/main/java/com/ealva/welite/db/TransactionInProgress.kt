@@ -46,7 +46,7 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.OnConflict.Unspecified
 import com.ealva.welite.db.table.Query
 import com.ealva.welite.db.table.QuerySeed
-import com.ealva.welite.db.table.SQLiteMaster
+import com.ealva.welite.db.table.SQLiteSchema
 import com.ealva.welite.db.table.SelectFrom
 import com.ealva.welite.db.table.SqlExecutor
 import com.ealva.welite.db.table.Table
@@ -299,7 +299,7 @@ private class TransactionInProgressImpl(
     get() = try {
       val creatableType = masterType.toString()
       val creatableName = identity.unquoted
-      SQLiteMaster.selectWhere { type eq creatableType and (name eq creatableName) }.count() == 1L
+      SQLiteSchema.selectWhere { type eq creatableType and (name eq creatableName) }.count() == 1L
     } catch (e: Exception) {
       LOG.e(e) { it("Error checking table existence") }
       false
@@ -325,9 +325,9 @@ private class TransactionInProgressImpl(
       val views = mutableListOf<String>()
 
       val tableIdentity = identity.unquoted
-      val sqlCol = SQLiteMaster.sql
-      val typeCol = SQLiteMaster.type
-      SQLiteMaster.selects { listOf(sqlCol, typeCol) }
+      val sqlCol = SQLiteSchema.sql
+      val typeCol = SQLiteSchema.type
+      SQLiteSchema.selects { listOf(sqlCol, typeCol) }
         .where { tbl_name eq tableIdentity }
         .forEach { cursor ->
           val sql = cursor[sqlCol, ""]

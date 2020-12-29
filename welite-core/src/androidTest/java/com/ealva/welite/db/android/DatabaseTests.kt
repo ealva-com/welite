@@ -131,10 +131,10 @@ class DatabaseTests {
   }
 
   @Test
-  fun testCreateSQLiteMaster() = coroutineRule.runBlockingTest {
+  fun testCreateSQLiteScheme() = coroutineRule.runBlockingTest {
     // Can't create a system table
     thrown.expect(IllegalStateException::class.java)
-    Common.testCreateSQLiteMaster()
+    Common.testCreateSQLiteScheme()
   }
 
   @Test
