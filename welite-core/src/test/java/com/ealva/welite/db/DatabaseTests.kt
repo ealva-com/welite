@@ -129,6 +129,25 @@ class DatabaseTests {
   }
 
   @Test
+  fun `test SQLiteSequence`() = coroutineRule.runBlockingTest {
+    Common.testSQLiteSequence(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
+  fun `test create SQLiteSequence`() = coroutineRule.runBlockingTest {
+    // Can't create a system table
+    thrown.expect(IllegalStateException::class.java)
+    Common.testCreateSQLiteSequence()
+  }
+
+  @Test
+  fun `test create SQLiteMaster`() = coroutineRule.runBlockingTest {
+    // Can't create a system table
+    thrown.expect(IllegalStateException::class.java)
+    Common.testCreateSQLiteMaster()
+  }
+
+  @Test
   fun `test no auto commit txn without marking success or rollback`() =
     coroutineRule.runBlockingTest {
       thrown.expect(UnmarkedTransactionException::class.java)

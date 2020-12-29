@@ -104,8 +104,6 @@ public object SQLiteMaster : Table(name = "sqlite_master", systemTable = true) {
   public val sql: Column<String> = text("sql")
 
   override fun preCreate() {
-    error(
-      "Cannot create system table sqlite_master. sqlite_master is available after database creation"
-    )
+    error("Cannot create system table sqlite_master. It is available after database creation")
   }
 }

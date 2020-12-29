@@ -19,11 +19,18 @@ package com.ealva.welite.test.db
 import android.content.Context
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.OpenParams
+import com.ealva.welite.db.Queryable
+import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.statements.updateColumns
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.ColumnMetadata
 import com.ealva.welite.db.table.FieldType
+import com.ealva.welite.db.table.SQLiteMaster
+import com.ealva.welite.db.table.SQLiteSequence
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.Blob
 import com.ealva.welite.test.db.trigger.DeleteAlbumTrigger
 import com.ealva.welite.test.db.trigger.DeleteArtistTrigger
@@ -340,7 +347,8 @@ public object CommonDatabaseTests {
 
   public suspend fun testCreateAndDropIndex(appCtx: Context, testDispatcher: CoroutineDispatcher) {
     val aTable = object : Table() {
-      @Suppress("unused") val id = long("_id") { primaryKey() }
+      @Suppress("unused")
+      val id = long("_id") { primaryKey() }
       val artistName = text("ArtistName") { collateNoCase() }
     }
     withTestDatabase(appCtx, setOf(aTable), testDispatcher) {
@@ -399,6 +407,69 @@ public object CommonDatabaseTests {
         rollback()
         expect(toString()).toContain("rolledBack=true")
       }
+    }
+  }
+
+  public suspend fun testSQLiteSequence(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+    val aTable = object : Table("aTable") {
+      val id = long("_id") { primaryKey().autoIncrement() }
+      val name = text("name")
+    }
+    withTestDatabase(appCtx, setOf(aTable), testDispatcher) {
+      transaction {
+        val list = getAllSeq()
+        expect(list).toHaveSize(0)
+        aTable.insert {
+          it[name] = "Alex Trebek"
+        }
+      }
+
+      transaction {
+        val list = getAllSeq()
+        expect(list).toHaveSize(1)
+        expect(list[0]).toBe(Pair(aTable.tableName, 1))
+
+        SQLiteSequence
+          .updateColumns { it[seq] = 999 }
+          .where { name eq aTable.tableName }
+          .update()
+      }
+
+      val seanConnery = "Sean Connery"
+      transaction {
+        val list = getAllSeq()
+        expect(list).toHaveSize(1)
+        expect(list[0]).toBe(Pair(aTable.tableName, 999))
+
+        aTable.insert {
+          it[name] = seanConnery
+        }
+      }
+      query {
+        val connery = aTable
+          .select()
+          .where { name eq seanConnery }
+          .sequence { Pair(it[id], it[name]) }
+          .singleOrNull()
+        expect(connery).toBe(Pair(1000, seanConnery))
+      }
+    }
+  }
+
+  private fun Queryable.getAllSeq(): List<Pair<String, Long>> = SQLiteSequence
+    .selectAll()
+    .sequence { Pair(it[name], it[seq]) }
+    .toList()
+
+  public fun testCreateSQLiteSequence() {
+    SqlExecutorSpy().let { spy ->
+      SQLiteSequence.create(spy)
+    }
+  }
+
+  public fun testCreateSQLiteMaster() {
+    SqlExecutorSpy().let { spy ->
+      SQLiteMaster.create(spy)
     }
   }
 
