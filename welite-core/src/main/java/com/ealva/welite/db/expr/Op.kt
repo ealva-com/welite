@@ -33,6 +33,7 @@ import com.ealva.welite.db.type.UIntegerPersistentType
 import com.ealva.welite.db.type.ULongPersistentType
 import com.ealva.welite.db.type.UShortPersistentType
 import com.ealva.welite.db.type.toStatementString
+import java.lang.System.identityHashCode
 
 public abstract class Op<T> : BaseExpression<T>() {
   public object TRUE : Op<Boolean>() {
@@ -203,26 +204,18 @@ public fun bindUlong(): BindExpression<ULong> = BindExpression(ULongPersistentTy
 public class BindExpression<T>(
   override val persistentType: PersistentType<T>
 ) : BaseSqlTypeExpression<T>() {
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    registerBindable(this@BindExpression)
-  }
 
+  /** BindExpressions are only equal if the same object. BindExpression is used as a key in maps */
   override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-    if (!super.equals(other)) return false
-
-    other as BindExpression<*>
-
-    if (persistentType != other.persistentType) return false
-
-    return true
+    return this === other
   }
 
   override fun hashCode(): Int {
-    var result = super.hashCode()
-    result = 31 * result + persistentType.hashCode()
-    return result
+    return identityHashCode(this)
+  }
+
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    registerBindable(this@BindExpression)
   }
 }
 
