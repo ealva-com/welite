@@ -43,7 +43,6 @@ import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.toStatementString
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.util.Locale
@@ -509,8 +508,8 @@ private class OpenHelper private constructor(
   private val openParams = openParams.copy()
 
   private var onConfigure: ((DatabaseConfiguration) -> Unit) = {}
-  private var onCreate: (suspend TransactionInProgress.(Database) -> Unit) = {}
-  private var onOpen: (suspend TransactionInProgress.(Database) -> Unit) = {}
+  private var onCreate: (TransactionInProgress.(Database) -> Unit) = {}
+  private var onOpen: (TransactionInProgress.(Database) -> Unit) = {}
 
   var allowWorkOnUiThread: Boolean
     get() = database.allowWorkOnUiThread
@@ -528,11 +527,11 @@ private class OpenHelper private constructor(
     onConfigure = block
   }
 
-  override fun onCreate(block: suspend TransactionInProgress.(Database) -> Unit) {
+  override fun onCreate(block: TransactionInProgress.(Database) -> Unit) {
     onCreate = block
   }
 
-  override fun onOpen(block: suspend TransactionInProgress.(Database) -> Unit) {
+  override fun onOpen(block: TransactionInProgress.(Database) -> Unit) {
     onOpen = block
   }
 
@@ -583,7 +582,7 @@ private class OpenHelper private constructor(
       table.postCreate(executor)
     }
     database.ongoingTransaction {
-      runBlocking { onCreate(database) } // run suspendable but block till return
+      onCreate(database)
     }
   }
 
@@ -592,10 +591,8 @@ private class OpenHelper private constructor(
     when {
       migrationPath != null -> {
         database.ongoingTransaction {
-          runBlocking {
-            migrationPath.forEach { migration ->
-              migration.doExec(this@ongoingTransaction, database)
-            }
+          migrationPath.forEach { migration ->
+            migration.doExec(this, database)
           }
         }
       }
@@ -623,9 +620,9 @@ private class OpenHelper private constructor(
   }
 
   override fun onOpen(db: SQLiteDatabase) {
-    db.transaction(exclusive = false) {
+    db.transaction {
       database.ongoingTransaction {
-        runBlocking { onOpen(database) } // run suspendable but block till return
+        onOpen(database)
       }
     }
   }
