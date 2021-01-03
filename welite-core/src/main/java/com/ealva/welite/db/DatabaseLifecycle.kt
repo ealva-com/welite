@@ -32,7 +32,7 @@ public interface DatabaseLifecycle {
    * TransactionInProgress. This function is only called if the database tables needed to be created
    * (first app run or DB file deleted).
    */
-  public fun onCreate(block: TransactionInProgress.(Database) -> Unit)
+  public fun onCreate(block: suspend TransactionInProgress.(Database) -> Unit)
 
   /**
    * After the database has been opened, configured, and either created or migrated, as
@@ -41,7 +41,7 @@ public interface DatabaseLifecycle {
    * during [onCreate]. If an exception is thrown from [block] all db changes made in the scope of
    * [block] are rolled back.
    */
-  public fun onOpen(block: TransactionInProgress.(Database) -> Unit)
+  public fun onOpen(block: suspend TransactionInProgress.(Database) -> Unit)
 
   /**
    * Call [block] when database corruption is detected. [useDefaultHandler] indicates if default

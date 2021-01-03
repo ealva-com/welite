@@ -27,11 +27,14 @@ import java.util.HashMap
 import java.util.TreeMap
 
 public abstract class Migration {
-  public fun doExec(txn: TransactionInProgress, database: Database): Unit = txn.execute(database)
+  public suspend fun doExec(
+    txn: TransactionInProgress,
+    database: Database
+  ): Unit = txn.execute(database)
 
   public abstract val startVersion: Int
   public abstract val endVersion: Int
-  protected abstract fun TransactionInProgress.execute(db: Database)
+  protected abstract suspend fun TransactionInProgress.execute(db: Database)
 
   override fun toString(): String = "Migration from $startVersion to $endVersion"
 }
