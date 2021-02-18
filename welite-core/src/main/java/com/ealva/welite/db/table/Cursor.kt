@@ -17,8 +17,9 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.SqlTypeExpression
+import com.ealva.welite.db.type.Row
 
-public interface Cursor {
+public interface Cursor : Row {
   /**
    * Total number of rows returned
    */

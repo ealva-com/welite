@@ -25,10 +25,9 @@ import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.log.WeLiteLog
-import com.ealva.welite.db.type.Row
 import com.ealva.welite.db.type.buildStr
 
-internal interface CursorWrapper<C : ColumnSet> : Cursor, Row, AutoCloseable {
+internal interface CursorWrapper<C : ColumnSet> : Cursor, AutoCloseable {
   fun moveToNext(): Boolean
 
   companion object {
@@ -45,7 +44,7 @@ internal interface CursorWrapper<C : ColumnSet> : Cursor, Row, AutoCloseable {
 
 private typealias ACursor = android.database.Cursor
 
-private class CursorWrapperImpl<C : ColumnSet> (
+private class CursorWrapperImpl<C : ColumnSet>(
   private val cursor: ACursor,
   columns: List<Expression<*>>
 ) : CursorWrapper<C> {
@@ -174,7 +173,7 @@ private fun <C : ColumnSet> doBind(
 
 private val LOG by lazyLogger(QueryArgs::class, WeLiteLog.marker)
 
-private class QueryArgs<C : ColumnSet> (seed: QuerySeed<C>) : ArgBindings {
+private class QueryArgs<C : ColumnSet>(seed: QuerySeed<C>) : ArgBindings {
   private val argTypes = seed.types
   private val expressionToIndexMap = seed.expressionToIndexMap
   private val arguments = Array(argTypes.size) { UNBOUND }

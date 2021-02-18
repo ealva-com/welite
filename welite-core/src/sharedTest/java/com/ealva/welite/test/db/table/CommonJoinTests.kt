@@ -37,9 +37,6 @@ import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.flow.collectIndexed
-import kotlinx.coroutines.flow.singleOrNull
-import kotlinx.coroutines.flow.toList
 
 public object CommonJoinTests {
   public suspend fun testJoinInnerJoin(appCtx: Context, testDispatcher: CoroutineDispatcher) {
@@ -77,12 +74,12 @@ public object CommonJoinTests {
         Person.innerJoin(Place)
           .select(Person.name, Place.name)
           .where { Place.name eq "Cleveland" or Person.cityId.isNull() }
-          .flow { cursor: Cursor -> Pair(cursor[Person.name], cursor[Place.name]) }
+          .sequence { cursor: Cursor -> Pair(cursor[Person.name], cursor[Place.name]) }
           .singleOrNull()
           ?.let { (user, city) ->
             expect(user).toBe("Louis")
             expect(city).toBe("Cleveland")
-          } ?: fail("Expected an item from the flow")
+          } ?: fail("Expected an item from the sequence")
       }
     }
   }
@@ -97,9 +94,9 @@ public object CommonJoinTests {
         (Place innerJoin Person innerJoin Review)
           .selectAll()
           .orderByAsc { Person.id }
-          .flow { cursor ->
+          .sequence { cursor ->
             Triple(cursor[Person.name], cursor[Review.post], cursor[Place.name])
-          }.collectIndexed { index, (person, post, city) ->
+          }.forEachIndexed { index, (person, post, city) ->
             when (index) {
               0 -> {
                 expect(person).toBe("Mike")
@@ -141,7 +138,7 @@ public object CommonJoinTests {
       query {
         (Numbers innerJoin NumberNameRel innerJoin Names)
           .selectAll()
-          .flow { Pair(it[Numbers.id], it[Names.name]) }
+          .sequence { Pair(it[Numbers.id], it[Names.name]) }
           .singleOrNull()
           ?.let { (id, name) ->
             expect(id).toBe(2)
@@ -161,7 +158,7 @@ public object CommonJoinTests {
         val allToSouthPoint: List<Pair<String, String>> = (Person crossJoin Place)
           .select(Person.name, Person.cityId, Place.name)
           .where { Place.name eq "South Point" }
-          .flow {
+          .sequence {
             it[Person.name] to it[Place.name]
           }
           .toList()
@@ -232,7 +229,7 @@ public object CommonJoinTests {
           literal("nathalia"),
           personAlias[Person.id]
         ).selectWhere { Person.id eq "amber" }
-          .flow { Pair(it[Person.name], it[personAlias[Person.name]]) }
+          .sequence { Pair(it[Person.name], it[personAlias[Person.name]]) }
           .singleOrNull() ?: fail("expected single item")
 
         expect(pair.first).toBe("Amber")

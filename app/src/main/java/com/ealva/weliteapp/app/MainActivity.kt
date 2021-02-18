@@ -25,7 +25,6 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.expr.like
-import com.ealva.welite.javatime.localDate
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.OnConflict
@@ -33,7 +32,7 @@ import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selects
 import com.ealva.welite.db.table.where
-import kotlinx.coroutines.flow.collect
+import com.ealva.welite.javatime.localDate
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import java.time.LocalDate
@@ -104,8 +103,8 @@ class MainActivity : AppCompatActivity() {
         MediaFileTable
           .selects { listOf(mediaTitle, localDate) }
           .where { mediaTitle like "%Title%" }
-          .flow { Pair(it[mediaTitle], it[localDate]) }
-          .collect { (title, date) -> LOG.i { +it("collect %s %s", title, date) } }
+          .sequence { Pair(it[mediaTitle], it[localDate]) }
+          .forEach { (title, date) -> LOG.i { +it("collect %s %s", title, date) } }
 
         MediaFileTable
           .selects { listOf(mediaTitle, localDate) }

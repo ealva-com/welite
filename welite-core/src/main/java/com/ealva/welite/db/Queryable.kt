@@ -27,50 +27,35 @@ import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker
-import kotlinx.coroutines.flow.Flow
 
 /**
  * These functions are scoped to a Queryable interface in an attempt to only initiate queries while
  * a transaction is in progress. See [Database.query] for starting a query only under an explicit
- * transaction (with no commit/rollback concerns).
+ * transaction. Using Queryable is done under a transaction but transaction boundaries are
+ * handled by [Database]. Use [Transaction] obtained via [Database.transaction] to control
+ * transaction commit/rollback.
  */
 @WeLiteMarker
 public interface Queryable {
   /**
    * Do any necessary [bind], execute the query, and invoke [action] for each row in the
-   * results.
+   * results, and return the number of rows reported by [Cursor.count] which would be zero in the
+   * case of no results returned by the query.
    */
   public fun <C : ColumnSet> Query<C>.forEach(
     bind: C.(ArgBindings) -> Unit = { },
     action: C.(Cursor) -> Unit
-  )
+  ): Int
 
   /**
-   * Same as [Query.forEach] except the resulting Query is not reusable as it's not
-   * visible to the client
+   * Same as [Query.forEach] except the resulting Query is not reusable as it's not visible to the
+   * client. Returns the number of rows reported by [Cursor.count] which would be zero in the case
+   * of no results returned by the query.
    */
   public fun <C : ColumnSet> QueryBuilder<C>.forEach(
     bind: C.(ArgBindings) -> Unit = { },
     action: C.(Cursor) -> Unit
-  )
-
-  /**
-   * Creates a flow, first doing any necessary [bind], execute the query, and emit a [T]
-   * created using [factory] for each row in the query results
-   */
-  public fun <C : ColumnSet, T> Query<C>.flow(
-    bind: C.(ArgBindings) -> Unit = { },
-    factory: C.(Cursor) -> T
-  ): Flow<T>
-
-  /**
-   * Same as [Query.flow] except the resulting Query is not reusable as it's not
-   * visible to the client
-   */
-  public fun <C : ColumnSet, T> QueryBuilder<C>.flow(
-    bind: C.(ArgBindings) -> Unit = { },
-    factory: C.(Cursor) -> T
-  ): Flow<T>
+  ): Int
 
   /**
    * After any necessary [bind] generate a [Sequence] of [T] using [factory] for each Cursor
@@ -135,7 +120,7 @@ public interface Queryable {
 
   /**
    * True if the Creatable, as known via [Creatable.identity], exists in the database, else false.
-   * Creatable implementations are Table, Index, View, Trigger
+   * Examples of Creatable implementations are Table, Index, View, Trigger
    */
   public val Creatable.exists: Boolean
 
@@ -147,7 +132,7 @@ public interface Queryable {
   public val Table.description: TableDescription
 
   /**
-   * Full create sql of this [Table] as stored by SQLite. Throws [IllegalArgumentException] if
+   * Full create SQL of this [Table] as stored by SQLite. Throws [IllegalArgumentException] if
    * this [Table] does not exist in the database.
    * @see [Table.exists]
    */
@@ -156,7 +141,7 @@ public interface Queryable {
   /**
    * Does an integrity check of the entire database. Looks for out-of-order records, missing pages,
    * malformed records, missing index entries, and UNIQUE, CHECK, and NOT NULL constraint errors.
-   * Returns a list of strings describe any problems found. Will return at
+   * Returns a list of strings describing any problems found. Will return at
    * most [maxErrors] errors (default 100) before the analysis quits. If integrity check
    * finds no errors, a single string with the value 'ok' is returned.
    *

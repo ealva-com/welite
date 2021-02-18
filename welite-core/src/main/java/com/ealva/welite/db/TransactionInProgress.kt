@@ -26,6 +26,7 @@ import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.and
+import com.ealva.welite.db.expr.bindString
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.ColumnValues
@@ -40,11 +41,11 @@ import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.CursorWrapper
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.ForeignKeyAction
-import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.OnConflict.Unspecified
 import com.ealva.welite.db.table.Query
+import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.QuerySeed
 import com.ealva.welite.db.table.SQLiteSchema
 import com.ealva.welite.db.table.SelectFrom
@@ -56,23 +57,20 @@ import com.ealva.welite.db.table.asMasterType
 import com.ealva.welite.db.table.columnMetadata
 import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.where
 import com.ealva.welite.db.table.selectWhere
 import com.ealva.welite.db.table.selects
 import com.ealva.welite.db.table.stringForQuery
+import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 
 private val LOG by lazyLogger(TransactionInProgress::class, WeLiteLog.marker)
 private const val NULL_SQL_FOUND = "Null sql table:%s type=%s position:%d"
 
 /**
- * These functions are scoped to a transaction interface in an attempt to only read and write to
- * the DB under an explicit transaction. Functions in this interface require the enclosing
- * transaction to be marked successful or rolled back, but leave the commit/rollback to a different
- * level.
+ * Functions of this interface are for creating, updating, or delete elements in the Database. These
+ * functions are scoped to a transaction interface in an attempt to only read and write to the DB
+ * under an explicit transaction. Queries are also available via TransactionInProgress.
+ * Transaction implements this interface.
  */
 @WeLiteMarker
 public interface TransactionInProgress : Queryable {
@@ -140,6 +138,16 @@ public interface TransactionInProgress : Queryable {
    */
   public fun vacuum()
 
+  /**
+   * Execute the [block] lambda on Transaction commit. If the current transaction was started
+   * outside this framework, an IllegalStateException is thrown as we cannot determine success nor
+   * transaction boundary. See [isFrameworkTransaction]. [block] is called within the scope
+   * of the Transaction and on the Database dispatcher.
+   */
+  public fun onCommit(block: () -> Unit)
+
+  public val isFrameworkTransaction: Boolean
+
   public companion object {
     /**
      * Create a TransactionInProgress using [dbConfig]
@@ -163,8 +171,12 @@ private const val INDEX_FK_VIOLATION_ROW_ID = 1
 private const val INDEX_FK_VIOLATION_REFERS_TO = 2
 private const val INDEX_FK_VIOLATION_CONSTRAINT_INDEX = 3
 
+/**
+ * This class handles the bulk of create/update/delete. The [Transaction] implementation delegates
+ * to an instance of this class and only concerns itself with commit/rollback.
+ */
 private class TransactionInProgressImpl(
-  private val dbConfig: DbConfig
+  dbConfig: DbConfig
 ) : TransactionInProgress, SqlExecutor {
   private val db: SQLiteDatabase = dbConfig.db
 
@@ -175,22 +187,12 @@ private class TransactionInProgressImpl(
   override fun <C : ColumnSet> Query<C>.forEach(
     bind: C.(ArgBindings) -> Unit,
     action: C.(Cursor) -> Unit
-  ) = doForEach(seed, bind, action)
+  ): Int = doForEach(seed, bind, action)
 
   override fun <C : ColumnSet> QueryBuilder<C>.forEach(
     bind: C.(ArgBindings) -> Unit,
     action: C.(Cursor) -> Unit
-  ) { this@TransactionInProgressImpl.doForEach(build(), bind, action) }
-
-  override fun <C : ColumnSet, T> Query<C>.flow(
-    bind: C.(ArgBindings) -> Unit,
-    factory: C.(Cursor) -> T
-  ): Flow<T> = doFlow(seed, bind, factory)
-
-  override fun <C : ColumnSet, T> QueryBuilder<C>.flow(
-    bind: C.(ArgBindings) -> Unit,
-    factory: C.(Cursor) -> T
-  ): Flow<T> = this@TransactionInProgressImpl.doFlow(build(), bind, factory)
+  ): Int = this@TransactionInProgressImpl.doForEach(build(), bind, action)
 
   override fun <C : ColumnSet, T> Query<C>.sequence(
     bind: C.(ArgBindings) -> Unit,
@@ -206,19 +208,12 @@ private class TransactionInProgressImpl(
     seed: QuerySeed<C>,
     bind: C.(ArgBindings) -> Unit,
     action: C.(Cursor) -> Unit
-  ) = CursorWrapper.select(seed, db, bind).use { cursor ->
-    while (cursor.moveToNext()) seed.sourceSet.action(cursor)
-  }
-
-  private fun <C : ColumnSet, T> doFlow(
-    seed: QuerySeed<C>,
-    bind: C.(ArgBindings) -> Unit,
-    factory: C.(Cursor) -> T
-  ): Flow<T> = flow {
-    CursorWrapper.select(seed, db, bind).use { cursor ->
-      while (cursor.moveToNext()) emit(seed.sourceSet.factory(cursor))
+  ): Int = CursorWrapper.select(seed, db, bind).use { cursor ->
+    while (cursor.moveToNext()) {
+      seed.sourceSet.action(cursor)
     }
-  }.flowOn(dbConfig.dispatcher)
+    cursor.count
+  }
 
   private fun <C : ColumnSet, T> doSequence(
     seed: QuerySeed<C>,
@@ -295,11 +290,20 @@ private class TransactionInProgressImpl(
     where: Op<Boolean>?
   ): Query<C> = Query(QueryBuilder(this, where, true))
 
+  /**
+   * We'll use count here, as opposed to exists, because there can only be 1 of any particular
+   * type/name combination. Performance is same or slightly faster in informal tests
+   */
   override val Creatable.exists
     get() = try {
+      // IMPORTANT: "inlining" creatableType and creatableName into the count lambda will change
+      // the receiver to SQLiteSchema which is NOT this Creatable and this@exists won't work
       val creatableType = masterType.toString()
       val creatableName = identity.unquoted
-      SQLiteSchema.selectWhere { type eq creatableType and (name eq creatableName) }.count() == 1L
+      EXISTS_COUNT_QUERY.count {
+        it[BIND_TYPE] = creatableType
+        it[BIND_NAME] = creatableName
+      } == 1L
     } catch (e: Exception) {
       LOG.e(e) { it("Error checking table existence") }
       false
@@ -422,6 +426,13 @@ private class TransactionInProgressImpl(
     db.execSQL("VACUUM")
   }
 
+  override fun onCommit(block: () -> Unit) {
+    // only a transaction we started can notify of a commit.
+    throw IllegalStateException("Cannot notify of a commit when txn started outside this framework")
+  }
+
+  override val isFrameworkTransaction: Boolean = false
+
   override fun exec(sql: String, vararg bindArgs: Any) {
     db.execSQL(sql, bindArgs)
   }
@@ -435,3 +446,8 @@ private typealias ACursor = android.database.Cursor
 
 internal fun ACursor.getOptLong(columnIndex: Int, ifNullValue: Long = -1): Long =
   if (isNull(columnIndex)) ifNullValue else getLong(columnIndex)
+
+private val BIND_TYPE = bindString()
+private val BIND_NAME = bindString()
+private val EXISTS_COUNT_QUERY = SQLiteSchema
+  .selectWhere { type eq BIND_TYPE and (name eq BIND_NAME) }

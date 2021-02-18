@@ -57,7 +57,8 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [LOLLIPOP])
 class UpdateTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule
+  var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 
@@ -67,22 +68,25 @@ class UpdateTests {
   }
 
   @Test
-  fun `test update`() = coroutineRule.runBlockingTest {
+  fun `test update and onCommit`() = coroutineRule.runBlockingTest {
     withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
       val badName = "Led Zepelin"
       val goodName = "Led Zeppelin"
       transaction {
         val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
         insertData(badName, "Houses of the Holy", uri)
-        setSuccessful()
       }
-      transaction {
+
+      var commitCalled = false
+      transaction(autoCommit = false) {
+        onCommit { commitCalled = true }
         ArtistTable.updateColumns { it[artistName] = goodName }
           .where { artistName eq badName }
           .update()
-
         setSuccessful()
       }
+      expect(commitCalled).toBe(true)
+
       query {
         expect(ArtistTable.selectWhere { artistName eq goodName }.count()).toBe(1)
       }
@@ -90,7 +94,7 @@ class UpdateTests {
   }
 
   @Test
-  fun `test update Person name`() = coroutineRule.runBlockingTest {
+  fun `test update Person name and onCommit`() = coroutineRule.runBlockingTest {
     withPlaceTestDatabase(
       context = appCtx,
       tables = setOf(Place, Person, Review),
@@ -107,13 +111,16 @@ class UpdateTests {
         ).toBe("Nathalia")
       }
 
+      var commitCalled = false
       val newName = "Natalie"
       transaction {
         Person
           .updateColumns { it[name] = newName }
           .where { id eq nathaliaId }
           .update()
+        onCommit { commitCalled = true }
       }
+      expect(commitCalled).toBe(true)
 
       query {
         expect(
@@ -146,6 +153,34 @@ class UpdateTests {
           expect(it[Person.name]).toBe(it[Review.post])
           expect(it[Review.value]).toBe(123)
         }
+      }
+    }
+  }
+
+  @Test
+  fun `test update but rollback`() = coroutineRule.runBlockingTest {
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
+      val badName = "Led Zepelin"
+      val goodName = "Led Zeppelin"
+      transaction {
+        val uri = Uri.fromFile(File("""/Music/Song.mp3"""))
+        insertData(badName, "Houses of the Holy", uri)
+      }
+
+      var rolledBack = true
+      // autoCommit but we'll rollback
+      transaction {
+        onCommit { rolledBack = false }
+        ArtistTable.updateColumns { it[artistName] = goodName }
+          .where { artistName eq badName }
+          .update()
+        rollback()
+      }
+      expect(rolledBack).toBe(true)
+
+      query {
+        // badName because 2nd txn was rolled back
+        expect(ArtistTable.selectWhere { artistName eq badName }.count()).toBe(1)
       }
     }
   }

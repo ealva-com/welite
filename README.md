@@ -7,7 +7,7 @@ WeLite is a Kotlin DSL, and Statement/Cursor Wrapper, for Android SQLite
 ### The goals of this library are:
   * Provide a DSL for Android SQLite that fully (eventually) encapsulates the underlying SQL
   * Clients write Kotlin - no SQL, no annotation processing
-  * Support Kotlin coroutines via suspend methods, flow, and an injected coroutine dispatcher
+  * Support Kotlin coroutines via suspend methods and an injected coroutine dispatcher
   * Encapsulate SQLite statements, eg. insert/update/delete, for reuse and simplified binding   
   * Encapsulate Select results and provide for easy row->object conversion
 
@@ -211,8 +211,8 @@ Lite=SQLite and We="without entities". After attempting to port an in-house solu
 searching for other libraries, it was decided to build a thin wrapper over the SQLite API with a 
 Kotlin DSL to build the underlying SQL. The goal is to store and retrieve data with as little 
 friction as possible, while providing benefits of a Kotlin interface. That said, the client 
-controls what objects are created from rows in a query. While we envision flows of data classes or 
-simple types, the user is free to construct any type of object(s).
+controls what objects are created from rows in a query. While we envision sequences of data classes
+or simple types, the user is free to construct any type of object(s).
 
 Why "without entities"? We often find a one-to-many relationship between a row in a table to a 
 Kotlin object. So we don't try to enforce a row to entity mapping or load data unnecessarily. A 
@@ -230,7 +230,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 [squash]: https://github.com/orangy/squash
 [exposed]: https://github.com/JetBrains/Exposed
 [coroutines]: https://kotlinlang.org/docs/reference/coroutines-overview.html
-[flow]: https://kotlinlang.org/docs/reference/coroutines/flow.html  
 [splitties]: https://github.com/LouisCAD/Splitties
 [maven-welite-core]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-core%22
 [maven-welite-javatime]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-javatime%22

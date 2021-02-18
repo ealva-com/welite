@@ -243,8 +243,8 @@ private class QueryBuilderImpl<out C : ColumnSet>(
 
   /**
    * Build the QuerySeed as a basis for a Query. Query's are reusable and are executed within the
-   * scope of a Queryable or Transaction, using sequence, flow, or a forEach to convert rows from
-   * a cursor to an object. QueryBuilder may be executed directly and uses a Query at a lower level.
+   * scope of a Queryable or Transaction, using sequence or a forEach to convert rows from a cursor
+   * to an object. QueryBuilder may be executed directly and uses a Query at a lower level.
    * Typically building a Query then binding any parameters at execution time is more efficient.
    */
   override fun build(): QuerySeed<C> = QuerySeed(statementSeed(), selectFrom)

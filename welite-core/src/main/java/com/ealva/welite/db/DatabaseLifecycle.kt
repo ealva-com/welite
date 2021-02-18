@@ -19,6 +19,12 @@ package com.ealva.welite.db
 import java.sql.SQLException
 import java.util.Locale
 
+/**
+ * When a [Database] is constructed a lambda may be passed whose receiver is a DatabaseLifecycle.
+ * Client code can invoke the various functions to be called during different phases of
+ * Database lifecycle. For example, [onConfigure] provides a DatabaseConfiguration object to allow
+ * a Locale to be set, set the journal mode, exec other pragma's, etc.
+ */
 public interface DatabaseLifecycle {
   /**
    * After the database is open [block] is called with a [DatabaseConfiguration] to allow the

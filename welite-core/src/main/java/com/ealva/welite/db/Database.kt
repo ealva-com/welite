@@ -84,7 +84,7 @@ public interface Database {
 
   /**
    * Begin a [Transaction] named [unitOfWork] and call [work] with the transaction as the receiver.
-   * [R] is returned from the [work] function is returned from this function. WeLite attempts to
+   * The [R] returned from the [work] function is returned from this function. WeLite attempts to
    * require an explicit transaction be started for all DB access (otherwise SQLite will start an
    * implicit txn). By default [exclusive] is false and the transaction runs in IMMEDIATE mode. All
    * db work should be completed within the [work] block and the txn must be marked as either
@@ -119,7 +119,7 @@ public interface Database {
    * @see query
    * @throws IllegalStateException if the database has been closed
    * @throws WeLiteException if an exception is thrown in the coroutine code, but not in the [work]
-   * function. For example, if [work] is illegally dispatched on the main UI thread an
+   * function. For example, if [work] is dispatched on the main UI thread an
    * [IllegalStateException] is thrown which is in turn wrapped in a [WeLiteException].
    * @throws UnmarkedTransactionException if [autoCommit] is false and a txn is not marked as
    * successful or rolled back, this exception will be thrown
@@ -131,7 +131,7 @@ public interface Database {
     unitOfWork: String = UNNAMED_TXN,
     autoCommit: Boolean = true,
     throwIfNoChoice: Boolean = true,
-    work: suspend Transaction.() -> R
+    work: Transaction.() -> R
   ): R
 
   /**
@@ -151,7 +151,7 @@ public interface Database {
   public suspend fun <R> query(
     exclusive: Boolean = false,
     unitOfWork: String = UNNAMED_TXN,
-    work: suspend Queryable.() -> R
+    work: Queryable.() -> R
   ): R
 
   /**
@@ -163,11 +163,11 @@ public interface Database {
    * Provides the interface to an ongoing transaction. Client is not concerned with commit/rollback
    * which is handled at some other level.
    *
-   * The [work] function is executed on the current thread, unlike [transaction] and [query], which
-   * will use coroutines to execute off the main thread.
+   * The [work] function is executed on the current thread, unlike [transaction] and [query] which
+   * use coroutines to execute off the main thread.
    *
    * @throws IllegalStateException if the caller illegally invokes this function from the UI thread,
-   * the database has been closed, or  the current thread is not in a transaction
+   * the database has been closed, or the current thread is not in a transaction
    * @throws WeLiteUncaughtException if an exception is thrown from [work]. The
    * [WeLiteException.cause] is set to the underlying exception.
    * @see inTransaction
@@ -177,8 +177,7 @@ public interface Database {
   /**
    * Close this Database connection. Calling other public functions after close will result in an
    * IllegalStateException. This method isn't usually needed for Android apps. Typically
-   * Android apps will leave the DB connected for the life of the application and allow for
-   * cleanup during the GC->finalization of the underlying DB object.
+   * Android apps will leave the DB connected for the life of the application.
    *
    * This function is idempotent.
    *
@@ -327,8 +326,8 @@ private class WeLiteDatabase(
 
   /**
    * We want to use the db instance passed to the open helper onConfigure method because it's usable
-   * in onCreate, onUpgrade, onOpen, etc. If we call openHelper.writableDatabase in those
-   * instances we'll get an exception as SQLiteOpenHelper is still initializing. So the first
+   * in onCreate, onUpgrade, onOpen, etc. If we call openHelper.writableDatabase in onCreate or
+   * onUpgrade we'll get an exception as SQLiteOpenHelper is still initializing. So the first
    * call to openHelper.writableDatabase begins the process and our open helper calls back
    * and sets internalDb which is safe to use from that point forward
    */
@@ -360,7 +359,7 @@ private class WeLiteDatabase(
     unitOfWork: String,
     autoCommit: Boolean,
     throwIfNoChoice: Boolean,
-    work: suspend Transaction.() -> R
+    work: Transaction.() -> R
   ): R = workInTxn(exclusive, unitOfWork, autoCommit, throwIfNoChoice, work)
 
   /**
@@ -371,7 +370,7 @@ private class WeLiteDatabase(
   override suspend fun <R> query(
     exclusive: Boolean,
     unitOfWork: String,
-    work: suspend Queryable.() -> R
+    work: Queryable.() -> R
   ): R = workInTxn(exclusive, unitOfWork, autoCommit = true, throwIfNoChoice = false, work = work)
 
   /**
@@ -385,14 +384,14 @@ private class WeLiteDatabase(
     unitOfWork: String,
     autoCommit: Boolean,
     throwIfNoChoice: Boolean,
-    work: suspend Transaction.() -> R
+    work: Transaction.() -> R
   ): R {
     check(!closed) { "Database has been closed" }
     withContext(dispatcher) {
       try {
         assertNotUiThread() // client can set dispatcher, need to check
         beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { txn ->
-          txn.doWork(unitOfWork, work).also { result -> txn.closeIfNecessary(result, autoCommit) }
+          txn.doWork(unitOfWork, work).also { result -> txn.doAutoOrRollback(result, autoCommit) }
         }
       } catch (e: Exception) {
         Unsuccessful(e.asWeLiteException("Exception on coroutine '$unitOfWork'"))
@@ -405,7 +404,7 @@ private class WeLiteDatabase(
     }
   }
 
-  private fun <R> Transaction.closeIfNecessary(result: WeLiteResult<R>, autoCommit: Boolean) {
+  private fun <R> Transaction.doAutoOrRollback(result: WeLiteResult<R>, autoCommit: Boolean) {
     if (!isClosed) {
       if (result is Success) {
         if (autoCommit && !rolledBack) setSuccessful()
@@ -415,20 +414,15 @@ private class WeLiteDatabase(
     }
   }
 
-  private suspend fun <R> Transaction.doWork(
+  private fun <R> Transaction.doWork(
     unitOfWork: String,
-    work: suspend Transaction.() -> R
+    work: Transaction.() -> R
   ): WeLiteResult<R> = try {
     Success(work())
   } catch (e: Exception) {
     e.asUncaught { "Exception during transaction '$unitOfWork'" }
   }
 
-  /**
-   * Note: Can't invoke this during SQLite/OpenHelper startup (onConfigure->onOpen) as it will call
-   * [SQLiteOpenHelper.getWritableDatabase] which will result in an
-   * ```IllegalStateException("getDatabase called recursively")```
-   */
   override fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R {
     assertNotUiThread()
     check(!closed) { "Database has been closed" }
@@ -510,12 +504,6 @@ private class OpenHelper private constructor(
   private var onConfigure: ((DatabaseConfiguration) -> Unit) = {}
   private var onCreate: (TransactionInProgress.(Database) -> Unit) = {}
   private var onOpen: (TransactionInProgress.(Database) -> Unit) = {}
-
-  var allowWorkOnUiThread: Boolean
-    get() = database.allowWorkOnUiThread
-    set(value) {
-      database.allowWorkOnUiThread = value
-    }
 
   val tablesInCreateOrder: Set<Table> by lazy {
     TableDependencies(tables).also { dependencies ->

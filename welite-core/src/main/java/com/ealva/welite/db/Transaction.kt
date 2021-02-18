@@ -20,19 +20,17 @@ import android.database.sqlite.SQLiteDatabase
 import com.ealva.ealvalog.e
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
+import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.WeLiteMarker
+import java.lang.Exception
 
 /**
- * Transaction implements [AutoCloseable] and is typically used within a [use] block.
- * ```kotlin
- * beginTransaction().use { txn ->
- *    doDbWork()
- *    txn.markSuccessful()
- * } // txn is automatically closed leaving the use scope
- * ```
- * The commit/rollback occurs at the end of the [use] block when the txn is closed.
+ * Transaction is the interface presented to the client to control commit or rollback. This is
+ * typically automatically handled via [Database.transaction] ```autoCommit``` parameter, so the
+ * client only need use these functions/properties if finer grain control of commit/rollback is
+ * necessary.
  */
 @WeLiteMarker
 public interface Transaction : TransactionInProgress {
@@ -58,10 +56,10 @@ public interface Transaction : TransactionInProgress {
 internal interface CloseableTransaction : Transaction, AutoCloseable {
   companion object {
     /**
-     * Start a transaction and return the Transaction object which is [AutoCloseable] and
-     * expected to be used within a [use] block to control the Transaction lifetime. Client's use
-     * [Database.transaction], [Database.query], and [Database.query], so this is not expected
-     * to be exposed to a client.
+     * Start a transaction and return the Transaction object which is [AutoCloseable] and expected
+     * to be used within a [use] block to control the Transaction lifetime. Client's use
+     * [Database.transaction], [Database.query], and [Database.ongoingTransaction], so this is not
+     * expected to be exposed to a client.
      */
     internal operator fun invoke(
       dbConfig: DbConfig,
@@ -86,6 +84,16 @@ private val LOG by lazyLogger(Transaction::class, WeLiteLog.marker)
 private const val TXN_NOT_MARKED =
   "Txn '%s' closing without it being marked successful or rolled back."
 
+/**
+ * Transaction implements [AutoCloseable] and is typically used within a [use] block.
+ * ```kotlin
+ * beginTransaction().use { txn ->
+ *    doDbWork()
+ *    txn.markSuccessful()
+ * } // txn is automatically closed leaving the use scope
+ * ```
+ * The commit/rollback occurs at the end of the [use] block when the txn is closed.
+ */
 private class TransactionImpl(
   private val db: SQLiteDatabase,
   private val exclusiveLock: Boolean,
@@ -128,9 +136,27 @@ private class TransactionImpl(
         }
       } finally {
         db.endTransaction()
+        if (successful) notifyOfCommit()
       }
     }
   }
+
+  private val onCommitList: MutableSet<() -> Unit> = mutableSetOf()
+  override fun onCommit(block: () -> Unit) {
+    onCommitList.add(block)
+  }
+
+  private fun notifyOfCommit() {
+    onCommitList.forEach { block ->
+      try {
+        block()
+      } catch (e: Exception) {
+        LOG.e { +it("onCommit lambda threw unexpected exception") }
+      }
+    }
+  }
+
+  override val isFrameworkTransaction: Boolean = true
 
   override fun toString(): String {
     return "Txn='" + unitOfWork + "' closed=" + isClosed + " exclusive=" + exclusiveLock +
