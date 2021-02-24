@@ -18,7 +18,7 @@ package com.ealva.welite.test.db.table
 
 import android.content.Context
 import com.ealva.welite.db.Database
-import com.ealva.welite.db.expr.SortOrder
+import com.ealva.welite.db.expr.Order
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
@@ -26,6 +26,7 @@ import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.orderBy
 import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.to
 import com.ealva.welite.db.table.where
 import com.ealva.welite.test.db.table.Doctors.degree
 import com.ealva.welite.test.db.table.Doctors.doctorName
@@ -112,7 +113,7 @@ public object CommonNaturalJoinTests {
         (Doctors naturalJoin Specialty naturalJoin Visits)
           .select(Doctors.doctorId, doctorName, degree, description, patientName, visitDate)
           .where { degree eq "MD" }
-          .orderBy { Doctors.doctorId to SortOrder.DESC }
+          .orderBy { Doctors.doctorId to Order.DESC }
           .sequence {
             DoctorsVisit(
               it[Doctors.doctorId],

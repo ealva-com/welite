@@ -28,7 +28,7 @@ import com.ealva.welite.db.compound.select
 import com.ealva.welite.db.compound.selectAll
 import com.ealva.welite.db.compound.union
 import com.ealva.welite.db.compound.unionAll
-import com.ealva.welite.db.expr.SortOrder
+import com.ealva.welite.db.expr.Order
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.statements.deleteWhere
@@ -39,6 +39,7 @@ import com.ealva.welite.db.table.asExpression
 import com.ealva.welite.db.table.orderBy
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectCount
+import com.ealva.welite.db.table.to
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
 import com.ealva.welite.test.shared.AlbumTable
@@ -314,7 +315,7 @@ public object CommonCompoundSelectTests {
 
         val unionList = compoundSelect
           .selectAll()
-          .orderBy { id to SortOrder.DESC }
+          .orderBy { id to Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -416,7 +417,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to SortOrder.DESC }
+          .orderBy { id to Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -443,7 +444,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to SortOrder.DESC }
+          .orderBy { id to Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -470,7 +471,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to SortOrder.DESC }
+          .orderBy { id to Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -498,7 +499,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to SortOrder.DESC }
+          .orderBy { id to Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -510,7 +511,7 @@ public object CommonCompoundSelectTests {
           .except(TableA.select { id }.all())
           .select(TableC.id)
           .all()
-          .orderBy { id to SortOrder.DESC }
+          .orderBy { id to Order.DESC }
           .sequence { it[id] }
           .toList()
 

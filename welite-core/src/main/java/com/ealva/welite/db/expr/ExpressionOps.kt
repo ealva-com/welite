@@ -172,7 +172,7 @@ public fun <T> SqlTypeExpression<in T>.literal(value: T): LiteralOp<T> = when (v
   else -> LiteralOp(persistentType, value)
 } as LiteralOp<T>
 
-public enum class SortOrder(public val sqlName: String) {
+public enum class Order(public val sqlName: String) {
   ASC("ASC"),
   DESC("DESC");
 

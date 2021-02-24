@@ -19,7 +19,7 @@ package com.ealva.welite.db.table
 import com.ealva.welite.db.expr.BaseExpression
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
-import com.ealva.welite.db.expr.SortOrder
+import com.ealva.welite.db.expr.Order
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.or
@@ -36,13 +36,12 @@ public inline val LimitOffset.limit: Long
 public inline val LimitOffset.offset: Long
   get() = second
 
-public typealias OrderByPair = Pair<Expression<*>, SortOrder>
+public data class OrderBy(
+  val expression: Expression<*>,
+  val ascDesc: Order = Order.ASC
+)
 
-public inline val OrderByPair.expression: Expression<*>
-  get() = first
-
-public inline val OrderByPair.ascDesc: SortOrder
-  get() = second
+public infix fun Expression<*>.to(that: Order): OrderBy = OrderBy(this, that)
 
 public interface QueryBuilder<out C : ColumnSet> : AppendsToSqlBuilder {
 
@@ -85,12 +84,12 @@ public interface QueryBuilder<out C : ColumnSet> : AppendsToSqlBuilder {
   public fun having(op: C.() -> Op<Boolean>): QueryBuilder<C>
 
   /**
-   * Adds an OrderByPair (column to [SortOrder]) to sort the results by.
+   * Adds an OrderByPair (column to [Order]) to sort the results by.
    *
    * Prefer the extension functions [orderByAsc], [orderBy], and [ordersBy] as they have the
    * original source set (typically a [Table]) as the receiver and are inline
    */
-  public fun addOrderBy(pair: OrderByPair): QueryBuilder<C>
+  public fun addOrderBy(orderBy: OrderBy): QueryBuilder<C>
 
   /**
    * Does this query contain 1 or more order by clause. Simple select statements do not have an
@@ -172,11 +171,13 @@ public fun <C : ColumnSet> C.selectAll(): QueryBuilder<C> = selectWhere(null)
 public fun <C : ColumnSet> C.selectCount(where: (C.() -> Op<Boolean>)? = null): QueryBuilder<C> =
   QueryBuilder(set = selects { emptyList() }, where = where?.invoke(this), count = true)
 
+/** If [where] is null, all rows are returned. See [SelectFrom.all]*/
 public fun <C : ColumnSet> SelectFrom<C>.where(where: Op<Boolean>?): QueryBuilder<C> =
   QueryBuilder(this, where)
 
+/** If [where] returns null, all rows are returned */
 public inline fun <C : ColumnSet> SelectFrom<C>.where(
-  where: C.() -> Op<Boolean>
+  where: C.() -> Op<Boolean>?
 ): QueryBuilder<C> = where(where(sourceSet))
 
 /** All rows will be returned */
@@ -195,7 +196,7 @@ private class QueryBuilderImpl<out C : ColumnSet>(
   private var count: Boolean = false
 ) : QueryBuilder<C> {
   private var groupBy: MutableSet<Expression<*>> = LinkedHashSet()
-  private var orderBy: MutableSet<OrderByPair> = LinkedHashSet()
+  private var orderBy: MutableSet<OrderBy> = LinkedHashSet()
   private var having: Op<Boolean>? = null
   private var distinct: Boolean = false
   private var limitOffset: LimitOffset? = null
@@ -220,8 +221,8 @@ private class QueryBuilderImpl<out C : ColumnSet>(
     having = newHaving
   }
 
-  override fun addOrderBy(pair: OrderByPair): QueryBuilder<C> = apply {
-    orderBy.add(pair)
+  override fun addOrderBy(orderBy: OrderBy): QueryBuilder<C> = apply {
+    this.orderBy.add(orderBy)
   }
 
   override val hasOrderBy: Boolean
@@ -335,13 +336,13 @@ public inline fun <C : ColumnSet> QueryBuilder<C>.groupsBy(
 }
 
 public inline fun <C : ColumnSet> QueryBuilder<C>.ordersBy(
-  orderList: C.() -> List<OrderByPair>
+  orderList: C.() -> List<OrderBy>
 ): QueryBuilder<C> = apply {
   sourceSet.orderList().forEach { pair -> addOrderBy(pair) }
 }
 
 public inline fun <C : ColumnSet> QueryBuilder<C>.orderBy(
-  pair: C.() -> OrderByPair
+  pair: C.() -> OrderBy
 ): QueryBuilder<C> = apply {
   addOrderBy(sourceSet.pair())
 }
@@ -349,7 +350,7 @@ public inline fun <C : ColumnSet> QueryBuilder<C>.orderBy(
 public inline fun <C : ColumnSet> QueryBuilder<C>.orderByAsc(
   column: C.() -> Expression<*>
 ): QueryBuilder<C> = apply {
-  addOrderBy(sourceSet.column() to SortOrder.ASC)
+  addOrderBy(sourceSet.column() to Order.ASC)
 }
 
 /**

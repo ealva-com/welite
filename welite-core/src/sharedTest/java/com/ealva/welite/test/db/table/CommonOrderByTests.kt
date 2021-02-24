@@ -18,7 +18,7 @@ package com.ealva.welite.test.db.table
 
 import android.content.Context
 import com.ealva.welite.db.expr.Expression
-import com.ealva.welite.db.expr.SortOrder
+import com.ealva.welite.db.expr.Order
 import com.ealva.welite.db.expr.count
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.substring
@@ -30,6 +30,7 @@ import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.ordersBy
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
+import com.ealva.welite.db.table.to
 import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -77,7 +78,7 @@ public object CommonOrderByTests {
         val expectedList = others + withoutCities
         Person
           .selectAll()
-          .ordersBy { listOf(cityId to SortOrder.DESC, id to SortOrder.ASC) }
+          .ordersBy { listOf(cityId to Order.DESC, id to Order.ASC) }
           .sequence { it[id] }
           .toList()
           .let { list ->
@@ -103,7 +104,7 @@ public object CommonOrderByTests {
         val expectedList = others + withoutCities
         Person
           .selectAll()
-          .ordersBy { listOf(cityId to SortOrder.DESC, id to SortOrder.ASC) }
+          .ordersBy { listOf(cityId to Order.DESC, id to Order.ASC) }
           .sequence { it[id] }
           .toList()
           .let { list ->
@@ -186,7 +187,7 @@ public object CommonOrderByTests {
 
         Place
           .selectAll()
-          .orderBy { orderByExpr to SortOrder.DESC }
+          .orderBy { orderByExpr to Order.DESC }
           .sequence { it[name] }
           .toList()
           .let { list ->

@@ -19,10 +19,9 @@ package com.ealva.welite.db.compound
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.table.ColumnSet
-import com.ealva.welite.db.table.OrderByPair
+import com.ealva.welite.db.table.OrderBy
 import com.ealva.welite.db.table.QueryBuilder
-import com.ealva.welite.db.table.ascDesc
-import com.ealva.welite.db.table.expression
+import com.ealva.welite.db.table.to
 
 /**
  * Select all columns and all rows
@@ -60,9 +59,9 @@ public class CompoundQueryBuilder<C : ColumnSet>(
     original.addGroupBy(selectToResultMap[column] ?: column)
   }
 
-  override fun addOrderBy(pair: OrderByPair): QueryBuilder<C> = apply {
-    val expression = pair.expression
-    original.addOrderBy((selectToResultMap[expression] ?: expression) to pair.ascDesc)
+  override fun addOrderBy(orderBy: OrderBy): QueryBuilder<C> = apply {
+    val expression = orderBy.expression
+    original.addOrderBy((selectToResultMap[expression] ?: expression) to orderBy.ascDesc)
   }
 }
 

@@ -17,7 +17,7 @@
 package com.ealva.welite.test.db.expr
 
 import android.content.Context
-import com.ealva.welite.db.expr.SortOrder
+import com.ealva.welite.db.expr.Order
 import com.ealva.welite.db.expr.avg
 import com.ealva.welite.db.expr.lowerCase
 import com.ealva.welite.db.expr.max
@@ -32,6 +32,7 @@ import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.orderBy
 import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.select
+import com.ealva.welite.db.table.to
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -93,7 +94,7 @@ public object CommonFunctionTests {
         val list = DataTable
           .select { substringColumn }
           .all()
-          .orderBy { data to SortOrder.DESC }
+          .orderBy { data to Order.DESC }
           .sequence { it[substringColumn] }
           .toList()
         expect(list).toHaveSize(3)
@@ -122,7 +123,7 @@ public object CommonFunctionTests {
         val list = DataTable
           .select { lowerCaseCol }
           .all()
-          .orderBy { data to SortOrder.DESC }
+          .orderBy { data to Order.DESC }
           .sequence { it[lowerCaseCol] }
           .toList()
         expect(list).toHaveSize(3)
