@@ -32,8 +32,6 @@ import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-private val LOG by lazyLogger(Statement::class, WeLiteLog.marker)
-
 public interface Statement<C : ColumnSet> {
   public fun execute(db: SQLiteDatabase, bindArgs: C.(ArgBindings) -> Unit): Long
 }
@@ -48,10 +46,9 @@ public interface StatementAndTypes<C : ColumnSet> : Bindable, ArgBindings {
       columnSet: C,
       statement: SQLiteStatement,
       expressionToIndexMap: ExpressionToIndexMap,
-      types: List<PersistentType<*>>,
-      logSql: Boolean = WeLiteLog.logSql
+      types: List<PersistentType<*>>
     ): StatementAndTypes<C> {
-      return StatementAndTypesImpl(columnSet, statement, expressionToIndexMap, types, logSql)
+      return StatementAndTypesImpl(columnSet, statement, expressionToIndexMap, types)
     }
   }
 }
@@ -94,8 +91,7 @@ private class StatementAndTypesImpl<C : ColumnSet>(
   private val columnSet: C,
   private val statement: SQLiteStatement,
   private val expressionToIndexMap: ExpressionToIndexMap,
-  private val types: List<PersistentType<*>>,
-  private val logSql: Boolean
+  private val types: List<PersistentType<*>>
 ) : StatementAndTypes<C> {
   override val argCount: Int
     get() = types.size
@@ -125,7 +121,7 @@ private class StatementAndTypesImpl<C : ColumnSet>(
   private fun bindArgsToStatement(bindArgs: C.(ArgBindings) -> Unit) {
     clearBindings()
     columnSet.bindArgs(this)
-    if (logSql) LOG.i { it("%s args:%s", statement, bindings.contentToString()) }
+    if (WeLiteLog.logSql) logSql(statement, bindings)
   }
 
   private fun clearBindings() {
@@ -174,4 +170,9 @@ private class StatementAndTypesImpl<C : ColumnSet>(
   private fun ensureIndexInBounds(index: Int) {
     require(index in argRange) { "Out of bounds index=$index indices=$argRange" }
   }
+}
+
+private val SQL_LOG by lazyLogger(WeLiteLog.LOG_SQL_TAG, WeLiteLog.marker)
+private fun logSql(statement: SQLiteStatement, bindings: Array<Any?>) {
+  SQL_LOG.i { it("%s args:%s", statement, bindings.contentToString()) }
 }

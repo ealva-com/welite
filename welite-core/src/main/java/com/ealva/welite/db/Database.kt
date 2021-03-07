@@ -43,6 +43,7 @@ import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.toStatementString
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.util.Locale
@@ -166,13 +167,20 @@ public interface Database {
    * The [work] function is executed on the current thread, unlike [transaction] and [query] which
    * use coroutines to execute off the main thread.
    *
+   * An optional [coroutineScope] can be passed so that the [TransactionInProgress] receiver for
+   * work can test [TransactionInProgress.isActive] or call [TransactionInProgress.ensureActive] for
+   * cooperative coroutine cancellation.
+   *
    * @throws IllegalStateException if the caller illegally invokes this function from the UI thread,
    * the database has been closed, or the current thread is not in a transaction
    * @throws WeLiteUncaughtException if an exception is thrown from [work]. The
    * [WeLiteException.cause] is set to the underlying exception.
    * @see inTransaction
    */
-  public fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R
+  public fun <R> ongoingTransaction(
+    coroutineScope: CoroutineScope? = null,
+    work: TransactionInProgress.() -> R
+  ): R
 
   /**
    * Close this Database connection. Calling other public functions after close will result in an
@@ -390,7 +398,7 @@ private class WeLiteDatabase(
     withContext(dispatcher) {
       try {
         assertNotUiThread() // client can set dispatcher, need to check
-        beginTransaction(exclusive, unitOfWork, throwIfNoChoice).use { txn ->
+        beginTransaction(exclusive, unitOfWork, throwIfNoChoice, this).use { txn ->
           txn.doWork(unitOfWork, work).also { result -> txn.doAutoOrRollback(result, autoCommit) }
         }
       } catch (e: Exception) {
@@ -423,10 +431,13 @@ private class WeLiteDatabase(
     e.asUncaught { "Exception during transaction '$unitOfWork'" }
   }
 
-  override fun <R> ongoingTransaction(work: TransactionInProgress.() -> R): R {
+  override fun <R> ongoingTransaction(
+    coroutineScope: CoroutineScope?,
+    work: TransactionInProgress.() -> R
+  ): R {
     assertNotUiThread()
     check(!closed) { "Database has been closed" }
-    val txn = TransactionInProgress(this)
+    val txn = TransactionInProgress(this, coroutineScope)
     try {
       return txn.work()
     } catch (e: Exception) {
@@ -443,8 +454,15 @@ private class WeLiteDatabase(
   private fun beginTransaction(
     exclusive: Boolean,
     unitOfWork: String,
-    throwIfNoChoice: Boolean
-  ): CloseableTransaction = CloseableTransaction(this, exclusive, unitOfWork, throwIfNoChoice)
+    throwIfNoChoice: Boolean,
+    coroutineScope: CoroutineScope
+  ): CloseableTransaction = CloseableTransaction(
+    this,
+    exclusive,
+    unitOfWork,
+    throwIfNoChoice,
+    coroutineScope
+  )
 
   private fun assertNotUiThread() =
     check(allowWorkOnUiThread || isNotUiThread) { "Cannot access the Database on the UI thread." }

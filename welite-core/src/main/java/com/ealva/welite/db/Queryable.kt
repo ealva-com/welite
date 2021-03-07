@@ -38,6 +38,36 @@ import com.ealva.welite.db.table.WeLiteMarker
 @WeLiteMarker
 public interface Queryable {
   /**
+   * Ensures that current coroutine scope is active. If the job is no longer active, throws
+   * CancellationException. If the job was cancelled, thrown exception contains the original
+   * cancellation cause. This function does not do anything if there is no Job in the scope's
+   * coroutineContext. This method is a drop-in replacement for the following code, but with more
+   * precise exception:
+   * ```
+   * if (!isActive) {
+   *   throw CancellationException()
+   * }
+   * ```
+   * Transactions created by the WeLite framework contain a [kotlinx.coroutines.CoroutineScope] to
+   * facilitate cooperative coroutine cancellation. A [TransactionInProgress] created via the
+   * [Database.ongoingTransaction] may not contain a coroutine scope unless supplied by the user. If
+   * no coroutine scope is present this function is effectively a no-op
+   */
+  public fun ensureActive()
+
+  /**
+   * Returns true when the current coroutine scope is still active (has not completed and was not
+   * cancelled yet). Coroutine cancellation is cooperative, so this Boolean should be regularly
+   * checked or [ensureActive] should be called in long running loops or between expensive DB calls.
+   *
+   * Transactions created by the WeLite framework contain a [kotlinx.coroutines.CoroutineScope] to
+   * facilitate cooperative coroutine cancellation. A [TransactionInProgress] created via the
+   * [Database.ongoingTransaction] may not contain a coroutine scope unless supplied by the user. If
+   * no coroutine scope is present this value will always return true.
+   */
+  public val isActive: Boolean
+
+  /**
    * Do any necessary [bind], execute the query, and invoke [action] for each row in the
    * results, and return the number of rows reported by [Cursor.count] which would be zero in the
    * case of no results returned by the query.

@@ -120,7 +120,7 @@ internal fun <C : ColumnSet> SQLiteDatabase.stringForQuery(
   bind: C.(ArgBindings) -> Unit
 ): String = stringForQuery(seed.sql, doBind(seed, bind))
 
-private val QP_LOG by lazyLogger("QueryPlan", WeLiteLog.marker)
+private val QP_LOG by lazyLogger(WeLiteLog.QUERY_PLAN_TAG, WeLiteLog.marker)
 private fun SQLiteDatabase.logQueryPlan(sql: String, selectionArgs: Array<String>) {
   QP_LOG.i { it("Plan for:\nSQL:%s\nargs:%s", sql, selectionArgs.contentToString()) }
   rawQuery("""EXPLAIN QUERY PLAN $sql""", selectionArgs).use { cursor ->

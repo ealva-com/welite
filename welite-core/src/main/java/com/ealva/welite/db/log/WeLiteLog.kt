@@ -32,11 +32,16 @@ public object WeLiteLog {
    */
   public var logQueryPlans: Boolean = false
 
+  public const val QUERY_PLAN_TAG: String = "WeLite-QueryPlan"
+
   /**
    * If this is true all non-query sql is logged. Query logging is controlled via [logQueryPlans].
    */
   public var logSql: Boolean = false
 
+  public const val LOG_SQL_TAG: String = "WeLite-SQL"
+
+  /** Call this function to ensure a MarkerFactory is set, typically  */
   public fun configureLogging(factory: MarkerFactory = BasicMarkerFactory()) {
     Markers.setFactory(factory)
   }

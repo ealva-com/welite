@@ -13,6 +13,22 @@ WeLite is a Kotlin DSL, and Statement/Cursor Wrapper, for Android SQLite
 
 ## Usage
 
+### WeLite Logging
+Logging is done via the [ealvaLog] library. All logging in WeLite uses the Marker defined in the
+```WeLiteLog``` object so that all library logging may be filtered in some way (silenced, 
+directed to a file, etc). To view query plans and all generated SQL do:
+```kotlin
+WeLiteLog.logQueryPlans = true
+WeLiteLog.logSql = true
+```
+and refer to the tags:
+```kotlin
+WeLiteLog.QUERY_PLAN_TAG // Log TAG for logged query SQL and associated query plans
+WeLiteLog.LOG_SQL_TAG // Log TAG for all other logged SQL
+```
+Also, see the ```WeLiteLog``` object for the marker, marker name, marker filter and to configure
+WeLite logging.
+
 ### Create Database
 Create a single Database instance and then inject/locate where needed.
 ```kotlin
@@ -231,6 +247,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 [exposed]: https://github.com/JetBrains/Exposed
 [coroutines]: https://kotlinlang.org/docs/reference/coroutines-overview.html
 [splitties]: https://github.com/LouisCAD/Splitties
+[ealvalog]: https://github.com/ealva-com/ealvalog
 [maven-welite-core]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-core%22
 [maven-welite-javatime]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-javatime%22
 [core-snapshot]: https://oss.sonatype.org/content/repositories/snapshots/com/ealva/welite-core/

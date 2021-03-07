@@ -24,6 +24,7 @@ import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.WeLiteMarker
+import kotlinx.coroutines.CoroutineScope
 import java.lang.Exception
 
 /**
@@ -65,7 +66,8 @@ internal interface CloseableTransaction : Transaction, AutoCloseable {
       dbConfig: DbConfig,
       exclusiveLock: Boolean,
       unitOfWork: String,
-      throwIfNoChoice: Boolean
+      throwIfNoChoice: Boolean,
+      coroutineScope: CoroutineScope
     ): CloseableTransaction {
       val db = dbConfig.db
       if (exclusiveLock) db.beginTransaction() else db.beginTransactionNonExclusive()
@@ -74,7 +76,7 @@ internal interface CloseableTransaction : Transaction, AutoCloseable {
         exclusiveLock,
         unitOfWork,
         throwIfNoChoice,
-        TransactionInProgress(dbConfig)
+        TransactionInProgress(dbConfig, coroutineScope)
       )
     }
   }

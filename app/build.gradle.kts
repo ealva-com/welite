@@ -42,7 +42,7 @@ android {
     }
   }
 
-  lintOptions {
+  lint {
     isWarningsAsErrors = false
     isAbortOnError = false
   }
@@ -56,6 +56,8 @@ android {
       "-Xinline-classes",
       "-Xopt-in=kotlin.RequiresOptIn"
     )
+    languageVersion = "1.5"
+    apiVersion = "1.5"
   }
 }
 

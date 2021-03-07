@@ -62,6 +62,9 @@ import com.ealva.welite.db.table.selects
 import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 
 private val LOG by lazyLogger(TransactionInProgress::class, WeLiteLog.marker)
 private const val NULL_SQL_FOUND = "Null sql table:%s type=%s position:%d"
@@ -152,8 +155,10 @@ public interface TransactionInProgress : Queryable {
     /**
      * Create a TransactionInProgress using [dbConfig]
      */
-    internal operator fun invoke(dbConfig: DbConfig): TransactionInProgress =
-      TransactionInProgressImpl(dbConfig)
+    internal operator fun invoke(
+      dbConfig: DbConfig,
+      coroutineScope: CoroutineScope?
+    ): TransactionInProgress = TransactionInProgressImpl(dbConfig, coroutineScope)
   }
 }
 
@@ -176,13 +181,21 @@ private const val INDEX_FK_VIOLATION_CONSTRAINT_INDEX = 3
  * to an instance of this class and only concerns itself with commit/rollback.
  */
 private class TransactionInProgressImpl(
-  dbConfig: DbConfig
+  dbConfig: DbConfig,
+  private val coroutineScope: CoroutineScope?
 ) : TransactionInProgress, SqlExecutor {
   private val db: SQLiteDatabase = dbConfig.db
 
   init {
     check(db.inTransaction()) { "Transaction must be in progress" }
   }
+
+  override fun ensureActive() {
+    coroutineScope?.ensureActive()
+  }
+
+  override val isActive: Boolean
+    get() = coroutineScope?.isActive ?: true
 
   override fun <C : ColumnSet> Query<C>.forEach(
     bind: C.(ArgBindings) -> Unit,
