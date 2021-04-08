@@ -20,9 +20,11 @@ import android.app.Application
 import android.content.ComponentCallbacks2
 import android.util.SparseArray
 import com.ealva.ealvalog.Loggers
+import com.ealva.ealvalog.Markers
 import com.ealva.ealvalog.android.AndroidLogger
 import com.ealva.ealvalog.android.AndroidLoggerFactory
 import com.ealva.ealvalog.android.DebugLogHandler
+import com.ealva.ealvalog.core.BasicMarkerFactory
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
@@ -58,6 +60,7 @@ class App : Application() {
 
   private fun setupLogging() {
     AndroidLogger.setHandler(DebugLogHandler())
+    Markers.setFactory(BasicMarkerFactory())
     Loggers.setFactory(AndroidLoggerFactory)
   }
 

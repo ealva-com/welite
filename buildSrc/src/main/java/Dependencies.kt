@@ -21,32 +21,32 @@ object Sdk {
 }
 
 object Versions {
-  const val KOTLIN = "1.4.30"
-  const val ANDROIDX_TEST_EXT = "1.1.2"
   const val ANDROIDX_TEST = "1.3.0"
+  const val ANDROIDX_TEST_EXT = "1.1.2"
   const val APPCOMPAT = "1.2.0"
-  const val LIFECYCLE = "2.2.0"
   const val CONSTRAINT_LAYOUT = "2.0.1"
   const val CORE_KTX = "1.3.2"
-  const val ESPRESSO_CORE = "3.2.0"
-  const val JUNIT = "4.13"
-  const val EALVALOG = "0.5.6-SNAPSHOT"
-  const val ROBOLECTRIC = "4.4"
-  const val EXPECT = "1.0.1"
-  const val FASTUTIL = "7.2.1"
   const val COROUTINES = "1.4.3"
   const val COROUTINES_TEST = "1.4.3"
-  const val KOIN = "2.2.1"
   const val DESUGAR = "1.0.10"
+  const val EALVALOG = "0.5.6-SNAPSHOT"
+  const val ESPRESSO_CORE = "3.2.0"
+  const val EXPECT = "1.0.1"
+  const val FASTUTIL = "7.2.1"
+  const val JUNIT = "4.13"
+  const val KOIN = "2.2.1"
+  const val KOTLIN = "1.4.30"
+  const val LIFECYCLE = "2.2.0"
+  const val ROBOLECTRIC = "4.4"
 }
 
 object BuildPluginsVersion {
   const val AGP = "7.0.0-alpha08"
-  const val DETEKT = "1.14.1"
-  const val KOTLIN = "1.4.30"
+  const val DETEKT = "1.16.0"
+  const val DOKKA = "1.4.30"
+  const val KOTLIN = "1.4.32"
+  const val VANNIKTECH_PUBLISH = "0.14.2"
   const val VERSIONS = "0.33.0"
-  const val DOKKA = "1.4.10.2"
-  const val VANNIKTECH_PUBLISH = "0.13.0"
 }
 
 object SupportLibs {
