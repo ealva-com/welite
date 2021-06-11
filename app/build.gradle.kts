@@ -20,11 +20,11 @@ plugins {
 }
 
 android {
-  compileSdkVersion(Sdk.COMPILE_SDK_VERSION)
+  compileSdk = SdkVersion.COMPILE
 
   defaultConfig {
-    minSdkVersion(Sdk.MIN_SDK_VERSION)
-    targetSdkVersion(Sdk.TARGET_SDK_VERSION)
+    minSdk = SdkVersion.MIN
+    targetSdk = SdkVersion.TARGET
 
     applicationId = AppCoordinates.APP_ID
     versionCode = AppCoordinates.APP_VERSION_CODE
@@ -49,33 +49,33 @@ android {
 
   kotlinOptions {
     jvmTarget = "1.8"
+    languageVersion = "1.5"
+    apiVersion = "1.5"
     suppressWarnings = false
     verbose = true
     freeCompilerArgs = listOf(
       "-XXLanguage:+InlineClasses",
       "-Xinline-classes",
-      "-Xopt-in=kotlin.RequiresOptIn"
+      "-Xopt-in=kotlin.RequiresOptIn",
     )
-    languageVersion = "1.5"
-    apiVersion = "1.5"
   }
 }
 
 dependencies {
+  coreLibraryDesugaring(Libs.DESUGAR)
   implementation(project(":welite-core"))
   implementation(project(":welite-javatime"))
-  coreLibraryDesugaring(ToolsLib.DESUGARING)
   implementation(kotlin("stdlib-jdk8"))
 
-  implementation(SupportLibs.ANDROIDX_APPCOMPAT)
-  implementation(SupportLibs.ANDROIDX_CONSTRAINT_LAYOUT)
-  implementation(SupportLibs.ANDROIDX_CORE_KTX)
-  implementation(SupportLibs.ANDROIDX_LIFECYCLE_RUNTIME_KTX)
+  implementation(Libs.AndroidX.APPCOMPAT)
+  implementation(Libs.AndroidX.Constraint.LAYOUT)
+  implementation(Libs.AndroidX.Ktx.CORE)
+  implementation(Libs.AndroidX.Lifecycle.RUNTIME_KTX)
 
-  implementation(ThirdParty.EALVALOG)
-  implementation(ThirdParty.EALVALOG_CORE)
-  implementation(ThirdParty.EALVALOG_ANDROID)
+  implementation(Libs.Log.EALVALOG)
+  implementation(Libs.Log.CORE)
+  implementation(Libs.Log.ANDROID)
 
-  implementation(ThirdParty.KOIN)
-  implementation(ThirdParty.KOIN_ANDROID)
+  implementation(Libs.Koin.CORE)
+  implementation(Libs.Koin.ANDROID)
 }

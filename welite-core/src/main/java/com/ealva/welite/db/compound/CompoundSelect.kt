@@ -31,6 +31,7 @@ import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.asIdentity
+import com.ealva.welite.db.type.buildStr
 
 public enum class CompoundSelectOp(private val op: String) : AppendsToSqlBuilder {
   /**
@@ -61,7 +62,7 @@ public enum class CompoundSelectOp(private val op: String) : AppendsToSqlBuilder
 
 public interface SelectColumnToResultColumnMap {
   public operator fun get(column: Expression<*>): Expression<*>?
-
+  public operator fun get(column: String): Expression<*>?
   public fun copy(): SelectColumnToResultColumnMap
 }
 
@@ -157,7 +158,7 @@ private class CompoundSelectImpl<out C : ColumnSet>(
   override val columns: List<Column<*>> = builderList[0].sourceSetColumnsInResult()
   override val identity: Identity = "".asIdentity(false)
 
-  private val selectToResultMap = mutableMapOf<Expression<*>, Expression<*>>()
+  private val selectToResultMap = SelectToResultMap()
   private fun mapSelectColumnToResult(column: Expression<*>): Expression<*> {
     return if (column is Column) {
       SimpleDelegatingColumn(column).also { selectToResultMap[column] = it }
@@ -186,17 +187,19 @@ private class CompoundSelectImpl<out C : ColumnSet>(
     get() = this
 
   override fun get(column: Expression<*>): Expression<*>? = selectToResultMap[column]
+  override fun get(column: String): Expression<*>? = selectToResultMap[column]
 
   override fun copy(): SelectColumnToResultColumnMap {
     class SelectColumnToResultColumnMapImpl(
-      private val map: Map<Expression<*>, Expression<*>>
+      private val map: SelectToResultMap
     ) : SelectColumnToResultColumnMap {
       override fun get(column: Expression<*>): Expression<*>? = map[column]
+      override fun get(column: String): Expression<*>? = map[column]
 
       override fun copy(): SelectColumnToResultColumnMap =
-        SelectColumnToResultColumnMapImpl(map.toMap())
+        SelectColumnToResultColumnMapImpl(map.copy())
     }
-    return SelectColumnToResultColumnMapImpl(selectToResultMap.toMap())
+    return SelectColumnToResultColumnMapImpl(selectToResultMap.copy())
   }
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
@@ -220,10 +223,38 @@ private class CompoundSelectImpl<out C : ColumnSet>(
 
   override infix fun innerJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.INNER)
+
   override infix fun leftJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.LEFT)
+
   override infix fun crossJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.CROSS)
+
   override fun naturalJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.NATURAL)
+}
+
+private class SelectToResultMap(
+  private val selectToResultMap: MutableMap<Expression<*>, Expression<*>> = mutableMapOf(),
+  private val stringSelectToResultMap: MutableMap<String, Expression<*>> = mutableMapOf()
+) {
+  operator fun set(column: Column<*>, value: Column<*>) {
+    selectToResultMap[column] = value
+    stringSelectToResultMap[buildStr { append(column) }] = value
+  }
+
+  operator fun get(column: Expression<*>): Expression<*>? {
+    return selectToResultMap[column]
+  }
+
+  operator fun get(column: String): Expression<*>? {
+    return stringSelectToResultMap[column]
+  }
+
+  fun copy(): SelectToResultMap {
+    return SelectToResultMap(
+      selectToResultMap.toMutableMap(),
+      stringSelectToResultMap.toMutableMap()
+    )
+  }
 }

@@ -25,12 +25,11 @@ import com.ealva.welite.db.expr.substring
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
 import com.ealva.welite.db.table.groupBy
-import com.ealva.welite.db.table.orderBy
+import com.ealva.welite.db.table.by
 import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.ordersBy
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
-import com.ealva.welite.db.table.to
 import com.ealva.welite.db.table.where
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
@@ -78,7 +77,7 @@ public object CommonOrderByTests {
         val expectedList = others + withoutCities
         Person
           .selectAll()
-          .ordersBy { listOf(cityId to Order.DESC, id to Order.ASC) }
+          .ordersBy { listOf(cityId by Order.DESC, id by Order.ASC) }
           .sequence { it[id] }
           .toList()
           .let { list ->
@@ -104,7 +103,7 @@ public object CommonOrderByTests {
         val expectedList = others + withoutCities
         Person
           .selectAll()
-          .ordersBy { listOf(cityId to Order.DESC, id to Order.ASC) }
+          .ordersBy { listOf(cityId by Order.DESC, id by Order.ASC) }
           .sequence { it[id] }
           .toList()
           .let { list ->
@@ -187,7 +186,7 @@ public object CommonOrderByTests {
 
         Place
           .selectAll()
-          .orderBy { orderByExpr to Order.DESC }
+          .by { orderByExpr by Order.DESC }
           .sequence { it[name] }
           .toList()
           .let { list ->

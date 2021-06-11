@@ -21,7 +21,6 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.table.ColumnSet
 import com.ealva.welite.db.table.OrderBy
 import com.ealva.welite.db.table.QueryBuilder
-import com.ealva.welite.db.table.to
 
 /**
  * Select all columns and all rows
@@ -60,8 +59,10 @@ public class CompoundQueryBuilder<C : ColumnSet>(
   }
 
   override fun addOrderBy(orderBy: OrderBy): QueryBuilder<C> = apply {
-    val expression = orderBy.expression
-    original.addOrderBy((selectToResultMap[expression] ?: expression) to orderBy.ascDesc)
+    val exp = orderBy.expression
+    original.addOrderBy(
+      selectToResultMap[exp]?.let { OrderBy(it, orderBy.ascDesc, orderBy.collate) } ?: orderBy
+    )
   }
 }
 

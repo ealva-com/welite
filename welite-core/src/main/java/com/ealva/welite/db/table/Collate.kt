@@ -45,7 +45,6 @@ public sealed class Collate(public val sql: String) {
 public object CollateBinary : Collate("COLLATE BINARY")
 public object CollateNoCase : Collate("COLLATE NOCASE")
 public object CollateRTrim : Collate("COLLATE RTRIM")
-@Suppress("unused")
 public object UnspecifiedCollate : Collate("") {
   override val textAndCollate: String = "TEXT"
 }

@@ -36,10 +36,9 @@ import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
-import com.ealva.welite.db.table.orderBy
+import com.ealva.welite.db.table.by
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectCount
-import com.ealva.welite.db.table.to
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
 import com.ealva.welite.test.shared.AlbumTable
@@ -315,7 +314,7 @@ public object CommonCompoundSelectTests {
 
         val unionList = compoundSelect
           .selectAll()
-          .orderBy { id to Order.DESC }
+          .by { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -417,7 +416,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to Order.DESC }
+          .by { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -444,7 +443,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to Order.DESC }
+          .by { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -471,7 +470,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to Order.DESC }
+          .by { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -499,7 +498,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .orderBy { id to Order.DESC }
+          .by { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -511,7 +510,7 @@ public object CommonCompoundSelectTests {
           .except(TableA.select { id }.all())
           .select(TableC.id)
           .all()
-          .orderBy { id to Order.DESC }
+          .by { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 

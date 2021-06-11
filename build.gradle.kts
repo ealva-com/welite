@@ -17,13 +17,14 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  id("com.android.application") version BuildPluginsVersion.AGP apply false
-  id("com.android.library") version BuildPluginsVersion.AGP apply false
-  kotlin("android") version BuildPluginsVersion.KOTLIN apply false
-  id("io.gitlab.arturbosch.detekt") version BuildPluginsVersion.DETEKT
-  id("com.github.ben-manes.versions") version BuildPluginsVersion.VERSIONS
-  id("org.jetbrains.dokka") version BuildPluginsVersion.DOKKA
-  id("com.vanniktech.maven.publish") version BuildPluginsVersion.VANNIKTECH_PUBLISH
+  id("com.android.application") version PluginsVersion.AGP apply false
+  id("com.android.library") version PluginsVersion.AGP apply false
+  kotlin("android") version PluginsVersion.KOTLIN apply false
+  kotlin("plugin.serialization") version "1.5.0" apply false
+  id("io.gitlab.arturbosch.detekt") version PluginsVersion.DETEKT
+  id("com.github.ben-manes.versions") version PluginsVersion.VERSIONS
+  id("org.jetbrains.dokka") version PluginsVersion.DOKKA
+  id("com.vanniktech.maven.publish") version PluginsVersion.PUBLISH
 }
 
 allprojects {
@@ -53,7 +54,7 @@ subprojects {
 
 buildscript {
   dependencies {
-    classpath("com.android.tools.build:gradle:7.0.0-alpha09")
+    classpath("com.android.tools.build:gradle:${PluginsVersion.AGP}")
   }
 }
 

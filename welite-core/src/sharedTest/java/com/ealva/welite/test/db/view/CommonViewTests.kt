@@ -23,13 +23,15 @@ import com.ealva.welite.db.expr.Order
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greaterEq
+import com.ealva.welite.db.table.CollateNoCase
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.all
+import com.ealva.welite.db.table.and
 import com.ealva.welite.db.table.ordersBy
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selects
-import com.ealva.welite.db.table.to
+import com.ealva.welite.db.table.by
 import com.ealva.welite.db.table.toQuery
 import com.ealva.welite.db.table.where
 import com.ealva.welite.db.view.View
@@ -147,7 +149,7 @@ public object CommonViewTests {
         val result = FullMediaView
           .selects()
           .where { mediaId greaterEq 1 }
-          .ordersBy { listOf(artistName to Order.DESC, albumName to Order.ASC) }
+          .ordersBy { listOf(artistName by Order.DESC and CollateNoCase, albumName by Order.ASC) }
           .sequence { cursor -> Triple(cursor[mediaTitle], cursor[artistName], cursor[albumName]) }
           .toList()
         expect(result).toHaveSize(3)

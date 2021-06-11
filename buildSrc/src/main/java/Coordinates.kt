@@ -21,26 +21,28 @@ object AppCoordinates {
   const val APP_VERSION_CODE = 1
 }
 
+private const val IS_SNAPSHOT = false
+
 object WeLiteCoreCoordinates {
   // All parts of versioning can be up to 2 digits: 0-99
-  private const val versionMajor = 0
-  private const val versionMinor = 0
-  private const val versionPatch = 29
-  private const val versionBuild = 0
+  private const val MAJOR = 0
+  private const val MINOR = 1
+  private const val PATCH = 0
+  private const val BUILD = 0
 
-  const val LIBRARY_VERSION_CODE = versionMajor * 1000000 + versionMinor * 10000 +
-    versionPatch * 100 + versionBuild
-  const val LIBRARY_VERSION = "$versionMajor.$versionMinor.$versionPatch-$versionBuild"
+  val VERSION = "$MAJOR.$MINOR.$PATCH-${buildPart(IS_SNAPSHOT, BUILD)}"
 }
 
 object WeLiteJavaTimeCoordinates {
   // All parts of versioning can be up to 2 digits: 0-99
-  private const val versionMajor = 0
-  private const val versionMinor = 0
-  private const val versionPatch = 29
-  private const val versionBuild = 0
+  private const val MAJOR = 0
+  private const val MINOR = 1
+  private const val PATCH = 0
+  private const val BUILD = 0
 
-  const val LIBRARY_VERSION_CODE = versionMajor * 1000000 + versionMinor * 10000 +
-    versionPatch * 100 + versionBuild
-  const val LIBRARY_VERSION = "$versionMajor.$versionMinor.$versionPatch-$versionBuild"
+  val VERSION = "$MAJOR.$MINOR.$PATCH-${buildPart(IS_SNAPSHOT, BUILD)}"
 }
+
+@Suppress("SameParameterValue")
+private fun buildPart(isSnapshot: Boolean, build: Int): String =
+  if (isSnapshot) "SNAPSHOT" else build.toString()

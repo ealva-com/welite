@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-version = WeLiteCoreCoordinates.LIBRARY_VERSION
+version = WeLiteCoreCoordinates.VERSION
 
 plugins {
   id("com.android.library")
   kotlin("android")
+  kotlin("plugin.serialization")
   id("org.jetbrains.dokka")
   id("com.vanniktech.maven.publish")
 }
 
 android {
-  compileSdkVersion(Sdk.COMPILE_SDK_VERSION)
+  compileSdk = SdkVersion.COMPILE
 
   defaultConfig {
-    minSdkVersion(Sdk.MIN_SDK_VERSION)
-    targetSdkVersion(Sdk.TARGET_SDK_VERSION)
+    minSdk = SdkVersion.MIN
+    targetSdk = SdkVersion.TARGET
 
-    versionCode = WeLiteCoreCoordinates.LIBRARY_VERSION_CODE
-    versionName = WeLiteCoreCoordinates.LIBRARY_VERSION
+    version = WeLiteCoreCoordinates.VERSION
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("consumer-rules.pro")
   }
 
   compileOptions {
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
@@ -78,6 +79,8 @@ android {
 
   kotlinOptions {
     jvmTarget = "1.8"
+    languageVersion = "1.5"
+    apiVersion = "1.5"
     suppressWarnings = false
     verbose = true
     freeCompilerArgs = listOf(
@@ -86,39 +89,41 @@ android {
       "-Xopt-in=kotlin.RequiresOptIn",
       "-Xexplicit-api=warning"
     )
-//    languageVersion = "1.5"
-//    apiVersion = "1.5"
   }
 }
 
 dependencies {
+  coreLibraryDesugaring(Libs.DESUGAR)
   implementation(kotlin("stdlib-jdk8"))
-  implementation(SupportLibs.ANDROIDX_APPCOMPAT)
-  implementation(SupportLibs.ANDROIDX_CORE_KTX)
-  implementation(ThirdParty.EALVALOG)
-  implementation(ThirdParty.EALVALOG_CORE)
-  implementation(ThirdParty.FASTUTIL)
-  implementation(ThirdParty.COROUTINE_CORE)
-  implementation(ThirdParty.COROUTINE_ANDROID)
+  implementation(Libs.AndroidX.APPCOMPAT)
+  implementation(Libs.AndroidX.Ktx.CORE)
+  implementation(Libs.Log.EALVALOG)
+  implementation(Libs.Log.CORE)
+  implementation(Libs.Fastutil.FASTUTIL)
+  implementation(Libs.Coroutines.CORE)
+  implementation(Libs.Coroutines.ANDROID)
 
-  testImplementation(TestingLib.JUNIT)
-  testImplementation(AndroidTestingLib.ANDROIDX_TEST_CORE) {
-    exclude("junit", "junit")
-  }
-  testImplementation(AndroidTestingLib.ANDROIDX_TEST_RULES) {
-    exclude("junit", "junit")
-  }
-  testImplementation(TestingLib.EXPECT)
-  testImplementation(TestingLib.ROBOLECTRIC)
-  testImplementation(TestingLib.COROUTINE_TEST)
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.2.1")
+  androidTestImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
 
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER) {
+  testImplementation(Libs.JUnit.JUNIT)
+  testImplementation(Libs.AndroidX.Test.CORE) {
     exclude("junit", "junit")
   }
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT) {
+  testImplementation(Libs.AndroidX.Test.RULES) {
     exclude("junit", "junit")
   }
-  androidTestImplementation(TestingLib.JUNIT)
-  androidTestImplementation(TestingLib.EXPECT)
-  androidTestImplementation(TestingLib.COROUTINE_TEST)
+  testImplementation(Libs.Expect.EXPECT)
+  testImplementation(Libs.Robolectric.ROBOLECTRIC)
+  testImplementation(Libs.Coroutines.TEST)
+
+  androidTestImplementation(Libs.AndroidX.Test.RUNNER) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(Libs.AndroidX.Test.Ext.JUNIT) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(Libs.JUnit.JUNIT)
+  androidTestImplementation(Libs.Expect.EXPECT)
+  androidTestImplementation(Libs.Coroutines.TEST)
 }

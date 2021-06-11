@@ -29,10 +29,9 @@ import com.ealva.welite.db.expr.upperCase
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
-import com.ealva.welite.db.table.orderBy
+import com.ealva.welite.db.table.by
 import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.select
-import com.ealva.welite.db.table.to
 import com.ealva.welite.test.shared.withTestDatabase
 import com.nhaarman.expect.expect
 import kotlinx.coroutines.CoroutineDispatcher
@@ -94,7 +93,7 @@ public object CommonFunctionTests {
         val list = DataTable
           .select { substringColumn }
           .all()
-          .orderBy { data to Order.DESC }
+          .by { data by Order.DESC }
           .sequence { it[substringColumn] }
           .toList()
         expect(list).toHaveSize(3)
@@ -123,7 +122,7 @@ public object CommonFunctionTests {
         val list = DataTable
           .select { lowerCaseCol }
           .all()
-          .orderBy { data to Order.DESC }
+          .by { data by Order.DESC }
           .sequence { it[lowerCaseCol] }
           .toList()
         expect(list).toHaveSize(3)

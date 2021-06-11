@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-version = WeLiteJavaTimeCoordinates.LIBRARY_VERSION
+version = WeLiteJavaTimeCoordinates.VERSION
 
 plugins {
   id("com.android.library")
   kotlin("android")
+  kotlin("plugin.serialization")
   id("org.jetbrains.dokka")
   id("com.vanniktech.maven.publish")
 }
 
 android {
-  compileSdkVersion(Sdk.COMPILE_SDK_VERSION)
+  compileSdk = SdkVersion.COMPILE
 
   defaultConfig {
-    minSdkVersion(Sdk.MIN_SDK_VERSION)
-    targetSdkVersion(Sdk.TARGET_SDK_VERSION)
+    minSdk = SdkVersion.MIN
+    targetSdk = SdkVersion.TARGET
 
-    versionCode = WeLiteJavaTimeCoordinates.LIBRARY_VERSION_CODE
-    versionName = WeLiteJavaTimeCoordinates.LIBRARY_VERSION
+    version = WeLiteJavaTimeCoordinates.VERSION
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("consumer-rules.pro")
@@ -64,6 +64,8 @@ android {
 
   kotlinOptions {
     jvmTarget = "1.8"
+    languageVersion = "1.5"
+    apiVersion = "1.5"
     suppressWarnings = false
     verbose = true
     freeCompilerArgs = listOf(
@@ -72,35 +74,38 @@ android {
       "-Xopt-in=kotlin.RequiresOptIn",
       "-Xexplicit-api=warning"
     )
-//    languageVersion = "1.5"
-//    apiVersion = "1.5"
   }
 }
 
 dependencies {
+  coreLibraryDesugaring(Libs.DESUGAR)
   implementation(kotlin("stdlib-jdk8"))
   implementation(project(":welite-core"))
-  coreLibraryDesugaring(ToolsLib.DESUGARING)
-  implementation(SupportLibs.ANDROIDX_CORE_KTX)
-  implementation(ThirdParty.EALVALOG)
-  implementation(ThirdParty.FASTUTIL)
-  implementation(ThirdParty.COROUTINE_CORE)
-  implementation(ThirdParty.COROUTINE_ANDROID)
+  implementation(Libs.AndroidX.Ktx.CORE)
+  implementation(Libs.Log.EALVALOG)
+  implementation(Libs.Log.CORE)
+  implementation(Libs.Fastutil.FASTUTIL)
+  implementation(Libs.Coroutines.CORE)
+  implementation(Libs.Coroutines.ANDROID)
 
-  testImplementation(TestingLib.JUNIT)
-  testImplementation(AndroidTestingLib.ANDROIDX_TEST_CORE)
-  testImplementation(AndroidTestingLib.ANDROIDX_TEST_RULES)
-  testImplementation(TestingLib.EXPECT)
-  testImplementation(TestingLib.ROBOLECTRIC)
-  testImplementation(TestingLib.COROUTINE_TEST)
-
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_RUNNER) {
+  testImplementation(Libs.JUnit.JUNIT)
+  testImplementation(Libs.AndroidX.Test.CORE) {
     exclude("junit", "junit")
   }
-  androidTestImplementation(AndroidTestingLib.ANDROIDX_TEST_EXT_JUNIT) {
+  testImplementation(Libs.AndroidX.Test.RULES) {
     exclude("junit", "junit")
   }
-  androidTestImplementation(TestingLib.JUNIT)
-  androidTestImplementation(TestingLib.EXPECT)
-  androidTestImplementation(TestingLib.COROUTINE_TEST)
+  testImplementation(Libs.Expect.EXPECT)
+  testImplementation(Libs.Robolectric.ROBOLECTRIC)
+  testImplementation(Libs.Coroutines.TEST)
+
+  androidTestImplementation(Libs.AndroidX.Test.RUNNER) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(Libs.AndroidX.Test.Ext.JUNIT) {
+    exclude("junit", "junit")
+  }
+  androidTestImplementation(Libs.JUnit.JUNIT)
+  androidTestImplementation(Libs.Expect.EXPECT)
+  androidTestImplementation(Libs.Coroutines.TEST)
 }

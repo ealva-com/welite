@@ -27,6 +27,8 @@ import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
+import com.ealva.welite.db.type.buildStr
+import kotlinx.serialization.Serializable
 
 public typealias LimitOffset = Pair<Long, Long>
 
@@ -36,12 +38,62 @@ public inline val LimitOffset.limit: Long
 public inline val LimitOffset.offset: Long
   get() = second
 
+@Serializable
 public data class OrderBy(
-  val expression: Expression<*>,
-  val ascDesc: Order = Order.ASC
-)
+  val expression: String,
+  val ascDesc: String = "",
+  val collate: String = ""
+) : AppendsToSqlBuilder {
+  init {
+    require(expression.isNotBlank()) { "Expression must no be blank" }
+  }
 
-public infix fun Expression<*>.to(that: Order): OrderBy = OrderBy(this, that)
+  public companion object {
+    public operator fun invoke(
+      expression: Expression<*>,
+      ascDesc: Order = Order.ASC,
+      collate: Collate = UnspecifiedCollate
+    ): OrderBy = OrderBy(
+      expression,
+      if (ascDesc === Order.ASC) "" else Order.DESC.toString(),
+      if (collate.sql.isEmpty()) "" else collate.sql
+    )
+
+    public operator fun invoke(
+      expression: Expression<*>,
+      ascDesc: String,
+      collate: String
+    ): OrderBy = OrderBy(
+      buildStr {
+        val alias = (expression as? ExpressionAlias<*>)?.alias
+        if (alias != null) append(alias) else append(expression)
+      },
+      ascDesc,
+      collate
+    )
+
+    public operator fun invoke(
+      expression: String,
+      ascDesc: Order,
+      collate: Collate = UnspecifiedCollate
+    ): OrderBy = OrderBy(
+      expression,
+      if (ascDesc === Order.ASC) "" else Order.DESC.toString(),
+      if (collate.sql.isEmpty()) "" else collate.sql
+    )
+  }
+
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(expression)
+    if (collate.isNotEmpty()) append(' ').append(collate)
+    if (ascDesc.isNotEmpty()) append(' ').append(ascDesc)
+  }
+}
+
+public infix fun Expression<*>.by(order: Order): OrderBy = OrderBy(this, order)
+public infix fun String.by(order: Order): OrderBy = OrderBy(this, order.toString())
+
+public infix fun OrderBy.and(collate: Collate): OrderBy = copy(collate = collate.toString())
 
 public interface QueryBuilder<out C : ColumnSet> : AppendsToSqlBuilder {
 
@@ -195,8 +247,8 @@ private class QueryBuilderImpl<out C : ColumnSet>(
   private var where: Op<Boolean>?,
   private var count: Boolean = false
 ) : QueryBuilder<C> {
-  private var groupBy: MutableSet<Expression<*>> = LinkedHashSet()
-  private var orderBy: MutableSet<OrderBy> = LinkedHashSet()
+  private var groupBySet: MutableSet<Expression<*>> = LinkedHashSet()
+  private var orderBySet: OrderBySet = OrderBySet()
   private var having: Op<Boolean>? = null
   private var distinct: Boolean = false
   private var limitOffset: LimitOffset? = null
@@ -210,7 +262,7 @@ private class QueryBuilderImpl<out C : ColumnSet>(
   override fun distinct(distinct: Boolean): QueryBuilder<C> = apply { this.distinct = distinct }
 
   override fun addGroupBy(column: Expression<*>): QueryBuilder<C> = apply {
-    groupBy.add(column)
+    groupBySet.add(column)
   }
 
   override fun having(op: C.() -> Op<Boolean>): QueryBuilder<C> = apply {
@@ -222,11 +274,11 @@ private class QueryBuilderImpl<out C : ColumnSet>(
   }
 
   override fun addOrderBy(orderBy: OrderBy): QueryBuilder<C> = apply {
-    this.orderBy.add(orderBy)
+    this.orderBySet.add(orderBy)
   }
 
   override val hasOrderBy: Boolean
-    get() = orderBy.isNotEmpty()
+    get() = orderBySet.isNotEmpty()
 
   override fun limit(limit: Long, offset: Long): QueryBuilder<C> = apply {
     limitOffset = LimitOffset(limit, offset)
@@ -275,9 +327,9 @@ private class QueryBuilderImpl<out C : ColumnSet>(
     }
 
     if (!count) {
-      if (groupBy.isNotEmpty()) {
+      if (groupBySet.isNotEmpty()) {
         append(" GROUP BY ")
-        groupBy.appendEach { expression ->
+        groupBySet.appendEach { expression ->
           append(((expression as? ExpressionAlias)?.aliasOnlyExpression() ?: expression))
         }
       }
@@ -286,14 +338,7 @@ private class QueryBuilderImpl<out C : ColumnSet>(
         append(" HAVING ").append(having)
       }
 
-      if (orderBy.isNotEmpty()) {
-        append(" ORDER BY ")
-        orderBy.appendEach { orderByPair ->
-          val alias = (orderByPair.expression as? ExpressionAlias<*>)?.alias
-          if (alias != null) append(alias) else append(orderByPair.expression)
-          append(" ").append(orderByPair.ascDesc.sqlName)
-        }
-      }
+      append(orderBySet)
 
       limitOffset?.let { limitOffset ->
         append(" LIMIT ").append(limitOffset.limit)
@@ -341,7 +386,7 @@ public inline fun <C : ColumnSet> QueryBuilder<C>.ordersBy(
   sourceSet.orderList().forEach { pair -> addOrderBy(pair) }
 }
 
-public inline fun <C : ColumnSet> QueryBuilder<C>.orderBy(
+public inline fun <C : ColumnSet> QueryBuilder<C>.by(
   pair: C.() -> OrderBy
 ): QueryBuilder<C> = apply {
   addOrderBy(sourceSet.pair())
@@ -350,7 +395,7 @@ public inline fun <C : ColumnSet> QueryBuilder<C>.orderBy(
 public inline fun <C : ColumnSet> QueryBuilder<C>.orderByAsc(
   column: C.() -> Expression<*>
 ): QueryBuilder<C> = apply {
-  addOrderBy(sourceSet.column() to Order.ASC)
+  addOrderBy(sourceSet.column() by Order.ASC)
 }
 
 /**
@@ -393,3 +438,15 @@ public fun <T : Any> wrapAsExpression(
       append(")")
     }
   }
+
+private class OrderBySet : AppendsToSqlBuilder {
+  private val set: MutableSet<OrderBy> = LinkedHashSet()
+  fun add(orderBy: OrderBy): Boolean = set.add(orderBy)
+  fun isNotEmpty(): Boolean = set.isNotEmpty()
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    if (set.isNotEmpty()) {
+      append(" ORDER BY ")
+      set.appendEach { orderBy -> append(orderBy) }
+    }
+  }
+}
