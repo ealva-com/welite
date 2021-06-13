@@ -69,8 +69,6 @@ android {
     suppressWarnings = false
     verbose = true
     freeCompilerArgs = listOf(
-      "-XXLanguage:+InlineClasses",
-      "-Xinline-classes",
       "-Xopt-in=kotlin.RequiresOptIn",
       "-Xexplicit-api=warning"
     )

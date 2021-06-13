@@ -84,8 +84,6 @@ android {
     suppressWarnings = false
     verbose = true
     freeCompilerArgs = listOf(
-      "-XXLanguage:+InlineClasses",
-      "-Xinline-classes",
       "-Xopt-in=kotlin.RequiresOptIn",
       "-Xexplicit-api=warning"
     )
@@ -103,8 +101,8 @@ dependencies {
   implementation(Libs.Coroutines.CORE)
   implementation(Libs.Coroutines.ANDROID)
 
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.2.1")
-  androidTestImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+  implementation(Libs.Kotlin.Serialization.CORE)
+  androidTestImplementation(Libs.Kotlin.Serialization.JSON)
 
   testImplementation(Libs.JUnit.JUNIT)
   testImplementation(Libs.AndroidX.Test.CORE) {

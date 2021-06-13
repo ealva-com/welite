@@ -50,11 +50,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 public object CommonViewTests {
   public fun testCreateView() {
     val view = object : View(
-      "FullMedia",
-      MediaFileTable.select { id }.where { id eq 1 }
+      MediaFileTable.select { id }.where { id eq 1 },
+      "FullMedia"
     ) {
       @Suppress("unused")
-      val mediaId = column("mediaFileId", MediaFileTable.id)
+      val mediaId = column(MediaFileTable.id, "mediaFileId")
     }
 
     SqlExecutorSpy().let { spy ->
@@ -208,12 +208,12 @@ private val ViewTestsQuery = MediaFileTable
   .toQuery()
 
 public object FullMediaView : View(
-  "FullMedia",
-  ViewTestsQuery
+  ViewTestsQuery,
+  "FullMedia"
 ) {
-  public val mediaId: ViewColumn<Long> = column("FullMedia_MediaId", MediaFileTable.id)
+  public val mediaId: ViewColumn<Long> = column(MediaFileTable.id, "FullMedia_MediaId")
   public val mediaTitle: ViewColumn<String> =
-    column("FullMedia_MediaTitle", MediaFileTable.mediaTitle)
-  public val albumName: ViewColumn<String> = column("FullMedia_AlbumName", AlbumTable.albumName)
-  public val artistName: ViewColumn<String> = column("FullMedia_ArtistName", ArtistTable.artistName)
+    column(MediaFileTable.mediaTitle, "FullMedia_MediaTitle")
+  public val albumName: ViewColumn<String> = column(AlbumTable.albumName, "FullMedia_AlbumName")
+  public val artistName: ViewColumn<String> = column(ArtistTable.artistName, "FullMedia_ArtistName")
 }

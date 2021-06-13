@@ -20,7 +20,7 @@ plugins {
   id("com.android.application") version PluginsVersion.AGP apply false
   id("com.android.library") version PluginsVersion.AGP apply false
   kotlin("android") version PluginsVersion.KOTLIN apply false
-  kotlin("plugin.serialization") version "1.5.0" apply false
+  kotlin("plugin.serialization") version PluginsVersion.SERIALIZATION apply false
   id("io.gitlab.arturbosch.detekt") version PluginsVersion.DETEKT
   id("com.github.ben-manes.versions") version PluginsVersion.VERSIONS
   id("org.jetbrains.dokka") version PluginsVersion.DOKKA
@@ -54,7 +54,7 @@ subprojects {
 
 buildscript {
   dependencies {
-    classpath("com.android.tools.build:gradle:${PluginsVersion.AGP}")
+    classpath(Libs.AGP)
   }
 }
 

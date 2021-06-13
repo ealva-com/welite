@@ -188,8 +188,6 @@ private val LOG by lazyLogger(View::class, WeLiteLog.marker)
 /**
  * Represents a View in the database.
  *
- * The number
- *
  * The CREATE VIEW command assigns a name to a pre-packaged SELECT statement. Once the view is
  * created, it can be used in the FROM clause of another SELECT in place of a table name.
  * [SQLite CREATE VIEW](https://sqlite.org/lang_createview.html)
@@ -201,13 +199,13 @@ private val LOG by lazyLogger(View::class, WeLiteLog.marker)
  * CREATE VIEW statement and will use the column name parameter if it's not blank.
  */
 public abstract class View private constructor(
-  name: String = "",
+  name: String,
   private val querySeed: QuerySeed<*>
 ) : BaseColumnSet(), Creatable, Comparable<View> {
 
-  public constructor(name: String = "", query: Query<*>) : this(name, query.seed)
+  public constructor(query: Query<*>, name: String = "") : this(name, query.seed)
 
-  public constructor(name: String = "", builder: QueryBuilder<*>) : this(name, builder.build())
+  public constructor(builder: QueryBuilder<*>, name: String = "") : this(name, builder.build())
 
   public val viewName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
     require(!startsWith(Table.RESERVED_PREFIX)) {
@@ -227,7 +225,7 @@ public abstract class View private constructor(
    * the original full name of [column] as the CREATE VIEW statement doesn't support
    * the column-name list that follows the view-name until SQLite 3.9.
    */
-  public fun <T> column(name: String = "", column: Column<T>): ViewColumn<T> {
+  public fun <T> column(column: Column<T>, name: String = ""): ViewColumn<T> {
     return _columns.addColumn(ViewColumn(this, name, column))
   }
 
@@ -254,10 +252,13 @@ public abstract class View private constructor(
 
   override infix fun innerJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.INNER)
+
   override infix fun leftJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.LEFT)
+
   override infix fun crossJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.CROSS)
+
   override infix fun naturalJoin(joinTo: ColumnSet): Join =
     Join(this, joinTo, joinType = JoinType.NATURAL)
 
@@ -282,7 +283,7 @@ public abstract class View private constructor(
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       if (columns.isNotEmpty()) {
         columns.joinTo(this, prefix = " (", postfix = ") AS ") { it.identity().value }
-      }
+      } else append(" AS ")
     } else {
       append(" AS ")
     }
