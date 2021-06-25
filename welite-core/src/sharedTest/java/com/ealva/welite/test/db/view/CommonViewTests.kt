@@ -106,7 +106,12 @@ public object CommonViewTests {
   }
 
   public suspend fun testQueryView(appCtx: Context, testDispatcher: CoroutineDispatcher) {
-    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+    withTestDatabase(
+      context = appCtx,
+      tables = MEDIA_TABLES,
+      otherCreatables = listOf(FullMediaView),
+      testDispatcher = testDispatcher
+    ) {
       val tomorrow = Triple(
         "Tomorrow Never Knows",
         "The Beatles",
@@ -123,8 +128,6 @@ public object CommonViewTests {
         "Houses of the Holy"
       )
       transaction {
-        FullMediaView.create()
-
         insertData(
           tomorrow.first,
           tomorrow.second,

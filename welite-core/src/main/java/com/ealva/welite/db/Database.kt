@@ -23,6 +23,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.os.Build
 import androidx.core.database.sqlite.transaction
+import com.ealva.ealvalog.e
 import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
@@ -31,6 +32,7 @@ import com.ealva.welite.db.WeLiteResult.Success
 import com.ealva.welite.db.WeLiteResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.log.WeLiteLog
+import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.DbConfig
 import com.ealva.welite.db.table.MasterType
 import com.ealva.welite.db.table.SQLiteSchema
@@ -218,16 +220,19 @@ public interface Database {
      * Construct a Database instance with the given [fileName] and [context] used to locate the
      * database file path. The database instance maintains the list of [tables] and will construct
      * them if Android calls onCreate. [version] is used to determine if the schema needs to be
-     * migrated to a new version using [migrations]. [openParams] provide various configuration
-     * settings and has reasonable defaults. See [OpenParams] for details. An optional [configure]
-     * function will be called to provide for configuring the database connection at various points
-     * during creation.
+     * migrated to a new version using [migrations]. [otherCreatables] are Views, Triggers, or other
+     * [Creatable] types to be created after all [tables] are created (dependency order is important
+     * and is not managed by this class). [openParams] provide various configuration settings and
+     * has reasonable defaults. See [OpenParams] for details. An optional [configure] function will
+     * be called to provide for configuring the database connection at various points during
+     * creation.
      */
     public operator fun invoke(
       context: Context,
       fileName: String,
       tables: Set<Table>,
       version: Int,
+      otherCreatables: List<Creatable> = emptyList(),
       migrations: List<Migration> = emptyList(),
       requireMigration: Boolean = true,
       openParams: OpenParams = OpenParams(),
@@ -238,6 +243,7 @@ public interface Database {
         fileName,
         version,
         tables,
+        otherCreatables,
         migrations,
         requireMigration,
         openParams,
@@ -249,7 +255,9 @@ public interface Database {
      * Construct an in-memory Database instance with the given [context] used to locate the
      * database file path. The database instance maintains the list of [tables] and will construct
      * them if Android calls onCreate. [version] is used to determine if the schema needs to be
-     * migrated to a new version using [migrations]. [openParams] provide various configuration
+     * migrated to a new version using [migrations]. [otherCreatables] are Views, Triggers, or other
+     * [Creatable] types to be created after all [tables] are created (dependency order is important
+     * and is not managed by this class). [openParams] provide various configuration
      * settings and has reasonable defaults. See [OpenParams] for details. An optional [configure]
      * function will be called to provide for configuring the database connection at various points
      * during creation.
@@ -259,6 +267,7 @@ public interface Database {
       tables: Set<Table>,
       version: Int,
       migrations: List<Migration>,
+      otherCreatables: List<Creatable> = emptyList(),
       requireMigration: Boolean = true,
       openParams: OpenParams = OpenParams(),
       configure: DatabaseLifecycle.() -> Unit = {}
@@ -268,6 +277,7 @@ public interface Database {
         null,
         version,
         tables,
+        otherCreatables,
         migrations,
         requireMigration,
         openParams,
@@ -280,6 +290,7 @@ public interface Database {
       fileName: String?,
       version: Int,
       tables: Set<Table>,
+      otherCreatables: List<Creatable>,
       migrations: List<Migration>,
       requireMigration: Boolean,
       openParams: OpenParams,
@@ -290,6 +301,7 @@ public interface Database {
         fileName,
         version,
         tables,
+        otherCreatables,
         migrations,
         requireMigration,
         openParams,
@@ -310,6 +322,7 @@ private class WeLiteDatabase(
   fileName: String?,
   version: Int,
   tables: Set<Table>,
+  otherCreatables: List<Creatable>,
   migrations: List<Migration>,
   requireMigration: Boolean,
   openParams: OpenParams,
@@ -322,6 +335,7 @@ private class WeLiteDatabase(
     name = fileName,
     version = version,
     tables = tables,
+    otherCreatables = otherCreatables,
     migrations = migrations,
     requireMigration = requireMigration,
     openParams = openParams,
@@ -511,6 +525,7 @@ private class OpenHelper private constructor(
   name: String?,
   version: Int,
   private val tables: Set<Table>,
+  private val otherCreatables: List<Creatable>,
   private val migrations: List<Migration>,
   private val requireMigration: Boolean,
   openParams: OpenParams,
@@ -547,6 +562,7 @@ private class OpenHelper private constructor(
   }
 
   override fun onConfigure(db: SQLiteDatabase) {
+    LOG.i { it("onConfigure") }
     val config = ConfigurationImpl(db)
     db.setForeignKeyConstraintsEnabled(openParams.enableForeignKeyConstraints)
     if (openParams.enableWriteAheadLogging) {
@@ -579,6 +595,7 @@ private class OpenHelper private constructor(
   }
 
   override fun onCreate(db: SQLiteDatabase) {
+    LOG.i { it("onCreate") }
     val executor = db.toSqlExecutor()
     val orderedTables = tablesInCreateOrder
     orderedTables.forEach { table ->
@@ -586,6 +603,13 @@ private class OpenHelper private constructor(
     }
     orderedTables.forEach { table ->
       table.postCreate(executor)
+    }
+    otherCreatables.forEach { creatable ->
+      try {
+        creatable.create(executor)
+      } catch (e: Exception) {
+        LOG.e(e) { it("Error creating %s", creatable.identity) }
+      }
     }
     database.ongoingTransaction {
       onCreate(database)
@@ -659,6 +683,7 @@ private class OpenHelper private constructor(
       name: String?,
       version: Int,
       tables: Set<Table>,
+      otherCreatables: List<Creatable>,
       migrations: List<Migration>,
       requireMigration: Boolean,
       openParams: OpenParams,
@@ -670,6 +695,7 @@ private class OpenHelper private constructor(
         name,
         version,
         tables,
+        otherCreatables,
         migrations,
         requireMigration,
         openParams,

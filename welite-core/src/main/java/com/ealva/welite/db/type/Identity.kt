@@ -36,8 +36,9 @@ import com.ealva.welite.db.type.Identity.Companion.quoteChar
  *
  * [SQLite Keywords](https://www.sqlite.org/lang_keywords.html)
  */
-@Suppress("EXPERIMENTAL_FEATURE_WARNING")
-public inline class Identity(public val value: String) {
+@Suppress("ModifierOrder")
+@JvmInline
+public value class Identity(public val value: String) {
   /**
    * For use where quotes aren't needed or are incorrect - such as an string literal, which uses
    * single quotes.

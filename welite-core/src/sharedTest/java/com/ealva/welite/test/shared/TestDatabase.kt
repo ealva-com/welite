@@ -19,6 +19,7 @@ package com.ealva.welite.test.shared
 import android.content.Context
 import com.ealva.welite.db.Database
 import com.ealva.welite.db.OpenParams
+import com.ealva.welite.db.table.Creatable
 import com.ealva.welite.db.table.Table
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -26,10 +27,17 @@ public suspend fun withTestDatabase(
   context: Context,
   tables: Set<Table>,
   testDispatcher: CoroutineDispatcher,
+  otherCreatables: List<Creatable> = emptyList(),
   enableForeignKeyConstraints: Boolean = true,
   block: suspend Database.() -> Unit
 ) {
-  val db = TestDatabase(context, tables, testDispatcher, enableForeignKeyConstraints)
+  val db = TestDatabase(
+    context,
+    tables,
+    otherCreatables,
+    testDispatcher,
+    enableForeignKeyConstraints
+  )
   try {
     db.block()
   } finally {
@@ -41,6 +49,7 @@ public suspend fun withTestDatabase(
 public fun TestDatabase(
   context: Context,
   tables: Set<Table>,
+  otherCreatables: List<Creatable>,
   testDispatcher: CoroutineDispatcher,
   enableForeignKeyConstraints: Boolean
 ): Database {
@@ -48,6 +57,7 @@ public fun TestDatabase(
     context = context,
     version = 1,
     tables = tables,
+    otherCreatables = otherCreatables,
     migrations = emptyList(),
     requireMigration = false,
     openParams = OpenParams(

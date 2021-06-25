@@ -21,11 +21,11 @@ object SdkVersion {
 }
 
 object PluginsVersion {
-  const val AGP = "7.0.0-beta03"
+  const val AGP = "7.0.0-beta04"
   const val DETEKT = "1.17.1"
   const val DOKKA = "1.4.32"
   const val KOTLIN = "1.5.10"
-  const val PUBLISH = "0.15.1"
+  const val PUBLISH = "0.16.0"
   const val SERIALIZATION = "1.5.10"
   const val VERSIONS = "0.39.0"
 }
