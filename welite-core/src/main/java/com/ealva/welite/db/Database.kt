@@ -56,7 +56,7 @@ import java.util.Locale
  * statement that created the table or index. For automatically created indices (used to implement
  * the PRIMARY KEY or UNIQUE constraints) the sql field is NULL.
  */
-public data class TableSql(
+public data class SchemaSql(
   /** The table name as it appears in sqlite_master.tbl_name */
   val tableName: String,
   /** List of create statements to create the Table [tableName] */

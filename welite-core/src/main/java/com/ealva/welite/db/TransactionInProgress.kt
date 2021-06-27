@@ -333,15 +333,15 @@ private class TransactionInProgressImpl(
       return TableDescription(tableIdentity, columnsMetadata)
     }
 
-  override val Table.sql: TableSql
+  override val Creatable.sql: SchemaSql
     get() {
-      require(exists) { "Table $tableName does not exist" }
+      val tableIdentity = identity.unquoted
+      require(exists) { "Table $tableIdentity does not exist" }
       val tableSql = mutableListOf<String>()
       val indices = mutableListOf<String>()
       val triggers = mutableListOf<String>()
       val views = mutableListOf<String>()
 
-      val tableIdentity = identity.unquoted
       val sqlCol = SQLiteSchema.sql
       val typeCol = SQLiteSchema.type
       SQLiteSchema.selects { listOf(sqlCol, typeCol) }
@@ -360,7 +360,7 @@ private class TransactionInProgressImpl(
             }
           } else LOG.w { it(NULL_SQL_FOUND, tableName, cursor[typeCol], cursor.position) }
         }
-      return TableSql(tableName, tableSql, indices, triggers, views)
+      return SchemaSql(tableIdentity, tableSql, indices, triggers, views)
     }
 
   override val sqliteVersion: String

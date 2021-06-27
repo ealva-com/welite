@@ -166,7 +166,7 @@ public interface Queryable {
    * this [Table] does not exist in the database.
    * @see [Table.exists]
    */
-  public val Table.sql: TableSql
+  public val Creatable.sql: SchemaSql
 
   /**
    * Does an integrity check of the entire database. Looks for out-of-order records, missing pages,
