@@ -173,6 +173,8 @@ private class ViewColumnImpl<T>(
     return result
   }
 
+  override fun toString(): String = "ViewColumn[view=view, name=$name, original=$originalColumn"
+
   companion object {
     private val columnComparator: Comparator<ViewColumnImpl<*>> =
       compareBy(
@@ -230,7 +232,7 @@ public abstract class View private constructor(
   }
 
   private fun <T> MutableList<ViewColumn<*>>.addColumn(column: ViewColumn<T>) = column.apply {
-    if (any { it.name == column.name }) throw DuplicateColumnException(column.name, viewName)
+    if (any { it == column }) throw DuplicateColumnException(column.toString(), viewName)
     add(column)
   }
 
@@ -308,6 +310,8 @@ public abstract class View private constructor(
   override fun compareTo(other: View): Int {
     return viewName.compareTo(other.viewName)
   }
+
+  override fun toString(): String = viewName
 }
 
 private fun View.nameFromClass() = javaClass.simpleName.removeSuffix("View")
