@@ -21,12 +21,12 @@ object SdkVersion {
 }
 
 object PluginsVersion {
-  const val AGP = "7.0.0-beta04"
+  const val AGP = "7.0.0"
   const val DETEKT = "1.17.1"
-  const val DOKKA = "1.4.32"
-  const val KOTLIN = "1.5.10"
-  const val PUBLISH = "0.16.0"
-  const val SERIALIZATION = "1.5.10"
+  const val DOKKA = "1.5.0"
+  const val KOTLIN = "1.5.21"
+  const val PUBLISH = "0.17.0"
+  const val SERIALIZATION = "1.5.21"
   const val VERSIONS = "0.39.0"
 }
 
@@ -35,11 +35,10 @@ object Libs {
   const val DESUGAR = "com.android.tools:desugar_jdk_libs:1.1.5"
 
   object AndroidX {
-    const val APPCOMPAT = "androidx.appcompat:appcompat:1.3.0"
-    const val PALETTE = "androidx.palette:palette:1.0.0"
+    const val APPCOMPAT = "androidx.appcompat:appcompat:1.3.1"
 
     object Ktx {
-      const val CORE = "androidx.core:core-ktx:1.6.0-alpha03"
+      const val CORE = "androidx.core:core-ktx:1.6.0"
     }
 
     object Constraint {
@@ -52,20 +51,20 @@ object Libs {
     }
 
     object Test {
-      private const val VERSION = "1.4.0-alpha04"
+      private const val VERSION = "1.4.0"
       const val CORE = "androidx.test:core:$VERSION"
       const val RULES = "androidx.test:rules:$VERSION"
       const val RUNNER = "androidx.test:runner:$VERSION"
 
       object Ext {
-        private const val VERSION = "1.1.3-alpha04"
+        private const val VERSION = "1.1.3"
         const val JUNIT = "androidx.test.ext:junit-ktx:$VERSION"
       }
     }
   }
 
   object Coroutines {
-    private const val VERSION = "1.5.0"
+    private const val VERSION = "1.5.1"
     const val CORE = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$VERSION"
     const val ANDROID = "org.jetbrains.kotlinx:kotlinx-coroutines-android:$VERSION"
     const val TEST = "org.jetbrains.kotlinx:kotlinx-coroutines-test:$VERSION"
@@ -80,20 +79,17 @@ object Libs {
   }
 
   object Koin {
-    private const val VERSION = "3.1.0"
+    private const val VERSION = "3.1.2"
     const val CORE = "io.insert-koin:koin-core:$VERSION"
     const val ANDROID = "io.insert-koin:koin-android:$VERSION"
   }
 
   object Kotlin {
-    private const val VERSION = "1.4.32"
+    private const val VERSION = "1.5.21"
     const val KGP = "org.jetbrains.kotlin:kotlin-gradle-plugin:$VERSION"
 
-    // const val STDLIB = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$VERSION"
-    // const val EXTENSIONS = "org.jetbrains.kotlin:kotlin-android-extensions:$VERSION"
-
     object Serialization {
-      private const val VERSION = "1.2.1"
+      private const val VERSION = "1.2.2"
       const val CORE = "org.jetbrains.kotlinx:kotlinx-serialization-core:$VERSION"
       const val JSON = "org.jetbrains.kotlinx:kotlinx-serialization-json:$VERSION"
     }
@@ -112,6 +108,6 @@ object Libs {
   }
 
   object Robolectric {
-    const val ROBOLECTRIC = "org.robolectric:robolectric:4.5.1"
+    const val ROBOLECTRIC = "org.robolectric:robolectric:4.6.1"
   }
 }
