@@ -41,7 +41,7 @@ public interface SqlBuilder : Appendable {
   public fun append(identity: Identity): SqlBuilder
   public fun <T> registerBindable(sqlType: SqlTypeExpression<T>)
   public fun <T> registerArgument(sqlType: PersistentType<T>, argument: T)
-  public fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>)
+  public fun <T> registerArgumentList(sqlType: PersistentType<T>, arguments: Iterable<T>)
 
   /** for test */
   public val length: Int
@@ -138,8 +138,11 @@ private class SqlBuilderImpl(private val maxCapacity: Int) : SqlBuilder {
     append(sqlType.valueToString(argument, true))
   }
 
-  override fun <T> registerArguments(sqlType: PersistentType<T>, arguments: Iterable<T>) {
-    arguments.forEach { arg -> registerArgument(sqlType, arg) }
+  override fun <T> registerArgumentList(sqlType: PersistentType<T>, arguments: Iterable<T>) {
+    arguments.forEachIndexed { index, arg ->
+      if (index > 0) append(", ")
+      registerArgument(sqlType, arg)
+    }
   }
 
   override fun toString(): String = strBuilder.toString()
@@ -170,6 +173,7 @@ private const val DEFAULT_MAX_CACHE_ENTRIES = 4
 private const val MIN_BUILDER_CAPACITY = 1024
 private const val DEFAULT_BUILDER_CAPACITY = 2048
 private var queueCapacity = DEFAULT_MAX_CACHE_ENTRIES
+
 @Volatile
 private var queue: Queue<SqlBuilderImpl> = LinkedBlockingQueue(queueCapacity)
 private var exceededCapacity = 0

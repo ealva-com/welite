@@ -20,9 +20,11 @@ import android.content.Context
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.expr.greaterEq
+import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.expr.isNull
 import com.ealva.welite.db.expr.less
 import com.ealva.welite.db.expr.lessEq
+import com.ealva.welite.db.expr.notInList
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
@@ -204,6 +206,65 @@ public object CommonConditionsTests {
           .toList()
           .let { list ->
             expect(list).toHaveSize(3)
+          }
+      }
+    }
+  }
+
+  public suspend fun testInList(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
+    val table = object : Table("foo") {
+      val c1 = integer("c1")
+      val c2 = integer("c2")
+    }
+
+    withTestDatabase(appCtx, setOf(table), testDispatcher) {
+      transaction {
+        table.insert { it[c1] = 0; it[c2] = 30 }
+        table.insert { it[c1] = 1; it[c2] = 40 }
+        table.insert { it[c1] = 2; it[c2] = 50 }
+      }
+      query {
+        table
+          .selectWhere { c2 inList listOf(40, 50) }
+          .orderByAsc { c1 }
+          .sequence { it[c1] }
+          .toList()
+          .let { list ->
+            expect(list).toHaveSize(2)
+            expect(list[0]).toBe(1)
+            expect(list[1]).toBe(2)
+          }
+      }
+    }
+  }
+
+  public suspend fun testNotInList(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
+    val table = object : Table("foo") {
+      val c1 = integer("c1")
+      val c2 = integer("c2")
+    }
+
+    withTestDatabase(appCtx, setOf(table), testDispatcher) {
+      transaction {
+        table.insert { it[c1] = 0; it[c2] = 30 }
+        table.insert { it[c1] = 1; it[c2] = 40 }
+        table.insert { it[c1] = 2; it[c2] = 50 }
+      }
+      query {
+        table
+          .selectWhere { c2 notInList listOf(40, 50) }
+          .orderByAsc { c1 }
+          .sequence { it[c1] }
+          .toList()
+          .let { list ->
+            expect(list).toHaveSize(1)
+            expect(list[0]).toBe(0)
           }
       }
     }

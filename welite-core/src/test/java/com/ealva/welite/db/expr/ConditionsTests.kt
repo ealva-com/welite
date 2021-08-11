@@ -65,4 +65,14 @@ class ConditionsTests {
   fun `compare with nullable column`() = coroutineRule.runBlockingTest {
     Common.testCompareWithNullableColumn(appCtx, coroutineRule.testDispatcher)
   }
+
+  @Test
+  fun `test inList`() = coroutineRule.runBlockingTest {
+    Common.testInList(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
+  fun `test notInList`() = coroutineRule.runBlockingTest {
+    Common.testNotInList(appCtx, coroutineRule.testDispatcher)
+  }
 }

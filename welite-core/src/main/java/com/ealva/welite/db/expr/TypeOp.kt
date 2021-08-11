@@ -182,7 +182,7 @@ public class InListOrNotInListOp<T>(
             isInList -> append(" IN (")
             else -> append(" NOT IN (")
           }
-          registerArguments(expr.persistentType, list)
+          registerArgumentList(expr.persistentType, list)
           append(")")
         }
       }
