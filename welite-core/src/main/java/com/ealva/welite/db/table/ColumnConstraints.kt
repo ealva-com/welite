@@ -47,6 +47,7 @@ public interface ColumnConstraints<T> {
   public fun onConflict(onConflict: OnConflict): ColumnConstraints<T>
   public fun autoIncrement(): ColumnConstraints<T>
   public fun unique(): ColumnConstraints<T>
+  @ExperimentalUnsignedTypes
   public fun check(name: String = "", op: (Column<T>) -> Op<Boolean>): ColumnConstraints<T>
   public fun default(defaultValue: T): ColumnConstraints<T>
   public fun defaultExpression(defaultValue: Expression<T>): ColumnConstraints<T>

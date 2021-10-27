@@ -215,7 +215,6 @@ private class ColumnImpl<T>(
     table.check(name) { op(this@ColumnImpl) }
   }
 
-  @ExperimentalUnsignedTypes
   override fun default(defaultValue: T) = apply { dbDefaultValue = literal(defaultValue) }
 
   override fun defaultExpression(defaultValue: Expression<T>) = apply {

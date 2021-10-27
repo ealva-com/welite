@@ -28,6 +28,7 @@ import com.ealva.welite.test.db.SomeMediaTable
 import com.ealva.welite.test.shared.CoroutineRule
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -157,6 +158,7 @@ class DatabaseTests {
       )
     }
 
+  @OptIn(DelicateCoroutinesApi::class)
   @Test
   fun `test isUiThread`() {
     var testedOnUi = false

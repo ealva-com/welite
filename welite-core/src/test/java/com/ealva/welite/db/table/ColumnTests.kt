@@ -130,6 +130,7 @@ class ColumnTests {
     }
   }
 
+  @OptIn(ExperimentalUnsignedTypes::class)
   @Test
   fun `text column key and collate`() {
     val id1 = "id1"
@@ -170,6 +171,7 @@ class ColumnTests {
     }
   }
 
+  @OptIn(ExperimentalUnsignedTypes::class)
   @Test
   fun `text column with check constraint`() {
     val id1Name = "id1"

@@ -33,6 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.Locale
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricTestRunner::class)
@@ -58,8 +59,8 @@ class MasterTypeTests {
 
     fun checkType(type: String, masterType: MasterType) {
       expect(type.asMasterType()).toBe(masterType)
-      expect(type.toUpperCase().asMasterType()).toBe(masterType)
-      expect(type.toLowerCase().asMasterType()).toBe(masterType)
+      expect(type.uppercase(Locale.getDefault()).asMasterType()).toBe(masterType)
+      expect(type.lowercase(Locale.getDefault()).asMasterType()).toBe(masterType)
     }
 
     types.forEach { checkType(it.first, it.second) }
