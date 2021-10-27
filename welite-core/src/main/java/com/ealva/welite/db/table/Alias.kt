@@ -183,7 +183,8 @@ public class QueryBuilderAlias<C : ColumnSet>(
 public fun <T : Table> T.alias(alias: String): Alias<T> = Alias(this, alias)
 public fun <C : ColumnSet> QueryBuilder<C>.alias(alias: String): QueryBuilderAlias<C> =
   QueryBuilderAlias(this, alias)
-
+public fun <T> Expression<T>.alias(alias: String): ExpressionAlias<T> =
+  ExpressionAlias(this, alias)
 public fun <T> SqlTypeExpression<T>.alias(alias: String): SqlTypeExpressionAlias<T> =
   SqlTypeExpressionAlias(this, alias)
 

@@ -37,6 +37,7 @@ import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
 import com.ealva.welite.db.table.by
+import com.ealva.welite.db.table.orderBy
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectCount
 import com.ealva.welite.db.table.where
@@ -314,7 +315,7 @@ public object CommonCompoundSelectTests {
 
         val unionList = compoundSelect
           .selectAll()
-          .by { id by Order.DESC }
+          .orderBy { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -416,7 +417,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .by { id by Order.DESC }
+          .orderBy { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -443,7 +444,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .by { id by Order.DESC }
+          .orderBy { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -470,7 +471,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .by { id by Order.DESC }
+          .orderBy { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -498,7 +499,7 @@ public object CommonCompoundSelectTests {
         val unionList = compoundSelect
           .select(TableA.id)
           .all()
-          .by { id by Order.DESC }
+          .orderBy { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 
@@ -510,7 +511,7 @@ public object CommonCompoundSelectTests {
           .except(TableA.select { id }.all())
           .select(TableC.id)
           .all()
-          .by { id by Order.DESC }
+          .orderBy { id by Order.DESC }
           .sequence { it[id] }
           .toList()
 

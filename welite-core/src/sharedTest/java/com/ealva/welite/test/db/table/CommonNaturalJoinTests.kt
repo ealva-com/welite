@@ -24,6 +24,7 @@ import com.ealva.welite.db.statements.insertValues
 import com.ealva.welite.db.table.Column
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.by
+import com.ealva.welite.db.table.orderBy
 import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.where
@@ -112,7 +113,7 @@ public object CommonNaturalJoinTests {
         (Doctors naturalJoin Specialty naturalJoin Visits)
           .select(Doctors.doctorId, doctorName, degree, description, patientName, visitDate)
           .where { degree eq "MD" }
-          .by { Doctors.doctorId by Order.DESC }
+          .orderBy { Doctors.doctorId by Order.DESC }
           .sequence {
             DoctorsVisit(
               it[Doctors.doctorId],

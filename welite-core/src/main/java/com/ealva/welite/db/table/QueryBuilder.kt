@@ -17,13 +17,16 @@
 package com.ealva.welite.db.table
 
 import com.ealva.welite.db.expr.BaseExpression
+import com.ealva.welite.db.expr.BaseSqlTypeExpression
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.Order
+import com.ealva.welite.db.expr.Random
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.type.AppendsToSqlBuilder
+import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.StatementSeed
 import com.ealva.welite.db.type.buildSql
@@ -386,10 +389,14 @@ public inline fun <C : ColumnSet> QueryBuilder<C>.ordersBy(
   sourceSet.orderList().forEach { pair -> addOrderBy(pair) }
 }
 
-public inline fun <C : ColumnSet> QueryBuilder<C>.by(
-  pair: C.() -> OrderBy
+public inline fun <C : ColumnSet> QueryBuilder<C>.orderBy(
+  orderFun: C.() -> OrderBy
 ): QueryBuilder<C> = apply {
-  addOrderBy(sourceSet.pair())
+  addOrderBy(sourceSet.orderFun())
+}
+
+public fun <C : ColumnSet> QueryBuilder<C>.orderByRandom(): QueryBuilder<C> = apply {
+  addOrderBy(OrderBy(Random()))
 }
 
 public inline fun <C : ColumnSet> QueryBuilder<C>.orderByAsc(
@@ -424,20 +431,34 @@ public fun <C : ColumnSet> QueryBuilder<C>.orWhere(
 /**
  * Use this query builder as an expression
  */
-public fun <T : Any> QueryBuilder<*>.asExpression(): Expression<T> {
-  return wrapAsExpression(this)
-}
+public fun <T : Any> QueryBuilder<*>.asExpression(): Expression<T> = wrapAsExpression(this)
 
 public fun <T : Any> wrapAsExpression(
   queryBuilder: QueryBuilder<*>
-): BaseExpression<T> =
-  object : BaseExpression<T>() {
-    override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-      append("(")
-      queryBuilder.appendTo(this)
-      append(")")
-    }
+): BaseExpression<T> = object : BaseExpression<T>() {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("(")
+    queryBuilder.appendTo(this)
+    append(")")
   }
+}
+
+public fun <T : Any> QueryBuilder<*>.asTypeExpression(
+  type: PersistentType<T>
+): SqlTypeExpression<T> = wrapAsTypeExpression(this, type)
+
+public fun <T : Any> wrapAsTypeExpression(
+  queryBuilder: QueryBuilder<*>,
+  type: PersistentType<T>
+): BaseSqlTypeExpression<T> = object : BaseSqlTypeExpression<T>() {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("(")
+    queryBuilder.appendTo(this)
+    append(")")
+  }
+
+  override val persistentType: PersistentType<T> get() = type
+}
 
 private class OrderBySet : AppendsToSqlBuilder {
   private val set: MutableSet<OrderBy> = LinkedHashSet()

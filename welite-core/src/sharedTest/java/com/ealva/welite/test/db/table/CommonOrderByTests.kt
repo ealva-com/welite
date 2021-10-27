@@ -24,9 +24,11 @@ import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.substring
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
-import com.ealva.welite.db.table.groupBy
 import com.ealva.welite.db.table.by
+import com.ealva.welite.db.table.groupBy
+import com.ealva.welite.db.table.orderBy
 import com.ealva.welite.db.table.orderByAsc
+import com.ealva.welite.db.table.orderByRandom
 import com.ealva.welite.db.table.ordersBy
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
@@ -48,6 +50,33 @@ public object CommonOrderByTests {
           .orderByAsc { id }
           .sequence { it[id] }
           .toList().also { list -> expect(list).toHaveSize(5) }
+          .forEachIndexed { index, id ->
+            when (index) {
+              0 -> expect(id).toBe("amber")
+              1 -> expect(id).toBe("louis")
+              2 -> expect(id).toBe("mike")
+              3 -> expect(id).toBe("nathalia")
+              4 -> expect(id).toBe("rick")
+              else -> fail("Too many results $index")
+            }
+          }
+      }
+    }
+  }
+
+  public suspend fun testOrderByRandom(appCtx: Context, testDispatcher: CoroutineDispatcher) {
+    withPlaceTestDatabase(
+      context = appCtx,
+      tables = setOf(Place, Person, Review),
+      testDispatcher = testDispatcher
+    ) {
+      query {
+        Person
+          .selectAll()
+          .orderByRandom()
+          .sequence { it[id] }
+          .toList().also { list -> expect(list).toHaveSize(5) }
+          .sortedBy { it }
           .forEachIndexed { index, id ->
             when (index) {
               0 -> expect(id).toBe("amber")
@@ -186,7 +215,7 @@ public object CommonOrderByTests {
 
         Place
           .selectAll()
-          .by { orderByExpr by Order.DESC }
+          .orderBy { orderByExpr by Order.DESC }
           .sequence { it[name] }
           .toList()
           .let { list ->

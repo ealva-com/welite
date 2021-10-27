@@ -21,12 +21,12 @@ object SdkVersion {
 }
 
 object PluginsVersion {
-  const val AGP = "7.0.0"
-  const val DETEKT = "1.17.1"
-  const val DOKKA = "1.5.0"
-  const val KOTLIN = "1.5.21"
-  const val PUBLISH = "0.17.0"
-  const val SERIALIZATION = "1.5.21"
+  const val AGP = "7.0.3"
+  const val DETEKT = "1.18.1"
+  const val DOKKA = "1.5.31"
+  const val KOTLIN = "1.5.31"
+  const val PUBLISH = "0.18.0"
+  const val SERIALIZATION = "1.5.31"
   const val VERSIONS = "0.39.0"
 }
 
@@ -64,7 +64,7 @@ object Libs {
   }
 
   object Coroutines {
-    private const val VERSION = "1.5.1"
+    private const val VERSION = "1.5.2"
     const val CORE = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$VERSION"
     const val ANDROID = "org.jetbrains.kotlinx:kotlinx-coroutines-android:$VERSION"
     const val TEST = "org.jetbrains.kotlinx:kotlinx-coroutines-test:$VERSION"
@@ -85,11 +85,11 @@ object Libs {
   }
 
   object Kotlin {
-    private const val VERSION = "1.5.21"
+    private const val VERSION = "1.5.31"
     const val KGP = "org.jetbrains.kotlin:kotlin-gradle-plugin:$VERSION"
 
     object Serialization {
-      private const val VERSION = "1.2.2"
+      private const val VERSION = "1.3.0"
       const val CORE = "org.jetbrains.kotlinx:kotlinx-serialization-core:$VERSION"
       const val JSON = "org.jetbrains.kotlinx:kotlinx-serialization-json:$VERSION"
     }
