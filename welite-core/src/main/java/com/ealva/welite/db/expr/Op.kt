@@ -144,6 +144,35 @@ public class IsNotNullOp(private val expr: Expression<*>) : Op<Boolean>() {
 public class LikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "LIKE")
 public class NotLikeOp(lhs: Expression<*>, rhs: Expression<*>) : ComparisonOp(lhs, rhs, "NOT LIKE")
 
+public infix fun LikeOp.escape(escapeChar: Char): EscapedLikeOp = EscapedLikeOp(this, escapeChar)
+
+public infix fun NotLikeOp.escape(escapeChar: Char): EscapedNotLikeOp =
+  EscapedNotLikeOp(this, escapeChar)
+
+public class EscapedLikeOp(
+  private val comparisonOp: LikeOp,
+  escapeChar: Char
+) : Op<Boolean>() {
+  private val escapeExpression = literal(escapeChar.toString())
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    comparisonOp.appendTo(sqlBuilder)
+    sqlBuilder.append(" ESCAPE ")
+    escapeExpression.appendTo(sqlBuilder)
+  }
+}
+
+public class EscapedNotLikeOp(
+  private val comparisonOp: NotLikeOp,
+  escapeChar: Char
+) : Op<Boolean>() {
+  private val escapeExpression = literal(escapeChar.toString())
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    comparisonOp.appendTo(sqlBuilder)
+    sqlBuilder.append(" ESCAPE ")
+    escapeExpression.appendTo(sqlBuilder)
+  }
+}
+
 public fun byteParam(value: Byte): Expression<Byte> = QueryParameter(value, BytePersistentType())
 public fun shortParam(value: Short): Expression<Short> =
   QueryParameter(value, ShortPersistentType())

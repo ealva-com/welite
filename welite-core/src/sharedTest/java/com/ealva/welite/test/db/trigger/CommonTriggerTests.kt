@@ -22,6 +22,7 @@ import com.ealva.welite.db.Transaction
 import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.case
 import com.ealva.welite.db.expr.eq
+import com.ealva.welite.db.expr.escape
 import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.expr.neq
 import com.ealva.welite.db.expr.notLike
@@ -350,7 +351,7 @@ public object CommonTriggerTests {
     ) {
       AlbumTable.update {
         it[albumName] = "Some Album"
-      }.where { new(MediaFileTable.mediaUri) notLike "file:%" }
+      }.where { new(MediaFileTable.mediaUri) notLike "file:%" escape '\\' }
     }
     SqlExecutorSpy().let { spy ->
       trigger.create(spy)
@@ -358,8 +359,8 @@ public object CommonTriggerTests {
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
         """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile" BEGIN""" +
-          """ UPDATE "Album" SET "AlbumName"='Some Album' WHERE NEW.MediaUri NOT LIKE 'file:%';""" +
-          """ END;"""
+          """ UPDATE "Album" SET "AlbumName"='Some Album' WHERE NEW.MediaUri NOT LIKE 'file:%'""" +
+          """ ESCAPE '\'; END;"""
       )
     }
   }

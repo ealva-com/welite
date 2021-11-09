@@ -18,6 +18,7 @@ package com.ealva.welite.test.db.expr
 
 import android.content.Context
 import com.ealva.welite.db.expr.Op
+import com.ealva.welite.db.expr.bindLong
 import com.ealva.welite.db.expr.greater
 import com.ealva.welite.db.expr.greaterEq
 import com.ealva.welite.db.expr.inList
@@ -113,6 +114,38 @@ public object CommonConditionsTests {
           }
 
         table
+          .selectWhere { c1 lessEq c2 }
+          .orderByAsc { c1 }
+          .limit(1)
+          .sequence { it[c1] }
+          .toList()
+          .let { list ->
+            expect(list).toHaveSize(1)
+            expect(list).toBe(listOf(0))
+          }
+
+        table
+          .selectWhere { c1 lessEq c2 }
+          .orderByAsc { c1 }
+          .limit(0)
+          .sequence { it[c1] }
+          .toList()
+          .let { list ->
+            expect(list).toHaveSize(0)
+          }
+
+        table
+          .selectWhere { c1 lessEq c2 }
+          .orderByAsc { c1 }
+          .limit(bindLong())
+          .sequence({ it[0] = 1 }) { it[c1] }
+          .toList()
+          .let { list ->
+            expect(list).toHaveSize(1)
+            expect(list).toBe(listOf(0))
+          }
+
+        table
           .selectWhere { c1 greater c2 }
           .sequence { it[c1] }
           .toList()
@@ -202,6 +235,15 @@ public object CommonConditionsTests {
 
         table
           .selectWhere { (c1 lessEq c3).isNull() }
+          .sequence { it[c1] }
+          .toList()
+          .let { list ->
+            expect(list).toHaveSize(3)
+          }
+
+        table
+          .selectWhere { (c1 lessEq c3).isNull() }
+          .limit(-1)
           .sequence { it[c1] }
           .toList()
           .let { list ->

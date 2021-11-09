@@ -24,6 +24,7 @@ import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.unaryPlus
 import com.ealva.welite.db.Database
+import com.ealva.welite.db.expr.escape
 import com.ealva.welite.db.expr.like
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.statements.insertValues
@@ -102,7 +103,7 @@ class MainActivity : AppCompatActivity() {
 
         MediaFileTable
           .selects { listOf(mediaTitle, localDate) }
-          .where { mediaTitle like "%Title%" }
+          .where { mediaTitle like "%Title%" escape '\\' }
           .sequence { Pair(it[mediaTitle], it[localDate]) }
           .forEach { (title, date) -> LOG.i { +it("collect %s %s", title, date) } }
 

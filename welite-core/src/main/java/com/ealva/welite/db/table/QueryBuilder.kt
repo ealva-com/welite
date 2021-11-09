@@ -24,6 +24,7 @@ import com.ealva.welite.db.expr.Order
 import com.ealva.welite.db.expr.Random
 import com.ealva.welite.db.expr.SqlTypeExpression
 import com.ealva.welite.db.expr.and
+import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.expr.or
 import com.ealva.welite.db.type.AppendsToSqlBuilder
 import com.ealva.welite.db.type.PersistentType
@@ -33,13 +34,10 @@ import com.ealva.welite.db.type.buildSql
 import com.ealva.welite.db.type.buildStr
 import kotlinx.serialization.Serializable
 
-public typealias LimitOffset = Pair<Long, Long>
-
-public inline val LimitOffset.limit: Long
-  get() = first
-
-public inline val LimitOffset.offset: Long
-  get() = second
+public data class LimitOffset(
+  val limit: SqlTypeExpression<Long>,
+  val offset: SqlTypeExpression<Long>?
+)
 
 @Serializable
 public data class OrderBy(
@@ -153,9 +151,22 @@ public interface QueryBuilder<out C : ColumnSet> : AppendsToSqlBuilder {
   public val hasOrderBy: Boolean
 
   /**
-   * Add a [limit] and [offset] to this query. The [offset] defaults to 0
+   * Add a [limit] and [offset] to this query. The [offset] defaults to 0.
+   *
+   * If [offset] is zero and limit is negative or [Long.MAX_VALUE], no limit is used
    */
   public fun limit(limit: Long, offset: Long = 0): QueryBuilder<C>
+
+  /**
+   * Add a limit and optional offset via an SQL type expression. Often used to bind, eg.
+   * ```kotlin
+   * limit(bindLong())
+   * ```
+   */
+  public fun limit(
+    limit: SqlTypeExpression<Long>,
+    offset: SqlTypeExpression<Long>? = null
+  ): QueryBuilder<C>
 
   /**
    * Does this query have a limit/offset clause. Simple select statements do not have a
@@ -284,6 +295,12 @@ private class QueryBuilderImpl<out C : ColumnSet>(
     get() = orderBySet.isNotEmpty()
 
   override fun limit(limit: Long, offset: Long): QueryBuilder<C> = apply {
+    if (offset > 0 || (limit >= 0 && limit != Long.MAX_VALUE)) {
+      limit(literal(limit), if (offset > 0) literal(offset) else null)
+    }
+  }
+
+  override fun limit(limit: SqlTypeExpression<Long>, offset: SqlTypeExpression<Long>?) = apply {
     limitOffset = LimitOffset(limit, offset)
   }
 
@@ -345,7 +362,7 @@ private class QueryBuilderImpl<out C : ColumnSet>(
 
       limitOffset?.let { limitOffset ->
         append(" LIMIT ").append(limitOffset.limit)
-        if (limitOffset.offset > 0) {
+        limitOffset.offset?.let {
           append(" OFFSET ").append(limitOffset.offset)
         }
       }

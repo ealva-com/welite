@@ -124,6 +124,9 @@ public infix fun <T : String?> Expression<T>.like(expr: Expression<T>): LikeOp =
 public infix fun <T : String?> Expression<T>.notLike(pattern: String): NotLikeOp =
   NotLikeOp(this, stringParam(pattern))
 
+public infix fun <T : String?> Expression<T>.notLike(expr: Expression<T>): NotLikeOp =
+  NotLikeOp(this, expr)
+
 public fun case(value: Expression<*>? = null): Case = Case(value)
 
 public infix fun <T> SqlTypeExpression<T>.inList(list: Iterable<T>): InListOrNotInListOp<T> =
