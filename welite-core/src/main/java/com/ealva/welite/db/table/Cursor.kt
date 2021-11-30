@@ -55,4 +55,10 @@ public interface Cursor : Row {
    * ```cursor[Table.column, valueIfNull]``` and avoiding null.
    */
   public fun <T> getOptional(expression: SqlTypeExpression<T>): T?
+
+  public fun <T> columnIndex(expression: SqlTypeExpression<T>): Int
+
+  public fun <T> isNull(expression: SqlTypeExpression<T>): Boolean
+
+  public fun <T> columnName(expression: SqlTypeExpression<T>): String
 }

@@ -61,11 +61,11 @@ private class CursorWrapperImpl<C : ColumnSet>(
 
   override fun moveToNext(): Boolean = cursor.moveToNext()
 
-  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
-    expression.persistentType.columnValue(this, exprMap[expression])
-
   override fun <T> get(expression: SqlTypeExpression<T>): T =
     getOptional(expression) ?: throw IllegalStateException(unexpectedNullMessage(expression))
+
+  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
+    expression.persistentType.columnValue(this, exprMap[expression])
 
   override fun getBlob(columnIndex: Int): ByteArray = cursor.getBlob(columnIndex)
   override fun getString(columnIndex: Int): String = cursor.getString(columnIndex)
@@ -85,6 +85,12 @@ private class CursorWrapperImpl<C : ColumnSet>(
     "Unexpected NULL reading column=${expression.name()}"
 
   private fun <T> Expression<T>.name() = cursor.getColumnName(exprMap[this])
+
+  override fun <T> columnIndex(expression: SqlTypeExpression<T>): Int = exprMap[expression]
+
+  override fun <T> isNull(expression: SqlTypeExpression<T>): Boolean = isNull(exprMap[expression])
+
+  override fun <T> columnName(expression: SqlTypeExpression<T>) = columnName(exprMap[expression])
 }
 
 internal fun SQLiteDatabase.select(sql: String, args: Array<String> = emptyArray()): ACursor {

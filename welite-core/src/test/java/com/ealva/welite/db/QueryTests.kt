@@ -29,7 +29,10 @@ import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.bindLong
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.greater
+import com.ealva.welite.db.expr.max
 import com.ealva.welite.db.table.OnConflict
+import com.ealva.welite.db.table.alias
+import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selects
 import com.ealva.welite.db.table.toQuery
@@ -221,6 +224,24 @@ class QueryTests {
             .count()
         ).toBe(2)
         setSuccessful()
+      }
+    }
+  }
+
+  @Test
+  fun `test cursor wrapper`() = coroutineRule.runBlockingTest {
+    val maxTitle by lazy { MediaFileTable.mediaTitle.max().alias("max_media_title") }
+    withTestDatabase(appCtx, MEDIA_TABLES, coroutineRule.testDispatcher) {
+      query {
+        MediaFileTable.selects { listOf(id, mediaUri, maxTitle) }
+          .all()
+          .limit(1)
+          .sequence { cursor ->
+            expect(cursor.columnIndex(id)).toBe(0)
+            expect(cursor.isNull(id)).toBe(true)
+            expect(cursor.columnName(mediaUri)).toBe("MediaUri")
+          }
+          .toList()
       }
     }
   }
