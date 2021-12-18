@@ -111,4 +111,6 @@ public interface Query<C : ColumnSet> {
 private class QueryImpl<C : ColumnSet>(override val seed: QuerySeed<C>) : Query<C> {
   override val sql: String
     get() = seed.sql
+
+  override fun toString(): String = sql
 }

@@ -103,7 +103,11 @@ private class ViewColumnImpl<T>(
     return originalColumn.asDefaultValue()
   }
 
-  override fun appendTo(sqlBuilder: SqlBuilder) = sqlBuilder.append(identity())
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(view.identity.value)
+    append('.')
+    append(identity().value)
+  }
 
   override val table: Table
     get() = originalColumn.table
@@ -200,9 +204,9 @@ private val LOG by lazyLogger(View::class, WeLiteLog.marker)
  * requested column name. Versions >= Build.VERSION_CODES.N use the column-name list syntax of the
  * CREATE VIEW statement and will use the column name parameter if it's not blank.
  */
-public abstract class View private constructor(
+public open class View private constructor(
   name: String,
-  private val querySeed: QuerySeed<*>
+  private val querySeed: QuerySeed<*>?
 ) : BaseColumnSet(), Creatable, Comparable<View> {
 
   public constructor(query: Query<*>, name: String = "") : this(name, query.seed)
@@ -289,7 +293,9 @@ public abstract class View private constructor(
     } else {
       append(" AS ")
     }
-    append(querySeed.sql)
+    querySeed?.let {
+      append(querySeed.sql)
+    } ?: throw IllegalStateException("Creating a View with no QuerySeed")
   }
 
   override fun equals(other: Any?): Boolean {
@@ -312,6 +318,12 @@ public abstract class View private constructor(
   }
 
   override fun toString(): String = viewName
+
+  public companion object {
+    public operator fun invoke(viewName: String): View = View(viewName, null)
+  }
 }
 
 private fun View.nameFromClass() = javaClass.simpleName.removeSuffix("View")
+
+public fun existingView(viewName: String): View = View(viewName)

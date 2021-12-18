@@ -50,6 +50,9 @@ public data class OrderBy(
   }
 
   public companion object {
+    public val NONE: OrderBy = OrderBy("NONE", "FAIL", "FAIL")
+    public val RANDOM: OrderBy = OrderBy("RANDOM()")
+
     public operator fun invoke(
       expression: Expression<*>,
       ascDesc: Order = Order.ASC,
@@ -288,7 +291,9 @@ private class QueryBuilderImpl<out C : ColumnSet>(
   }
 
   override fun addOrderBy(orderBy: OrderBy): QueryBuilder<C> = apply {
-    this.orderBySet.add(orderBy)
+    if (orderBy !== OrderBy.NONE) {
+      orderBySet.add(orderBy)
+    }
   }
 
   override val hasOrderBy: Boolean
@@ -386,6 +391,8 @@ private class QueryBuilderImpl<out C : ColumnSet>(
   override fun <T> findResultColumnExpressionAlias(
     original: SqlTypeExpression<T>
   ): SqlTypeExpressionAlias<T>? = selectFrom.findResultColumnExpressionAlias(original)
+
+  override fun toString(): String = buildStr { appendTo(this) }
 }
 
 public inline fun <C : ColumnSet> QueryBuilder<C>.groupBy(

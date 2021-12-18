@@ -217,10 +217,12 @@ public class DivideOp<T, S : T>(
 public class Between(
   private val expr: Expression<*>,
   private val from: LiteralOp<*>,
-  private val to: LiteralOp<*>
+  private val to: LiteralOp<*>,
+  private val not: Boolean = false
 ) : Op<Boolean>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(expr)
+    if (not) append(" NOT")
     append(" BETWEEN ")
     append(from)
     append(" AND ")

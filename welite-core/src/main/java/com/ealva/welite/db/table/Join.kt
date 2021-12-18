@@ -21,6 +21,7 @@ import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.appendTo
 import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.SqlBuilder
+import com.ealva.welite.db.type.buildStr
 
 public typealias JoinCondition = Pair<Expression<*>, Expression<*>>
 
@@ -156,6 +157,8 @@ public class Join(private val columnSet: ColumnSet) : BaseColumnSet() {
       .map { a_pk -> a_pk to b.columns.filter { it.refersTo == a_pk } }
       .filter { it.second.isNotEmpty() }
       .takeIf { it.isNotEmpty() }
+
+  override fun toString(): String = buildStr { appendTo(this) }
 
   internal class JoinPart(
     val joinType: JoinType,

@@ -59,10 +59,12 @@ public class CompoundQueryBuilder<C : ColumnSet>(
   }
 
   override fun addOrderBy(orderBy: OrderBy): QueryBuilder<C> = apply {
-    val exp = orderBy.expression
-    original.addOrderBy(
-      selectToResultMap[exp]?.let { OrderBy(it, orderBy.ascDesc, orderBy.collate) } ?: orderBy
-    )
+    if (orderBy !== OrderBy.NONE) {
+      val exp = orderBy.expression
+      original.addOrderBy(
+        selectToResultMap[exp]?.let { OrderBy(it, orderBy.ascDesc, orderBy.collate) } ?: orderBy
+      )
+    }
   }
 }
 

@@ -45,3 +45,21 @@ public fun <T> Iterable<T>.appendTo(
   postfix: CharSequence = "",
   append: SqlBuilder.(T) -> Unit
 ): SqlBuilder = builder.apply { appendEach(separator, prefix, postfix, append) }
+
+/**
+ * This is basically a backdoor into WeLite's expression building. It requires knowing what SQL is
+ * needed and is not really typesafe even though Expression requires a type. The only time I've
+ * found it necessary to use is to use the strftime function which is not yet included in WeLite
+ * design. There may be other times it's needed but it's suggested to find a supported method or
+ * issue a pull request.
+ *
+ * Example:
+ * ```
+ * "(strftime('%s','now','${calc(units)} $unitsName') * 1000)".wrapAsExpression()
+ * ```
+ */
+public fun <T : Any> String.wrapAsExpression(): BaseExpression<T> = object : BaseExpression<T>() {
+  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append(this@wrapAsExpression)
+  }
+}

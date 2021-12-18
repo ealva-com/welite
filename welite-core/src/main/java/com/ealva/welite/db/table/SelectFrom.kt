@@ -53,6 +53,8 @@ public fun <C : ColumnSet> C.select(
   columns: List<Expression<*>> = this.columns
 ): SelectFrom<C> = selects { columns }
 
+public fun <C : ColumnSet> C.selectOne(): SelectFrom<C> = SelectOne(this)
+
 /**
  * SelectFrom is a subset of columns from a ColumnSet, plus any added expressions which appear as
  * a result column, which are the fields to be read in a query. The columns know how to read
@@ -93,7 +95,7 @@ public interface SelectFrom<out C : ColumnSet> {
   }
 }
 
-private data class SelectFromImpl<out C : ColumnSet>(
+private open class SelectFromImpl<out C : ColumnSet>(
   override val resultColumns: List<Expression<*>>,
   override val sourceSet: C
 ) : SelectFrom<C> {
@@ -127,5 +129,16 @@ private data class SelectFromImpl<out C : ColumnSet>(
   ): SqlTypeExpressionAlias<T>? {
     @Suppress("UNCHECKED_CAST")
     return resultColumns.find { it == original } as? SqlTypeExpressionAlias<T>
+  }
+}
+
+private class SelectOne<out C : ColumnSet>(sourceSet: C) :
+  SelectFromImpl<C>(emptyList(), sourceSet) {
+  override fun appendFrom(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    sourceSet.appendFromTo(this)
+  }
+
+  override fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
+    append("1")
   }
 }

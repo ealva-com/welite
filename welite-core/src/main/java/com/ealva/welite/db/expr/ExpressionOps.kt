@@ -66,6 +66,9 @@ public infix fun <T : Comparable<T>, S : T?> Expression<in S>.greaterEq(
 public fun <T> SqlTypeExpression<T>.between(from: T, to: T): Between =
   Between(this, literal(from), literal(to))
 
+public fun <T> SqlTypeExpression<T>.notBetween(from: T, to: T): Between =
+  Between(this, literal(from), literal(to), not = true)
+
 public fun <T> Expression<T>.isNull(): IsNullOp = IsNullOp(this)
 
 public fun <T> Expression<T>.isNotNull(): IsNotNullOp = IsNotNullOp(this)
