@@ -33,7 +33,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.hamcrest.CoreMatchers.isA
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -192,7 +191,7 @@ class DatabaseTests {
 
   @Test
   fun `test transaction on UI thread throws`() = coroutineRule.runBlockingTest {
-    thrown.expect(WeLiteException::class.java)
+    thrown.expect(IllegalStateException::class.java)
     val db = Database(
       context = appCtx,
       version = 1,
@@ -209,7 +208,7 @@ class DatabaseTests {
 
   @Test
   fun `test query on UI thread throws`() = coroutineRule.runBlockingTest {
-    thrown.expectCause(isA(IllegalStateException::class.java))
+    thrown.expect(IllegalStateException::class.java)
     val db = Database(
       context = appCtx,
       version = 1,

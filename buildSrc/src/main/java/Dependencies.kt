@@ -107,6 +107,12 @@ object Libs {
     const val ANDROID = "com.ealva:ealvalog-android:$VERSION"
   }
 
+  object Result {
+    private const val VERSION = "1.1.13"
+    const val RESULT = "com.michael-bull.kotlin-result:kotlin-result:$VERSION"
+    const val COROUTINES = "com.michael-bull.kotlin-result:kotlin-result-coroutines:$VERSION"
+  }
+
   object Robolectric {
     const val ROBOLECTRIC = "org.robolectric:robolectric:4.6.1"
   }

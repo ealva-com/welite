@@ -16,25 +16,6 @@
 
 package com.ealva.welite.db
 
-/**
- * Used internally in [Database.transaction] and [Database.query] as return values
- * from coroutine calls.
- */
-internal sealed class WeLiteResult<out R> {
-
-  /** Call was successful and contains the [value] */
-  data class Success<R>(val value: R) : WeLiteResult<R>()
-
-  /** Call did not complete successfully and an exception was thrown */
-  data class Unsuccessful(val exception: Exception) : WeLiteResult<Nothing>() {
-    companion object {
-      fun makeUncaught(message: String, cause: Throwable): Unsuccessful {
-        return Unsuccessful(WeLiteUncaughtException(message, cause))
-      }
-    }
-  }
-}
-
 public open class WeLiteException(message: String, cause: Throwable? = null) :
   RuntimeException(message, cause)
 

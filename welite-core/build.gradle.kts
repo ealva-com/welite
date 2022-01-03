@@ -101,6 +101,9 @@ dependencies {
   implementation(Libs.Coroutines.CORE)
   implementation(Libs.Coroutines.ANDROID)
 
+  implementation(Libs.Result.RESULT)
+  implementation(Libs.Result.COROUTINES)
+
   implementation(Libs.Kotlin.Serialization.CORE)
   androidTestImplementation(Libs.Kotlin.Serialization.JSON)
 

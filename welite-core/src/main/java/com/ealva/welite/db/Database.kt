@@ -28,8 +28,6 @@ import com.ealva.ealvalog.i
 import com.ealva.ealvalog.invoke
 import com.ealva.ealvalog.lazyLogger
 import com.ealva.ealvalog.w
-import com.ealva.welite.db.WeLiteResult.Success
-import com.ealva.welite.db.WeLiteResult.Unsuccessful
 import com.ealva.welite.db.expr.inList
 import com.ealva.welite.db.log.WeLiteLog
 import com.ealva.welite.db.table.Creatable
@@ -44,6 +42,13 @@ import com.ealva.welite.db.table.knownTypes
 import com.ealva.welite.db.table.longForQuery
 import com.ealva.welite.db.table.stringForQuery
 import com.ealva.welite.db.type.toStatementString
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.coroutines.runSuspendCatching
+import com.github.michaelbull.result.mapBoth
+import com.github.michaelbull.result.mapError
+import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.onSuccess
+import com.github.michaelbull.result.runCatching
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
@@ -120,10 +125,8 @@ public interface Database {
    * effect. Automatically started transactions are committed when the last SQL statement finishes.
    *
    * @see query
-   * @throws IllegalStateException if the database has been closed
-   * @throws WeLiteException if an exception is thrown in the coroutine code, but not in the [work]
-   * function. For example, if [work] is dispatched on the main UI thread an
-   * [IllegalStateException] is thrown which is in turn wrapped in a [WeLiteException].
+   * @throws IllegalStateException if the database has been closed or [work] is executed on the
+   * UI thread (unless explicitly allowed)
    * @throws UnmarkedTransactionException if [autoCommit] is false and a txn is not marked as
    * successful or rolled back, this exception will be thrown
    * @throws WeLiteUncaughtException if an exception is thrown from [work]. The
@@ -313,10 +316,6 @@ public interface Database {
 
 private val LOG by lazyLogger(Database::class, WeLiteLog.marker)
 
-private fun Exception.asUncaught(errorMessage: () -> String): Unsuccessful {
-  return Unsuccessful.makeUncaught(errorMessage(), this)
-}
-
 private class WeLiteDatabase(
   context: Context,
   fileName: String?,
@@ -397,9 +396,13 @@ private class WeLiteDatabase(
 
   /**
    * Dispatch work on a coroutine inside of a transaction and handle marking the txn as required.
-   * Converts the returned [WeLiteResult] to the value returned from [work] if successful, else
-   * converts to an exception which is then thrown. The [WeLiteResult] is not returned as many times
-   * the return value is not checked, which would allow exceptions to be ignored.
+   * Converts the returned [Result] to the value returned from [work] if Ok, else converts to an
+   * [WeLiteUncaughtException] which is then thrown. The [Result] is not returned as many times the
+   * return value is not checked, which would allow exceptions to be ignored.
+   *
+   * Throws [IllegalStateException] if the DB is closed or [work] executed on the UI thread (unless
+   * specifically allowed), or [WeLiteUncaughtException] if an uncaught exception is thrown in
+   * [work].
    */
   private suspend fun <R> workInTxn(
     exclusive: Boolean,
@@ -407,43 +410,24 @@ private class WeLiteDatabase(
     autoCommit: Boolean,
     throwIfNoChoice: Boolean,
     work: Transaction.() -> R
-  ): R {
-    check(!closed) { "Database has been closed" }
-    withContext(dispatcher) {
-      try {
-        assertNotUiThread() // client can set dispatcher, need to check
-        beginTransaction(exclusive, unitOfWork, throwIfNoChoice, this).use { txn ->
-          txn.doWork(unitOfWork, work).also { result -> txn.doAutoOrRollback(result, autoCommit) }
-        }
-      } catch (e: Exception) {
-        Unsuccessful(e.asWeLiteException("Exception on coroutine '$unitOfWork'"))
-      }
-    }.let { result ->
-      when (result) {
-        is Success -> return result.value
-        is Unsuccessful -> throw result.exception
-      }
-    }
-  }
-
-  private fun <R> Transaction.doAutoOrRollback(result: WeLiteResult<R>, autoCommit: Boolean) {
-    if (!isClosed) {
-      if (result is Success) {
-        if (autoCommit && !rolledBack) setSuccessful()
-      } else {
-        rollback()
+  ): R = withContext(dispatcher) {
+    runSuspendCatching {
+      check(!closed) { "Database has been closed" }
+      assertNotUiThread() // client can set dispatcher, need to check
+      beginTransaction(
+        exclusive = exclusive,
+        unitOfWork = unitOfWork,
+        throwIfNoChoice = throwIfNoChoice,
+        coroutineScope = this
+      ).use { txn ->
+        runCatching { txn.work() }
+          .mapError { cause -> WeLiteUncaughtException("Uncaught during $unitOfWork", cause) }
+          .onFailure { with(txn) { if (!isClosed) rollback() } }
+          .onSuccess { with(txn) { if (!isClosed && autoCommit && !rolledBack) setSuccessful() } }
+          .getOrThrow()
       }
     }
-  }
-
-  private fun <R> Transaction.doWork(
-    unitOfWork: String,
-    work: Transaction.() -> R
-  ): WeLiteResult<R> = try {
-    Success(work())
-  } catch (e: Exception) {
-    e.asUncaught { "Exception during transaction '$unitOfWork'" }
-  }
+  }.getOrThrow()
 
   override fun <R> ongoingTransaction(
     coroutineScope: CoroutineScope?,
@@ -471,22 +455,15 @@ private class WeLiteDatabase(
     throwIfNoChoice: Boolean,
     coroutineScope: CoroutineScope
   ): CloseableTransaction = CloseableTransaction(
-    this,
-    exclusive,
-    unitOfWork,
-    throwIfNoChoice,
-    coroutineScope
+    dbConfig = this,
+    exclusiveLock = exclusive,
+    unitOfWork = unitOfWork,
+    throwIfNoChoice = throwIfNoChoice,
+    coroutineScope = coroutineScope
   )
 
   private fun assertNotUiThread() =
     check(allowWorkOnUiThread || isNotUiThread) { "Cannot access the Database on the UI thread." }
-}
-
-private fun Exception.asWeLiteException(msg: String): WeLiteException {
-  return when (this) {
-    is WeLiteException -> this
-    else -> WeLiteException(msg, this)
-  }
 }
 
 private class ErrorHandler(private val database: Database) : DatabaseErrorHandler {
@@ -744,3 +721,6 @@ private class ConfigurationImpl(private val db: SQLiteDatabase) : DatabaseConfig
 
 public class UnmarkedTransactionException(unitOfWork: String) :
   WeLiteException("Txn '$unitOfWork' was not set as successful nor rolled back")
+
+private fun <T> Result<T, Throwable>.getOrThrow(): T =
+  mapBoth({ it }, { throw it })
