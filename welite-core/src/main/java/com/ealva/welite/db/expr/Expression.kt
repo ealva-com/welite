@@ -22,6 +22,17 @@ import com.ealva.welite.db.type.buildStr
 
 public interface Expression<T> : AppendsToSqlBuilder {
   public fun asDefaultValue(): String
+
+  /**
+   * If this expression is an alias, an alias should be returned, otherwise returns self. This is
+   * used when the column should be referenced as the alias and not the original column.
+   */
+  public fun aliasOrSelf(): Expression<T> = this
+
+  /**
+   * If this expression is an alias, return the original column, and if not an alias return self
+   */
+  public fun originalOrSelf(): Expression<T> = this
 }
 
 public abstract class BaseExpression<T> : Expression<T> {

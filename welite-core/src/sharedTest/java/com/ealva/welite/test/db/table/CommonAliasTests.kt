@@ -19,6 +19,7 @@ package com.ealva.welite.test.db.table
 import android.content.Context
 import com.ealva.welite.db.expr.eq
 import com.ealva.welite.db.expr.max
+import com.ealva.welite.db.table.Cursor
 import com.ealva.welite.db.table.Join
 import com.ealva.welite.db.table.JoinType
 import com.ealva.welite.db.table.QueryBuilderAlias
@@ -56,8 +57,8 @@ public object CommonAliasTests {
         val actual = query.lastQueryBuilderAlias?.alias
         expect(actual).toBe("q0")
         expect(query.selectAll().count()).toBe(3L)
-        query.selects { Person.columns + innerExp }.all().sequence {
-          expect(it[innerExp]).toNotBeNull()
+        query.selects { Person.columns + innerExp }.all().sequence { cursor: Cursor ->
+          expect(cursor[innerExp]).toNotBeNull()
         }
       }
     }

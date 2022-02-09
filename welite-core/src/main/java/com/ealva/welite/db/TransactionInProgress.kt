@@ -64,6 +64,8 @@ import com.ealva.welite.db.table.where
 import com.ealva.welite.db.type.buildStr
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 
 private val LOG by lazyLogger(TransactionInProgress::class, WeLiteLog.marker)
@@ -217,6 +219,16 @@ private class TransactionInProgressImpl(
     factory: C.(Cursor) -> T
   ): Sequence<T> = this@TransactionInProgressImpl.doSequence(build(), bind, factory)
 
+  override fun <C : ColumnSet, T> Query<C>.flow(
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
+  ): Flow<T> = this@TransactionInProgressImpl.doFlow(seed, bind, factory)
+
+  override fun <C : ColumnSet, T> QueryBuilder<C>.flow(
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
+  ): Flow<T> = this@TransactionInProgressImpl.doFlow(build(), bind, factory)
+
   private fun <C : ColumnSet> doForEach(
     seed: QuerySeed<C>,
     bind: C.(ArgBindings) -> Unit,
@@ -235,6 +247,16 @@ private class TransactionInProgressImpl(
   ): Sequence<T> = sequence {
     CursorWrapper.select(seed, db, bind).use { cursor ->
       while (cursor.moveToNext()) yield(seed.sourceSet.factory(cursor))
+    }
+  }
+
+  private fun <C : ColumnSet, T> doFlow(
+    seed: QuerySeed<C>,
+    bind: C.(ArgBindings) -> Unit,
+    factory: C.(Cursor) -> T
+  ): Flow<T> = flow {
+    CursorWrapper.select(seed, db, bind).use { cursor ->
+      while (cursor.moveToNext()) emit(seed.sourceSet.factory(cursor))
     }
   }
 

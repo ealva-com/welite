@@ -34,11 +34,15 @@ import com.ealva.welite.db.type.SqlBuilder
  * it is converted
  */
 public fun <C : ColumnSet> CompoundSelect<C>.select(
-  columns: List<Expression<*>> = this.columns
-): CompoundSelectFrom<C> {
-  val resultColumns = columns.distinct().map { column -> mapSelectToResult[column] ?: column }
-  return CompoundSelectFrom(resultColumns, firstColumnSet, this, mapSelectToResult.copy())
-}
+  columns: List<Expression<*>> = this.resultColumns
+): CompoundSelectFrom<C> = CompoundSelectFrom(
+  columns
+    .distinct()
+    .map { column -> mapSelectToResult[column.originalOrSelf()] ?: column },
+  firstColumnSet,
+  this,
+  mapSelectToResult.copy()
+)
 
 public fun <C : ColumnSet> CompoundSelect<C>.select(
   vararg columns: Expression<*>
@@ -96,7 +100,7 @@ private class CompoundSelectFromImpl<out C : ColumnSet>(
   }
 
   override fun appendResultColumns(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    resultColumns.appendEach { append(it) }
+    resultColumns.appendEach { expression -> append(expression.aliasOrSelf()) }
   }
 
   override fun sourceSetColumnsInResult(): List<Column<*>> =

@@ -155,15 +155,14 @@ private class CompoundSelectImpl<out C : ColumnSet>(
   }
   private val operatorList = mutableListOf(op)
 
-  override val columns: List<Column<*>> = builderList[0].sourceSetColumnsInResult()
+  override val columns: List<Column<*>> = builderList[0].sourceSet.columns
   override val identity: Identity = "".asIdentity(false)
 
   private val selectToResultMap = SelectToResultMap()
   private fun mapSelectColumnToResult(column: Expression<*>): Expression<*> {
-    return if (column is Column) {
-      SimpleDelegatingColumn(column).also { selectToResultMap[column] = it }
-    } else {
-      column
+    return when (column) {
+      is Column -> SimpleDelegatingColumn(column).also { selectToResultMap[column] = it }
+      else -> column
     }
   }
 

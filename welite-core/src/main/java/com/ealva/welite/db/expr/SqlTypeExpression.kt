@@ -22,6 +22,11 @@ import com.ealva.welite.db.type.PersistentType
 public interface SqlTypeExpression<T> : Expression<T> {
   public val persistentType: PersistentType<T>
   public fun bind(bindable: Bindable, index: Int, value: T?)
+
+  /**
+   * Tighten the contract to return an SqlTypeExpression and not the parent Expression
+   */
+  override fun aliasOrSelf(): SqlTypeExpression<T> = this
 }
 
 public abstract class BaseSqlTypeExpression<T> : BaseExpression<T>(), SqlTypeExpression<T> {

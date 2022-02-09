@@ -27,6 +27,7 @@ import com.ealva.welite.db.table.QueryBuilder
 import com.ealva.welite.db.table.Table
 import com.ealva.welite.db.table.TableDescription
 import com.ealva.welite.db.table.WeLiteMarker
+import kotlinx.coroutines.flow.Flow
 
 /**
  * These functions are scoped to a Queryable interface in an attempt to only initiate queries while
@@ -104,6 +105,16 @@ public interface Queryable {
     bind: C.(ArgBindings) -> Unit = { },
     factory: C.(Cursor) -> T
   ): Sequence<T>
+
+  public fun <C : ColumnSet, T> Query<C>.flow(
+    bind: C.(ArgBindings) -> Unit = { },
+    factory: C.(Cursor) -> T
+  ): Flow<T>
+
+  public fun <C : ColumnSet, T> QueryBuilder<C>.flow(
+    bind: C.(ArgBindings) -> Unit = { },
+    factory: C.(Cursor) -> T
+  ): Flow<T>
 
   /**
    * Do any necessary [bind], execute the query, and return the value in the first column of the

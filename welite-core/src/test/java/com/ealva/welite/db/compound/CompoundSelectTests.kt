@@ -54,6 +54,11 @@ class CompoundSelectTests {
   }
 
   @Test
+  fun `test union and alias select`() = coroutineRule.runBlockingTest {
+    Common.testUnionAndAliasSelect(appCtx, coroutineRule.testDispatcher)
+  }
+
+  @Test
   fun `test unionAll two selects`() = coroutineRule.runBlockingTest {
     Common.testUnionAllTwoSelects(appCtx, coroutineRule.testDispatcher)
   }

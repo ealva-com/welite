@@ -64,8 +64,11 @@ private class CursorWrapperImpl<C : ColumnSet>(
   override fun <T> get(expression: SqlTypeExpression<T>): T =
     getOptional(expression) ?: throw IllegalStateException(unexpectedNullMessage(expression))
 
-  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? =
-    expression.persistentType.columnValue(this, exprMap[expression])
+  override fun <T> getOptional(expression: SqlTypeExpression<T>): T? {
+    val columnIndex = exprMap[expression]
+    require(columnIndex >= 0) { "Column index for $expression not found. May not match select." }
+    return expression.persistentType.columnValue(this, columnIndex)
+  }
 
   override fun getBlob(columnIndex: Int): ByteArray = cursor.getBlob(columnIndex)
   override fun getString(columnIndex: Int): String = cursor.getString(columnIndex)

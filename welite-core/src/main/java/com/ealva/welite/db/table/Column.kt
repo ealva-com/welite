@@ -300,6 +300,16 @@ public data class SimpleDelegatingColumn<T>(val original: Column<T>) : Column<T>
     append(identity().value)
   }
 
+  /**
+   * Don't allow delegation to original because is will slice this object and return [original]
+   */
+  override fun aliasOrSelf(): SqlTypeExpression<T> = this
+
+  /**
+   * Don't allow delegation to original because is will slice this object and return [original]
+   */
+  override fun originalOrSelf(): Expression<T> = this
+
   override fun toString(): String {
     return name
   }

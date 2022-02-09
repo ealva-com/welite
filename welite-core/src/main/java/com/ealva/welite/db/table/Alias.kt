@@ -67,18 +67,18 @@ public class Alias<out T : Table>(private val delegate: T, private val alias: St
 }
 
 public class ExpressionAlias<T>(
-  public val delegate: Expression<T>,
+  public val original: Expression<T>,
   public val alias: String
 ) : BaseExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    append(delegate)
+    append(original)
     append(" ")
     append(alias)
   }
 
-  public fun aliasOnlyExpression(): Expression<T> {
-    return if (delegate is SqlTypeExpression<T>) {
-      object : Function<T>(delegate.persistentType) {
+  override fun aliasOrSelf(): Expression<T> {
+    return if (original is SqlTypeExpression<T>) {
+      object : Function<T>(original.persistentType) {
         override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
           sqlBuilder.apply { append(alias) }
       }
@@ -89,24 +89,28 @@ public class ExpressionAlias<T>(
       }
     }
   }
+
+  override fun originalOrSelf(): Expression<T> = original
 }
 
 public class SqlTypeExpressionAlias<T>(
-  public val delegate: SqlTypeExpression<T>,
+  public val original: SqlTypeExpression<T>,
   public val alias: String
 ) : BaseSqlTypeExpression<T>() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    append(delegate)
+    append(original)
     append(" ")
     append(alias)
   }
 
-  public fun aliasOnlyExpression(): SqlTypeExpression<T> {
-    return object : Function<T>(delegate.persistentType) {
+  override fun aliasOrSelf(): SqlTypeExpression<T> {
+    return object : Function<T>(original.persistentType) {
       override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder =
         sqlBuilder.apply { append(alias) }
     }
   }
+
+  override fun originalOrSelf(): Expression<T> = original
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -115,7 +119,7 @@ public class SqlTypeExpressionAlias<T>(
 
     other as SqlTypeExpressionAlias<*>
 
-    if (delegate != other.delegate) return false
+    if (original != other.original) return false
     if (alias != other.alias) return false
 
     return true
@@ -123,13 +127,13 @@ public class SqlTypeExpressionAlias<T>(
 
   override fun hashCode(): Int {
     var result = super.hashCode()
-    result = 31 * result + delegate.hashCode()
+    result = 31 * result + original.hashCode()
     result = 31 * result + alias.hashCode()
     return result
   }
 
   override val persistentType: PersistentType<T>
-    get() = delegate.persistentType
+    get() = original.persistentType
 }
 
 public class QueryBuilderAlias<C : ColumnSet>(
@@ -159,7 +163,7 @@ public class QueryBuilderAlias<C : ColumnSet>(
     val expressionAlias = queryBuilder.findResultColumnExpressionAlias(original)
       ?: error("Field not found in original table fields")
 
-    return expressionAlias.delegate.alias("$alias.${expressionAlias.alias}").aliasOnlyExpression()
+    return expressionAlias.original.alias("$alias.${expressionAlias.alias}").aliasOrSelf()
   }
 
   override fun join(

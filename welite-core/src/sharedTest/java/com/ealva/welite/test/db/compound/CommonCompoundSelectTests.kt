@@ -34,10 +34,12 @@ import com.ealva.welite.db.expr.literal
 import com.ealva.welite.db.statements.deleteWhere
 import com.ealva.welite.db.table.OnConflict
 import com.ealva.welite.db.table.Table
+import com.ealva.welite.db.table.alias
 import com.ealva.welite.db.table.all
 import com.ealva.welite.db.table.asExpression
 import com.ealva.welite.db.table.by
 import com.ealva.welite.db.table.orderBy
+import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectCount
 import com.ealva.welite.db.table.where
@@ -97,7 +99,41 @@ public object CommonCompoundSelectTests {
         )
 
         expect(selectCount.longForQuery()).toBe(1)
+
+        val selectAll = union.selectAll()
+        val expectedUnionAll = buildStr { append(selectAll) }
+        expect(expectedUnionAll).toBe(
+          """SELECT "MediaIdId" FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
+            """WHERE "ArtistMedia"."ArtistId" = 1 UNION SELECT "MediaFile"."_id" """ +
+            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+        )
       }
+    }
+  }
+  public suspend fun testUnionAndAliasSelect(
+    appCtx: Context,
+    testDispatcher: CoroutineDispatcher
+  ) {
+    withTestDatabase(appCtx, MEDIA_TABLES, testDispatcher) {
+      expectMediaTablesExist()
+      transaction {
+        val uri1 = Uri.fromFile(File("""/Music/Song.mp3"""))
+        val uri2 = Uri.fromFile(File("""/Music/Song2.mp3"""))
+        insertMediaData("Title 1", "Artist 1", "Album 1", uri1)
+        insertMediaData("Title 2", "Artist 2", "Album 2", uri2)
+      }
+
+      val aliasColumn = "album_name_alias"
+      val album by lazy { AlbumTable.albumName.alias(aliasColumn) }
+      val artist by lazy { AlbumTable.artistName.alias(aliasColumn) }
+      val union = AlbumTable.select { album }.all() union AlbumTable.select { artist }.all()
+      val unionSelect = union.selectAll().orderByAsc { album }
+      val unionSelectStr = buildStr { append(unionSelect) }
+      expect(unionSelectStr).toBe(
+        """SELECT album_name_alias FROM (SELECT "Album"."AlbumName" album_name_alias FROM""" +
+          """ "Album" UNION SELECT "Album"."ArtistName" album_name_alias FROM "Album")""" +
+          """ ORDER BY album_name_alias"""
+      )
     }
   }
 

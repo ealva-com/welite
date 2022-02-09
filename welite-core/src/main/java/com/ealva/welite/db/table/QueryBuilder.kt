@@ -69,8 +69,7 @@ public data class OrderBy(
       collate: String
     ): OrderBy = OrderBy(
       buildStr {
-        val alias = (expression as? ExpressionAlias<*>)?.alias
-        if (alias != null) append(alias) else append(expression)
+        append(expression.aliasOrSelf())
       },
       ascDesc,
       collate
@@ -355,7 +354,7 @@ private class QueryBuilderImpl<out C : ColumnSet>(
       if (groupBySet.isNotEmpty()) {
         append(" GROUP BY ")
         groupBySet.appendEach { expression ->
-          append(((expression as? ExpressionAlias)?.aliasOnlyExpression() ?: expression))
+          append(expression.aliasOrSelf())
         }
       }
 
