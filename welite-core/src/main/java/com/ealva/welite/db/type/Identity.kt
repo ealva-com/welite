@@ -53,7 +53,7 @@ public value class Identity(public val value: String) {
     public const val DEFAULT_QUOTE_CHAR: Char = '"'
 
     @Suppress("MemberVisibilityCanBePrivate")
-    public const val DEFAULT_QUOTE_ALL: Boolean = true
+    public const val DEFAULT_QUOTE_ALL: Boolean = false
 
     public var quoteChar: Char =
       DEFAULT_QUOTE_CHAR

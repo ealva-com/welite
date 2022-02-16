@@ -178,12 +178,12 @@ public class Join(private val columnSet: ColumnSet) : BaseColumnSet() {
         append(" = ")
         append(fk)
       }
-      additionalConstraint?.let {
+      additionalConstraint?.let { constraint ->
         if (hasConditions()) {
           append(" AND ")
         }
         append(" (")
-        append((additionalConstraint)())
+        append(constraint())
         append(")")
       }
     }

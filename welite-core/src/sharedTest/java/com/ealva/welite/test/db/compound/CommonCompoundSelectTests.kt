@@ -85,17 +85,17 @@ public object CommonCompoundSelectTests {
 
         val expectedUnion: String = buildStr { append(union) }
         expect(expectedUnion).toBe(
-          """(SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" WHERE """ +
-            """"ArtistMedia"."ArtistId" = 1 UNION SELECT "MediaFile"."_id" FROM "MediaFile" """ +
-            """WHERE "MediaFile"."ArtistId" = 1)"""
+          """(SELECT ArtistMedia.MediaIdId FROM ArtistMedia WHERE """ +
+            """ArtistMedia.ArtistId = 1 UNION SELECT MediaFile._id FROM MediaFile """ +
+            """WHERE MediaFile.ArtistId = 1)"""
         )
 
         val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
-          """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
-            """WHERE "ArtistMedia"."ArtistId" = 1 UNION SELECT "MediaFile"."_id" """ +
-            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          """SELECT COUNT(*) FROM (SELECT ArtistMedia.MediaIdId FROM ArtistMedia """ +
+            """WHERE ArtistMedia.ArtistId = 1 UNION SELECT MediaFile._id """ +
+            """FROM MediaFile WHERE MediaFile.ArtistId = 1)"""
         )
 
         expect(selectCount.longForQuery()).toBe(1)
@@ -103,9 +103,9 @@ public object CommonCompoundSelectTests {
         val selectAll = union.selectAll()
         val expectedUnionAll = buildStr { append(selectAll) }
         expect(expectedUnionAll).toBe(
-          """SELECT "MediaIdId" FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
-            """WHERE "ArtistMedia"."ArtistId" = 1 UNION SELECT "MediaFile"."_id" """ +
-            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          """SELECT MediaIdId FROM (SELECT ArtistMedia.MediaIdId FROM ArtistMedia """ +
+            """WHERE ArtistMedia.ArtistId = 1 UNION SELECT MediaFile._id """ +
+            """FROM MediaFile WHERE MediaFile.ArtistId = 1)"""
         )
       }
     }
@@ -130,8 +130,8 @@ public object CommonCompoundSelectTests {
       val unionSelect = union.selectAll().orderByAsc { album }
       val unionSelectStr = buildStr { append(unionSelect) }
       expect(unionSelectStr).toBe(
-        """SELECT album_name_alias FROM (SELECT "Album"."AlbumName" album_name_alias FROM""" +
-          """ "Album" UNION SELECT "Album"."ArtistName" album_name_alias FROM "Album")""" +
+        """SELECT album_name_alias FROM (SELECT Album.AlbumName album_name_alias FROM""" +
+          """ Album UNION SELECT Album.ArtistName album_name_alias FROM Album)""" +
           """ ORDER BY album_name_alias"""
       )
     }
@@ -165,17 +165,17 @@ public object CommonCompoundSelectTests {
 
         val expectedUnion: String = buildStr { append(union) }
         expect(expectedUnion).toBe(
-          """(SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" WHERE """ +
-            """"ArtistMedia"."ArtistId" = 1 UNION ALL SELECT "MediaFile"."_id" FROM""" +
-            """ "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          """(SELECT ArtistMedia.MediaIdId FROM ArtistMedia WHERE """ +
+            """ArtistMedia.ArtistId = 1 UNION ALL SELECT MediaFile._id FROM""" +
+            """ MediaFile WHERE MediaFile.ArtistId = 1)"""
         )
 
         val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
-          """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
-            """WHERE "ArtistMedia"."ArtistId" = 1 UNION ALL SELECT "MediaFile"."_id" """ +
-            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          """SELECT COUNT(*) FROM (SELECT ArtistMedia.MediaIdId FROM ArtistMedia """ +
+            """WHERE ArtistMedia.ArtistId = 1 UNION ALL SELECT MediaFile._id """ +
+            """FROM MediaFile WHERE MediaFile.ArtistId = 1)"""
         )
 
         expect(selectCount.longForQuery()).toBe(2)
@@ -211,17 +211,17 @@ public object CommonCompoundSelectTests {
 
         val expectedUnion: String = buildStr { append(union) }
         expect(expectedUnion).toBe(
-          """(SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" WHERE """ +
-            """"ArtistMedia"."ArtistId" = 1 INTERSECT SELECT "MediaFile"."_id" FROM""" +
-            """ "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          """(SELECT ArtistMedia.MediaIdId FROM ArtistMedia WHERE """ +
+            """ArtistMedia.ArtistId = 1 INTERSECT SELECT MediaFile._id FROM""" +
+            """ MediaFile WHERE MediaFile.ArtistId = 1)"""
         )
 
         val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
-          """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
-            """WHERE "ArtistMedia"."ArtistId" = 1 INTERSECT SELECT "MediaFile"."_id" """ +
-            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          """SELECT COUNT(*) FROM (SELECT ArtistMedia.MediaIdId FROM ArtistMedia """ +
+            """WHERE ArtistMedia.ArtistId = 1 INTERSECT SELECT MediaFile._id """ +
+            """FROM MediaFile WHERE MediaFile.ArtistId = 1)"""
         )
 
         expect(selectCount.longForQuery()).toBe(1L)
@@ -257,17 +257,17 @@ public object CommonCompoundSelectTests {
 
         val expectedUnion: String = buildStr { append(union) }
         expect(expectedUnion).toBe(
-          """(SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" WHERE """ +
-            """"ArtistMedia"."ArtistId" = 1 EXCEPT SELECT "MediaFile"."_id" """ +
-            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          "(SELECT ArtistMedia.MediaIdId FROM ArtistMedia WHERE " +
+            "ArtistMedia.ArtistId = 1 EXCEPT SELECT MediaFile._id " +
+            "FROM MediaFile WHERE MediaFile.ArtistId = 1)"
         )
 
         val selectCount = union.selectCount()
         val expectedQuery = buildStr { append(selectCount) }
         expect(expectedQuery).toBe(
-          """SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
-            """WHERE "ArtistMedia"."ArtistId" = 1 EXCEPT SELECT "MediaFile"."_id" """ +
-            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = 1)"""
+          "SELECT COUNT(*) FROM (SELECT ArtistMedia.MediaIdId FROM ArtistMedia " +
+            "WHERE ArtistMedia.ArtistId = 1 EXCEPT SELECT MediaFile._id " +
+            "FROM MediaFile WHERE MediaFile.ArtistId = 1)"
         )
 
         expect(selectCount.longForQuery()).toBe(0)
@@ -320,9 +320,9 @@ public object CommonCompoundSelectTests {
 
         val expression = buildStr { append(countExpression) }
         expect(expression).toBe(
-          """(SELECT COUNT(*) FROM (SELECT "ArtistMedia"."MediaIdId" FROM "ArtistMedia" """ +
-            """WHERE "ArtistMedia"."ArtistId" = "Artist"."_id" UNION SELECT "MediaFile"."_id" """ +
-            """FROM "MediaFile" WHERE "MediaFile"."ArtistId" = "Artist"."_id"))"""
+          """(SELECT COUNT(*) FROM (SELECT ArtistMedia.MediaIdId FROM ArtistMedia """ +
+            """WHERE ArtistMedia.ArtistId = Artist._id UNION SELECT MediaFile._id """ +
+            """FROM MediaFile WHERE MediaFile.ArtistId = Artist._id))"""
         )
 
         val deleted = ArtistTable.deleteWhere { literal(0) eq countExpression }.delete()
@@ -345,8 +345,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" UNION SELECT""" +
-            """ "TableB"."_id" FROM "TableB")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA UNION SELECT""" +
+            """ TableB._id FROM TableB)"""
         )
 
         val unionList = compoundSelect
@@ -370,8 +370,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" UNION ALL SELECT""" +
-            """ "TableB"."_id" FROM "TableB")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA UNION ALL SELECT""" +
+            """ TableB._id FROM TableB)"""
         )
 
         val unionList = compoundSelect
@@ -395,8 +395,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" INTERSECT SELECT""" +
-            """ "TableB"."_id" FROM "TableB")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA INTERSECT SELECT""" +
+            """ TableB._id FROM TableB)"""
         )
 
         val unionList = compoundSelect
@@ -420,8 +420,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" EXCEPT SELECT""" +
-            """ "TableB"."_id" FROM "TableB")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA EXCEPT SELECT""" +
+            """ TableB._id FROM TableB)"""
         )
 
         val unionList = compoundSelect
@@ -446,8 +446,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" UNION SELECT""" +
-            """ "TableB"."_id" FROM "TableB" UNION SELECT "TableC"."_id" FROM "TableC")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA UNION SELECT""" +
+            """ TableB._id FROM TableB UNION SELECT TableC._id FROM TableC)"""
         )
 
         val unionList = compoundSelect
@@ -473,8 +473,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" UNION SELECT""" +
-            """ "TableB"."_id" FROM "TableB" UNION ALL SELECT "TableC"."_id" FROM "TableC")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA UNION SELECT""" +
+            """ TableB._id FROM TableB UNION ALL SELECT TableC._id FROM TableC)"""
         )
 
         val unionList = compoundSelect
@@ -500,8 +500,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" UNION SELECT""" +
-            """ "TableB"."_id" FROM "TableB" INTERSECT SELECT "TableC"."_id" FROM "TableC")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA UNION SELECT""" +
+            """ TableB._id FROM TableB INTERSECT SELECT TableC._id FROM TableC)"""
         )
 
         val unionList = compoundSelect
@@ -528,8 +528,8 @@ public object CommonCompoundSelectTests {
         val union = compoundSelect.selectAll()
         val unionString = buildStr { append(union) }
         expect(unionString).toBe(
-          """SELECT "_id" FROM (SELECT "TableA"."_id" FROM "TableA" UNION ALL SELECT""" +
-            """ "TableB"."_id" FROM "TableB" EXCEPT SELECT "TableC"."_id" FROM "TableC")"""
+          """SELECT _id FROM (SELECT TableA._id FROM TableA UNION ALL SELECT""" +
+            """ TableB._id FROM TableB EXCEPT SELECT TableC._id FROM TableC)"""
         )
 
         val unionList = compoundSelect

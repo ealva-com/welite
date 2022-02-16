@@ -103,7 +103,8 @@ public data class ForeignKeyConstraint(
   val child: Column<*>,
   val onUpdate: ForeignKeyAction,
   val onDelete: ForeignKeyAction,
-  private val name: String?
+  private val name: String?,
+  private val forceQuoteName: Boolean
 ) {
   private val childColumn: Identity
     get() = child.identity()
@@ -113,14 +114,15 @@ public data class ForeignKeyConstraint(
 
   private val fkName: Identity
     get() = Identity.make(
-      name ?: buildStr {
+      identity = name ?: buildStr {
         append("fk_")
         append(parentTable.unquoted)
         append("_")
         append(parentColumn.unquoted)
         append("_")
         append(childColumn.unquoted)
-      }
+      },
+      forceQuote = forceQuoteName
     )
 
   internal val foreignKeyPart: String
@@ -201,7 +203,8 @@ public class Index(
   private val table: Table,
   private val columns: List<Column<*>>,
   private val unique: Boolean,
-  private val customName: String? = null
+  private val customName: String? = null,
+  private val forceQuoteName: Boolean = false
 ) : Creatable {
   init {
     require(columns.isNotEmpty()) { "At least one column is required to create an index" }
@@ -221,7 +224,7 @@ public class Index(
 
   override val masterType: MasterType = MasterType.Index
   override val identity: Identity
-    get() = indexName.asIdentity()
+    get() = indexName.asIdentity(forceQuoteName)
 
   override fun toString(): String = makeCreateSql()
 

@@ -67,8 +67,8 @@ class BigDecimalColumnTest {
 
   @Test
   fun `test BigDecimal column`() {
-    expect(BigTable.bigD.descriptionDdl()).toBe(""""bigd" INTEGER NOT NULL""")
-    expect(BigTable.optBig.descriptionDdl()).toBe(""""opt_big" INTEGER""")
+    expect(BigTable.bigD.descriptionDdl()).toBe("bigd INTEGER NOT NULL")
+    expect(BigTable.optBig.descriptionDdl()).toBe("opt_big INTEGER")
   }
 
   @Test
@@ -205,7 +205,7 @@ class BigDecimalColumnTest {
 
   @Test
   fun `test opt reference`() = coroutineRule.runBlockingTest {
-    expect(HasBigTableRef.ref.descriptionDdl()).toBe(""""ref" INTEGER""")
+    expect(HasBigTableRef.ref.descriptionDdl()).toBe("ref INTEGER")
     withTestDatabase(appCtx, setOf(BigTable, HasBigTableRef), coroutineRule.testDispatcher) {
       query {
         HasBigTableRef.foreignKeyList.let { list ->

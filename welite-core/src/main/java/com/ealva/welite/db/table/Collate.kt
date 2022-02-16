@@ -52,4 +52,7 @@ public object UnspecifiedCollate : Collate("") {
 /**
  * Android doesn't expose ability to create a collating function but...
  */
-public class CollateUser(name: String) : Collate("COLLATE ${Identity.make(name).value}")
+public class CollateUser(
+  name: String,
+  forceQuoteName: Boolean = false
+) : Collate("COLLATE ${Identity.make(name, forceQuoteName).value}")

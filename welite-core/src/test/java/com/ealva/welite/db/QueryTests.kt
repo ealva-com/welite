@@ -88,8 +88,7 @@ class QueryTests {
           .toQuery()
 
         expect(query.sql).toBe(
-          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
-            """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
+          "SELECT MediaFile._id, MediaFile.MediaUri FROM MediaFile WHERE MediaFile._id > 0"
         )
 
         var count = 0
@@ -116,8 +115,7 @@ class QueryTests {
           .toQuery()
 
         expect(query.sql).toBe(
-          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
-            """ "MediaFile" WHERE "MediaFile"."_id" > ?"""
+          "SELECT MediaFile._id, MediaFile.MediaUri FROM MediaFile WHERE MediaFile._id > ?"
         )
 
         var count = 0
@@ -146,8 +144,7 @@ class QueryTests {
           .toQuery()
 
         expect(query.sql).toBe(
-          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
-            """ "MediaFile" WHERE "MediaFile"."_id" > ?"""
+          "SELECT MediaFile._id, MediaFile.MediaUri FROM MediaFile WHERE MediaFile._id > ?"
         )
 
         var count = 0
@@ -180,8 +177,7 @@ class QueryTests {
           .toQuery()
 
         expect(query.sql).toBe(
-          """SELECT "MediaFile"."_id", "MediaFile"."MediaUri" FROM""" +
-            """ "MediaFile" WHERE "MediaFile"."_id" > 0"""
+          "SELECT MediaFile._id, MediaFile.MediaUri FROM MediaFile WHERE MediaFile._id > 0"
         )
 
         val results = mutableListOf<String>()

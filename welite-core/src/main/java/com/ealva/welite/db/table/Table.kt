@@ -76,15 +76,19 @@ private const val IGNORED_CONSTRAINT_WITH_SAME_NAME =
  */
 public abstract class Table(
   name: String = "",
-  private val systemTable: Boolean = false
+  private val systemTable: Boolean = false,
+  private val forceQuoteName: Boolean = false
 ) : BaseColumnSet(), Creatable {
-  public open val tableName: String = (if (name.isNotEmpty()) name else nameFromClass()).apply {
+  public open val tableName: String = name.ifEmpty { nameFromClass() }.apply {
+    require(isNotBlank()) {
+      "Table name must not be blank. If using anonymous class (object) set name parameter."
+    }
     require(systemTable || !startsWith(RESERVED_PREFIX)) {
       "Invalid Table name '$this', must not start with $RESERVED_PREFIX"
     }
   }
 
-  override val identity: Identity by lazy { tableName.asIdentity() }
+  override val identity: Identity by lazy { tableName.asIdentity(forceQuoteName) }
 
   override fun toString(): String = identity.unquoted
 
@@ -342,7 +346,8 @@ public abstract class Table(
     refColumn: Column<T>,
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
-    fkName: String? = null
+    fkName: String? = null,
+    forceQuoteName: Boolean = false
   ): Column<T> = Column(
     table = this,
     name = name,
@@ -350,7 +355,7 @@ public abstract class Table(
     initialConstraints = listOf(NotNullConstraint),
     addTo = ::addColumn
   ) {
-    references(refColumn, onDelete, onUpdate, fkName)
+    references(refColumn, onDelete, onUpdate, fkName, forceQuoteName)
   }
 
   /**
@@ -369,14 +374,15 @@ public abstract class Table(
     refColumn: Column<T>,
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
-    fkName: String? = null
+    fkName: String? = null,
+    forceQuoteName: Boolean = false
   ): Column<T?> =
     Column(
       table = this,
       name = name,
       persistentType = refColumn.persistentType.asNullable(),
       addTo = ::addColumn
-    ) { references(refColumn, onDelete, onUpdate, fkName) }
+    ) { references(refColumn, onDelete, onUpdate, fkName, forceQuoteName) }
 
   public fun <T> registerColumn(
     name: String,

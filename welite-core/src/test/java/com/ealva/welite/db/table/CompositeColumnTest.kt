@@ -49,15 +49,15 @@ class CompositeColumnTest {
 
   @Test
   fun `test composite column`() {
-    val account = object : Table() {
+    val account = object : Table("AccountTable") {
       val instant = instant("created_instant")
     }
     val descriptions = account.instant.descriptionDdl()
     expect(descriptions).toHaveSize(2)
     descriptions.forEachIndexed { index, col ->
       when (index) {
-        0 -> expect(col).toBe(""""created_instant_epoch" INTEGER NOT NULL""")
-        1 -> expect(col).toBe(""""created_instant_nanos" INTEGER NOT NULL""")
+        0 -> expect(col).toBe("""created_instant_epoch INTEGER NOT NULL""")
+        1 -> expect(col).toBe("""created_instant_nanos INTEGER NOT NULL""")
         else -> fail("Too many ddl strings returned")
       }
     }

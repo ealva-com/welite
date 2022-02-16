@@ -50,8 +50,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 public object CommonViewTests {
   public fun testCreateView() {
     val view = object : View(
-      MediaFileTable.select { id }.where { id eq 1 },
-      "FullMedia"
+      builder = MediaFileTable.select { id }.where { id eq 1 },
+      name = "Full Media",
+      forceQuoteName = true
     ) {
       @Suppress("unused")
       val mediaId = column(MediaFileTable.id, "mediaFileId")
@@ -63,20 +64,20 @@ public object CommonViewTests {
       expect(ddl).toHaveSize(1)
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
         expect(ddl[0]).toBe(
-          """CREATE VIEW IF NOT EXISTS "FullMedia" AS SELECT "MediaFile"."_id" FROM "MediaFile"""" +
-            """ WHERE "MediaFile"."_id" = 1"""
+          """CREATE VIEW IF NOT EXISTS "Full Media" AS SELECT MediaFile._id FROM MediaFile""" +
+            """ WHERE MediaFile._id = 1"""
         )
       } else {
         expect(ddl[0]).toBe(
-          """CREATE VIEW IF NOT EXISTS "FullMedia" ("mediaFileId") AS SELECT """ +
-            """"MediaFile"."_id" FROM "MediaFile" WHERE "MediaFile"."_id" = 1"""
+          """CREATE VIEW IF NOT EXISTS "Full Media" (mediaFileId) AS SELECT """ +
+            """MediaFile._id FROM MediaFile WHERE MediaFile._id = 1"""
         )
       }
     }
     SqlExecutorSpy().let { spy ->
       view.drop(spy)
       expect(spy.execSqlList).toHaveSize(1)
-      expect(spy.execSqlList[0]).toBe("""DROP VIEW IF EXISTS "FullMedia"""")
+      expect(spy.execSqlList[0]).toBe("""DROP VIEW IF EXISTS "Full Media"""")
     }
   }
 
@@ -88,18 +89,18 @@ public object CommonViewTests {
       expect(ddl).toHaveSize(1)
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
         expect(ddl[0]).toBe(
-          """CREATE VIEW IF NOT EXISTS "FullMedia" AS SELECT "MediaFile"."_id",""" +
-            """ "MediaFile"."MediaTitle", "Album"."AlbumName", "Artist"."ArtistName" FROM""" +
-            """ "MediaFile" LEFT JOIN "Album" ON "MediaFile"."AlbumId" = "Album"."_id" LEFT""" +
-            """ JOIN "Artist" ON "MediaFile"."ArtistId" = "Artist"."_id""""
+          """CREATE VIEW IF NOT EXISTS "Full Media" AS SELECT MediaFile._id,""" +
+            """ MediaFile.MediaTitle, Album.AlbumName, Artist.ArtistName FROM""" +
+            """ MediaFile LEFT JOIN Album ON MediaFile.AlbumId = Album._id LEFT""" +
+            """ JOIN Artist ON MediaFile.ArtistId = Artist._id"""
         )
       } else {
         expect(ddl[0]).toBe(
-          """CREATE VIEW IF NOT EXISTS "FullMedia" ("FullMedia_MediaId", "FullMedia_MediaTitle"""" +
-            """, "FullMedia_AlbumName", "FullMedia_ArtistName") AS SELECT "MediaFile"."_id",""" +
-            """ "MediaFile"."MediaTitle", "Album"."AlbumName", "Artist"."ArtistName" FROM""" +
-            """ "MediaFile" LEFT JOIN "Album" ON "MediaFile"."AlbumId" = "Album"."_id" LEFT""" +
-            """ JOIN "Artist" ON "MediaFile"."ArtistId" = "Artist"."_id""""
+          """CREATE VIEW IF NOT EXISTS "Full Media" (FullMedia_MediaId, FullMedia_MediaTitle""" +
+            """, FullMedia_AlbumName, FullMedia_ArtistName) AS SELECT MediaFile._id,""" +
+            """ MediaFile.MediaTitle, Album.AlbumName, Artist.ArtistName FROM""" +
+            """ MediaFile LEFT JOIN Album ON MediaFile.AlbumId = Album._id LEFT""" +
+            """ JOIN Artist ON MediaFile.ArtistId = Artist._id"""
         )
       }
     }
@@ -211,8 +212,9 @@ private val ViewTestsQuery = MediaFileTable
   .toQuery()
 
 public object FullMediaView : View(
-  ViewTestsQuery,
-  "FullMedia"
+  query = ViewTestsQuery,
+  name = "Full Media",
+  forceQuoteName = true
 ) {
   public val mediaId: ViewColumn<Long> = column(MediaFileTable.id, "FullMedia_MediaId")
   public val mediaTitle: ViewColumn<String> =

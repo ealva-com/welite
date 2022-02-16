@@ -74,9 +74,9 @@ class ColumnTests {
       val col3 = integer(col3) { unique() }
     }
 
-    expect(account.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL""")
-    expect(account.col2.descriptionDdl()).toBe(""""$col2" INTEGER NOT NULL PRIMARY KEY""")
-    expect(account.col3.descriptionDdl()).toBe(""""$col3" INTEGER NOT NULL UNIQUE""")
+    expect(account.id.descriptionDdl()).toBe("""$id1 INTEGER NOT NULL""")
+    expect(account.col2.descriptionDdl()).toBe("""$col2 INTEGER NOT NULL PRIMARY KEY""")
+    expect(account.col3.descriptionDdl()).toBe("""$col3 INTEGER NOT NULL UNIQUE""")
     SqlExecutorSpy().let { spy ->
       account.drop(spy)
       expect(spy.execSqlList).toHaveSize(1)
@@ -102,9 +102,9 @@ class ColumnTests {
       val col2 = integer(col2) { default(4) }
       val col3 = integer(col3) { defaultExpression(abs(-100)) }
     }
-    expect(account2.id.descriptionDdl()).toBe("\"$id1\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT")
-    expect(account2.col2.descriptionDdl()).toBe(""""$col2" INTEGER NOT NULL DEFAULT 4""")
-    expect(account2.col3.descriptionDdl()).toBe(""""$col3" INTEGER NOT NULL DEFAULT (ABS(-100))""")
+    expect(account2.id.descriptionDdl()).toBe("$id1 INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT")
+    expect(account2.col2.descriptionDdl()).toBe("""$col2 INTEGER NOT NULL DEFAULT 4""")
+    expect(account2.col3.descriptionDdl()).toBe("""$col3 INTEGER NOT NULL DEFAULT (ABS(-100))""")
     SqlExecutorSpy().let { spy ->
       account2.drop(spy)
       spy.execSqlList.let { sqlList ->
@@ -121,7 +121,7 @@ class ColumnTests {
     val account3 = object : Table(tableName3) {
       val id = integer(id1) { primaryKey().desc() }
     }
-    expect(account3.id.descriptionDdl()).toBe(""""$id1" INTEGER NOT NULL PRIMARY KEY DESC""")
+    expect(account3.id.descriptionDdl()).toBe("""$id1 INTEGER NOT NULL PRIMARY KEY DESC""")
     SqlExecutorSpy().let { spy ->
       account3.drop(spy)
       val ddl = spy.execSqlList
@@ -147,20 +147,20 @@ class ColumnTests {
       val col5 = text(col5) { default("blah").check { it eq "blah" } }
     }
 
-    expect(account.id.descriptionDdl()).toBe(""""$id1" TEXT NOT NULL""")
-    expect(account.col2.descriptionDdl()).toBe(""""$col2" TEXT NOT NULL PRIMARY KEY""")
-    expect(account.col3.descriptionDdl()).toBe(""""$col3" TEXT NOT NULL UNIQUE COLLATE NOCASE""")
-    expect(account.col4.descriptionDdl()).toBe(""""$col4" TEXT NOT NULL COLLATE RTRIM""")
-    expect(account.col5.descriptionDdl()).toBe(""""$col5" TEXT NOT NULL DEFAULT 'blah'""")
+    expect(account.id.descriptionDdl()).toBe("""$id1 TEXT NOT NULL""")
+    expect(account.col2.descriptionDdl()).toBe("""$col2 TEXT NOT NULL PRIMARY KEY""")
+    expect(account.col3.descriptionDdl()).toBe("""$col3 TEXT NOT NULL UNIQUE COLLATE NOCASE""")
+    expect(account.col4.descriptionDdl()).toBe("""$col4 TEXT NOT NULL COLLATE RTRIM""")
+    expect(account.col5.descriptionDdl()).toBe("""$col5 TEXT NOT NULL DEFAULT 'blah'""")
 
     SqlExecutorSpy().let { spy ->
       account.create(spy)
       val ddl = spy.execSqlList
       expect(ddl).toHaveSize(1)
       expect(ddl[0]).toBe(
-        """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+        "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
           account.columns.joinToString { it.descriptionDdl() } +
-          """, CONSTRAINT "check_Account_0" CHECK ("col5" = 'blah'))"""
+          ", CONSTRAINT check_Account_0 CHECK (col5 = 'blah'))"
       )
     }
     SqlExecutorSpy().let { spy ->
@@ -191,13 +191,12 @@ class ColumnTests {
       val ddl = spy.execSqlList
       expect(ddl).toHaveSize(2)
       expect(ddl[0]).toBe(
-        """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
+        "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
           account.columns.joinToString { it.descriptionDdl() } +
-          """, CONSTRAINT "check_Account_0" CHECK ("""" + id2Name + """" > 10))"""
+          ", CONSTRAINT check_Account_0 CHECK (" + id2Name + " > 10))"
       )
       expect(ddl[1]).toBe(
-        "CREATE UNIQUE INDEX IF NOT EXISTS \"Account_id1_id2_unique\" " +
-          "ON \"Account\"(\"id1\", \"id2\")"
+        "CREATE UNIQUE INDEX IF NOT EXISTS Account_id1_id2_unique ON Account(id1, id2)"
       )
     }
     SqlExecutorSpy().let { spy ->

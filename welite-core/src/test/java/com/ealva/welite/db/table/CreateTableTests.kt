@@ -60,9 +60,9 @@ class CreateTableTests {
       expect(ddl).toHaveSize(1)
       val create = ddl.first()
       expect(create).toBe(
-        """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
-          account.columns.joinToString { it.descriptionDdl() } + """, CONSTRAINT "pk_""" +
-          tableName + """" PRIMARY KEY ("""" + id1Name + """", """" + id2Name + """"))"""
+        "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
+          account.columns.joinToString { it.descriptionDdl() } + ", CONSTRAINT pk_" +
+          tableName + " PRIMARY KEY (" + id1Name + ", " + id2Name + "))"
       )
     }
 
@@ -70,7 +70,7 @@ class CreateTableTests {
       account.drop(spy)
       val ddl = spy.execSqlList
       expect(ddl).toHaveSize(1)
-      expect(ddl[0]).toBe("""DROP TABLE IF EXISTS "Account"""")
+      expect(ddl[0]).toBe("DROP TABLE IF EXISTS Account")
     }
   }
 
@@ -90,8 +90,8 @@ class CreateTableTests {
       expect(ddl).toHaveSize(1)
       val create = ddl.first()
       expect(create).toBe(
-        """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
-          account.columns.joinToString { it.descriptionDdl() } + """)"""
+        "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
+          account.columns.joinToString { it.descriptionDdl() } + ")"
       )
     }
   }
@@ -113,10 +113,10 @@ class CreateTableTests {
     SqlExecutorSpy().let { spy ->
       other.create(spy)
       expect(spy.execSqlList.first()).toBe(
-        """CREATE TABLE IF NOT EXISTS """" + otherTableName +
-          """" (""" + other.columns.joinToString { it.descriptionDdl() } +
-          """, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") """ +
-          """REFERENCES "Account"("id1"))"""
+        "CREATE TABLE IF NOT EXISTS " + otherTableName +
+          " (" + other.columns.joinToString { it.descriptionDdl() } +
+          ", CONSTRAINT fk_Other_otherId_id1 FOREIGN KEY (otherId) " +
+          "REFERENCES Account(id1))"
       )
     }
   }
@@ -143,10 +143,10 @@ class CreateTableTests {
     SqlExecutorSpy().let { spy ->
       other.create(spy)
       expect(spy.execSqlList.first()).toBe(
-        """CREATE TABLE IF NOT EXISTS """ + other.identity.value + """ (""" +
+        "CREATE TABLE IF NOT EXISTS " + other.identity.value + " (" +
           other.columns.joinToString { it.descriptionDdl() } +
-          """, CONSTRAINT "fk_Other_otherId_id1" FOREIGN KEY ("otherId") REFERENCES""" +
-          """ "Account"("id1") ON DELETE CASCADE ON UPDATE SET DEFAULT)"""
+          """, CONSTRAINT fk_Other_otherId_id1 FOREIGN KEY (otherId) REFERENCES""" +
+          """ Account(id1) ON DELETE CASCADE ON UPDATE SET DEFAULT)"""
       )
     }
   }
@@ -196,14 +196,14 @@ class CreateTableTests {
       val ddl = spy.execSqlList
       expect(ddl).toHaveSize(4)
       expect(ddl[0]).toBe(
-        """CREATE TABLE IF NOT EXISTS """" + tableName + """" (""" +
-          account.columns.joinToString { it.descriptionDdl() } + """)"""
+        "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
+          account.columns.joinToString { it.descriptionDdl() } + ")"
       )
-      expect(ddl[1]).toBe("""CREATE INDEX IF NOT EXISTS "Account_id1" ON "Account"("id1")""")
+      expect(ddl[1]).toBe("CREATE INDEX IF NOT EXISTS Account_id1 ON Account(id1)")
       expect(ddl[2])
-        .toBe("""CREATE UNIQUE INDEX IF NOT EXISTS "Account_id2_unique" ON "Account"("id2")""")
+        .toBe("CREATE UNIQUE INDEX IF NOT EXISTS Account_id2_unique ON Account(id2)")
       expect(ddl[3])
-        .toBe("""CREATE INDEX IF NOT EXISTS "Account_id1_id2" ON "Account"("id1", "id2")""")
+        .toBe("CREATE INDEX IF NOT EXISTS Account_id1_id2 ON Account(id1, id2)")
     }
   }
 }

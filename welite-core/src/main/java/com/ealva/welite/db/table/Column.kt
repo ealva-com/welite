@@ -27,7 +27,6 @@ import com.ealva.welite.db.type.Identity
 import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.buildStr
-import java.util.Comparator
 
 /**
  * Represents a column in a table with the type [T]. [T] is the Kotlin type and not necessarily
@@ -64,7 +63,10 @@ public interface Column<T> : SqlTypeExpression<T>, Comparable<Column<*>> {
    * column's [name] appended, eg. pseudocode:
    * ```tableAlias="${column.table.name}_${column.name}"```
    */
-  public fun makeAlias(tableAlias: String? = null): Column<T>
+  public fun makeAlias(
+    tableAlias: String? = null,
+    forceQuoteName: Boolean = false
+  ): Column<T>
 
   /**
    * Clones this column substituting [table] for the original table
@@ -122,7 +124,8 @@ private class ColumnImpl<T>(
   override val name: String,
   override val table: Table,
   override val persistentType: PersistentType<T>,
-  initialConstraints: List<ColumnConstraint>
+  initialConstraints: List<ColumnConstraint>,
+  private val forceQuoteName: Boolean = false
 ) : BaseSqlTypeExpression<T>(), Column<T>, ColumnConstraints<T> {
 
   private val constraintList = ConstraintCollection(persistentType).apply {
@@ -144,10 +147,16 @@ private class ColumnImpl<T>(
 
   override var foreignKey: ForeignKeyConstraint? = null
 
-  override fun identity(): Identity = Identity.make(name)
+  override fun identity(): Identity = Identity.make(name, forceQuoteName)
 
-  override fun makeAlias(tableAlias: String?): Column<T> =
-    Column(name, Alias(table, tableAlias ?: "${table.tableName}_$name"), persistentType)
+  override fun makeAlias(
+    tableAlias: String?,
+    forceQuoteName: Boolean
+  ): Column<T> = Column(
+    name = name,
+    table = Alias(table, tableAlias ?: "${table.tableName}_$name", forceQuoteName),
+    persistentType = persistentType
+  )
 
   override fun cloneFor(table: Table): Column<T> = Column(name, table, persistentType)
 
@@ -239,7 +248,8 @@ private class ColumnImpl<T>(
     ref: Column<S>,
     onDelete: ForeignKeyAction,
     onUpdate: ForeignKeyAction,
-    fkName: String?
+    fkName: String?,
+    forceQuoteName: Boolean,
   ) = apply {
     foreignKey = ForeignKeyConstraint(
       parentTable = tableIdentity,
@@ -248,7 +258,8 @@ private class ColumnImpl<T>(
       child = ref,
       onUpdate = onUpdate,
       onDelete = onDelete,
-      name = fkName
+      name = fkName,
+      forceQuoteName = forceQuoteName
     )
   }
 

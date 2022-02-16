@@ -43,7 +43,6 @@ import com.ealva.welite.db.type.PersistentType
 import com.ealva.welite.db.type.SqlBuilder
 import com.ealva.welite.db.type.asIdentity
 import com.ealva.welite.db.type.buildStr
-import java.util.Comparator
 
 public interface ViewColumn<T> : Column<T> {
   public companion object {
@@ -135,8 +134,8 @@ private class ViewColumnImpl<T>(
     get() = null
     set(@Suppress("UNUSED_PARAMETER") value) {}
 
-  override fun makeAlias(tableAlias: String?): Column<T> =
-    ViewColumnImpl(name, view, originalColumn.makeAlias(tableAlias))
+  override fun makeAlias(tableAlias: String?, forceQuoteName: Boolean): Column<T> =
+    ViewColumnImpl(name, view, originalColumn.makeAlias(tableAlias, forceQuoteName))
 
   override fun cloneFor(table: Table): Column<T> =
     ViewColumnImpl(name, view, originalColumn.cloneFor(table))
@@ -206,12 +205,21 @@ private val LOG by lazyLogger(View::class, WeLiteLog.marker)
  */
 public open class View private constructor(
   name: String,
+  forceQuoteName: Boolean,
   private val querySeed: QuerySeed<*>?
 ) : BaseColumnSet(), Creatable, Comparable<View> {
 
-  public constructor(query: Query<*>, name: String = "") : this(name, query.seed)
+  public constructor(
+    query: Query<*>,
+    name: String = "",
+    forceQuoteName: Boolean = false
+  ) : this(name, forceQuoteName, query.seed)
 
-  public constructor(builder: QueryBuilder<*>, name: String = "") : this(name, builder.build())
+  public constructor(
+    builder: QueryBuilder<*>,
+    name: String = "",
+    forceQuoteName: Boolean = false
+  ) : this(name, forceQuoteName, builder.build())
 
   public val viewName: String = (if (name.isNotEmpty()) name else this.nameFromClass()).apply {
     require(!startsWith(Table.RESERVED_PREFIX)) {
@@ -221,7 +229,7 @@ public open class View private constructor(
 
   override val masterType: MasterType = MasterType.View
 
-  override val identity: Identity = viewName.asIdentity()
+  override val identity: Identity = viewName.asIdentity(forceQuoteName)
 
   /**
    * Create a ViewColumn from a Column that will appear in a query. If
@@ -320,10 +328,15 @@ public open class View private constructor(
   override fun toString(): String = viewName
 
   public companion object {
-    public operator fun invoke(viewName: String): View = View(viewName, null)
+    public operator fun invoke(viewName: String, forceQuoteName: Boolean): View =
+      View(viewName, forceQuoteName, null)
   }
 }
 
 private fun View.nameFromClass() = javaClass.simpleName.removeSuffix("View")
 
-public fun existingView(viewName: String): View = View(viewName)
+/**
+ * If the viewName has any spaces or special characters, [forceQuoteName] should be true.
+ */
+public fun existingView(viewName: String, forceQuoteName: Boolean): View =
+  View(viewName, forceQuoteName)

@@ -61,7 +61,8 @@ public interface ColumnConstraints<T> {
     ref: Column<S>,
     onDelete: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
     onUpdate: ForeignKeyAction = ForeignKeyAction.NO_ACTION,
-    fkName: String? = null
+    fkName: String? = null,
+    forceQuoteName: Boolean = false
   ): ColumnConstraints<T>
 }
 

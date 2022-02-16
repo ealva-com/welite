@@ -37,10 +37,14 @@ private inline operator fun Identity.plus(identity: Identity): Identity {
   }.asIdentity()
 }
 
-public class Alias<out T : Table>(private val delegate: T, private val alias: String) : Table() {
+public class Alias<out T : Table>(
+  private val delegate: T,
+  private val alias: String,
+  forceQuoteName: Boolean
+) : Table() {
   override val tableName: String get() = alias
   public val tableNameWithAlias: String = "${delegate.tableName} AS $alias"
-  override val identity: Identity = Identity.make(alias)
+  override val identity: Identity = Identity.make(alias, forceQuoteName)
 
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append(tableNameWithAlias)
@@ -138,7 +142,8 @@ public class SqlTypeExpressionAlias<T>(
 
 public class QueryBuilderAlias<C : ColumnSet>(
   private val queryBuilder: QueryBuilder<C>,
-  public val alias: String
+  public val alias: String,
+  forceQuoteName: Boolean
 ) : BaseColumnSet() {
   override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
     append("(")
@@ -147,15 +152,15 @@ public class QueryBuilderAlias<C : ColumnSet>(
     append(alias)
   }
 
-  override val identity: Identity = alias.asIdentity()
+  override val identity: Identity = alias.asIdentity(forceQuoteName)
 
   override val columns: List<Column<*>>
-    get() = queryBuilder.sourceSetColumnsInResult().map { it.makeAlias(alias) }
+    get() = queryBuilder.sourceSetColumnsInResult().map { it.makeAlias(alias,) }
 
   @Suppress("UNCHECKED_CAST")
   public operator fun <T : Any?> get(original: Column<T>): Column<T> =
     queryBuilder.findSourceSetOriginal(original)
-      ?.makeAlias(alias) as? Column<T>
+      ?.makeAlias(alias,) as? Column<T>
       ?: error("Column not found in original table")
 
   @Suppress("UNCHECKED_CAST")
@@ -184,11 +189,17 @@ public class QueryBuilderAlias<C : ColumnSet>(
     Join(this, joinTo, joinType = JoinType.NATURAL)
 }
 
-public fun <T : Table> T.alias(alias: String): Alias<T> = Alias(this, alias)
-public fun <C : ColumnSet> QueryBuilder<C>.alias(alias: String): QueryBuilderAlias<C> =
-  QueryBuilderAlias(this, alias)
+public fun <T : Table> T.alias(alias: String, forceQuoteName: Boolean = false): Alias<T> =
+  Alias(this, alias, forceQuoteName)
+
+public fun <C : ColumnSet> QueryBuilder<C>.alias(
+  alias: String,
+  forceQuoteName: Boolean = false
+): QueryBuilderAlias<C> = QueryBuilderAlias(this, alias, forceQuoteName)
+
 public fun <T> Expression<T>.alias(alias: String): ExpressionAlias<T> =
   ExpressionAlias(this, alias)
+
 public fun <T> SqlTypeExpression<T>.alias(alias: String): SqlTypeExpressionAlias<T> =
   SqlTypeExpressionAlias(this, alias)
 

@@ -67,8 +67,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "DeleteArtistTrigger" BEFORE DELETE ON "Artist" BEGIN""" +
-          """ DELETE FROM "ArtistAlbum" WHERE "ArtistAlbum"."ArtistId" = OLD._id; END;"""
+        "CREATE TRIGGER IF NOT EXISTS DeleteArtistTrigger BEFORE DELETE ON Artist BEGIN" +
+          " DELETE FROM ArtistAlbum WHERE ArtistAlbum.ArtistId = OLD._id; END;"
       )
     }
 
@@ -77,8 +77,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "DeleteAlbumTrigger" BEFORE DELETE ON "Album" BEGIN""" +
-          """ DELETE FROM "ArtistAlbum" WHERE "ArtistAlbum"."AlbumId" = OLD._id; END;"""
+        "CREATE TRIGGER IF NOT EXISTS DeleteAlbumTrigger BEFORE DELETE ON Album BEGIN" +
+          " DELETE FROM ArtistAlbum WHERE ArtistAlbum.AlbumId = OLD._id; END;"
       )
     }
 
@@ -87,7 +87,7 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile" """ +
+        """CREATE TRIGGER IF NOT EXISTS InsertMediaTrigger BEFORE INSERT ON MediaFile """ +
           """BEGIN SELECT CASE WHEN NEW.MediaUri NOT LIKE 'file:%' THEN RAISE(ABORT, """ +
           """'Abort, not URI') END; END;"""
       )
@@ -98,10 +98,10 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "DeleteMediaTrigger" AFTER DELETE ON "MediaFile" BEGIN """ +
-          """DELETE FROM "Album" WHERE (SELECT COUNT(*) FROM "MediaFile" WHERE """ +
-          """"MediaFile"."AlbumId" = OLD.AlbumId) = 0; DELETE FROM "Artist" WHERE (SELECT """ +
-          """COUNT(*) FROM "MediaFile" WHERE "MediaFile"."ArtistId" = OLD.ArtistId) = 0; END;"""
+        "CREATE TRIGGER IF NOT EXISTS DeleteMediaTrigger AFTER DELETE ON MediaFile BEGIN " +
+          "DELETE FROM Album WHERE (SELECT COUNT(*) FROM MediaFile WHERE " +
+          "MediaFile.AlbumId = OLD.AlbumId) = 0; DELETE FROM Artist WHERE (SELECT " +
+          "COUNT(*) FROM MediaFile WHERE MediaFile.ArtistId = OLD.ArtistId) = 0; END;"
       )
     }
   }
@@ -111,7 +111,7 @@ public object CommonTriggerTests {
       DeleteArtistTrigger.drop(spy)
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
-      expect(execSqlList[0]).toBe("DROP TRIGGER IF EXISTS \"DeleteArtistTrigger\"")
+      expect(execSqlList[0]).toBe("DROP TRIGGER IF EXISTS DeleteArtistTrigger")
     }
   }
 
@@ -338,8 +338,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile" BEGIN""" +
-          """ INSERT INTO "Album" ("AlbumName") VALUES ('Some Album'); END;"""
+        """CREATE TRIGGER IF NOT EXISTS InsertMediaTrigger BEFORE INSERT ON MediaFile BEGIN""" +
+          """ INSERT INTO Album (AlbumName) VALUES ('Some Album'); END;"""
       )
     }
   }
@@ -358,8 +358,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile" BEGIN""" +
-          """ UPDATE "Album" SET "AlbumName"='Some Album' WHERE NEW.MediaUri NOT LIKE 'file:%'""" +
+        """CREATE TRIGGER IF NOT EXISTS InsertMediaTrigger BEFORE INSERT ON MediaFile BEGIN""" +
+          """ UPDATE Album SET AlbumName='Some Album' WHERE NEW.MediaUri NOT LIKE 'file:%'""" +
           """ ESCAPE '\'; END;"""
       )
     }
@@ -380,8 +380,8 @@ public object CommonTriggerTests {
 
       val oldCol = old(MediaFileTable.mediaUri)
       val newCol = new(MediaFileTable.albumId)
-      expect(oldCol.identity()).toBe("OLD.MediaUri".asIdentity(forceQuote = true))
-      expect(newCol.identity()).toBe("NEW.AlbumId".asIdentity(forceQuote = true))
+      expect(oldCol.identity()).toBe("OLD.MediaUri".asIdentity())
+      expect(newCol.identity()).toBe("NEW.AlbumId".asIdentity())
     }
   }
 
@@ -400,8 +400,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TEMP TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE INSERT ON "MediaFile"""" +
-          """ BEGIN INSERT INTO "Album" ("AlbumName") VALUES ('Some Album'); END;"""
+        """CREATE TEMP TRIGGER IF NOT EXISTS InsertMediaTrigger BEFORE INSERT ON MediaFile""" +
+          """ BEGIN INSERT INTO Album (AlbumName) VALUES ('Some Album'); END;"""
       )
     }
   }
@@ -424,8 +424,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TEMP TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE UPDATE ON""" +
-          """ "MediaFile" WHEN OLD._id <> NEW._id BEGIN INSERT INTO "Album" ("AlbumName")""" +
+        """CREATE TEMP TRIGGER IF NOT EXISTS InsertMediaTrigger BEFORE UPDATE ON""" +
+          """ MediaFile WHEN OLD._id <> NEW._id BEGIN INSERT INTO Album (AlbumName)""" +
           """ VALUES ('Some Album'); END;"""
       )
     }
@@ -451,8 +451,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE""" +
-          """ INSERT ON "MediaFile" WHEN NEW._id <> 1 BEGIN SELECT CASE WHEN NEW.MediaUri NOT""" +
+        """CREATE TRIGGER IF NOT EXISTS InsertMediaTrigger BEFORE""" +
+          """ INSERT ON MediaFile WHEN NEW._id <> 1 BEGIN SELECT CASE WHEN NEW.MediaUri NOT""" +
           """ LIKE 'file:%' THEN RAISE(ABORT, 'Abort, not URI') END; END;"""
       )
     }
@@ -473,8 +473,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "DeleteAlbumTrigger" BEFORE DELETE ON "Album" WHEN""" +
-          """ OLD._id <> 1 BEGIN DELETE FROM "ArtistAlbum" WHERE "ArtistAlbum"."AlbumId" =""" +
+        """CREATE TRIGGER IF NOT EXISTS DeleteAlbumTrigger BEFORE DELETE ON Album WHEN""" +
+          """ OLD._id <> 1 BEGIN DELETE FROM ArtistAlbum WHERE ArtistAlbum.AlbumId =""" +
           """ OLD._id; END;"""
       )
     }
@@ -567,8 +567,8 @@ public object CommonTriggerTests {
       val execSqlList = spy.execSqlList
       expect(execSqlList).toHaveSize(1)
       expect(execSqlList[0]).toBe(
-        """CREATE TRIGGER IF NOT EXISTS "InsertMediaTrigger" BEFORE UPDATE OF "MediaTitle",""" +
-          """ "MediaUri" ON "MediaFile" BEGIN INSERT INTO "Album" ("AlbumName") VALUES""" +
+        """CREATE TRIGGER IF NOT EXISTS InsertMediaTrigger BEFORE UPDATE OF MediaTitle,""" +
+          """ MediaUri ON MediaFile BEGIN INSERT INTO Album (AlbumName) VALUES""" +
           """ ('Some Album'); END;"""
       )
     }
