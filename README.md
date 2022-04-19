@@ -174,6 +174,7 @@ query {
 ```
 ### Modules
   * welite-core - contains the core classes of WeLite
+  * welite-ktime - contains column types for kotlinx-datetime (currently Instant only)
   * welite-javatime - contains column types for LocalDate and LocalDateTime. Requires dependency 
   on ```com.android.tools:desugar_jdk_libs:${Versions.DESUGAR}``` and 
   ```coreLibraryDesugaringEnabled = true``` in compile options
@@ -213,7 +214,7 @@ Maven:
 Ensure you have the most recent version by checking [here][maven-welite-core],
 [here][maven-welite-ktime], and [here][maven-welite-javatime] 
 
-For the latest SNAPSHOT check [here][core-snapshot], [here][javatime-snapshot], and 
+For the latest SNAPSHOT check [here][core-snapshot], [here][ktime-snapshot], and 
 [here][javatime-snapshot] 
 ### Why this library?
 For WeLite the desire is to push all SQL down into the library and treat it as an implementation 
