@@ -24,8 +24,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
  * Maps an expression to an index in a list. This map is constructed with a list of [Expression]s
  * and provides a fast mapping of the expression to it's index in the list. Also, if the list
  * contains a [SimpleDelegatingColumn], a search for that column or the original column returns the
- * same index. This provides for [CompoundSelect] results being indexed by the result columns of the
- * first simple select of the compound select. See [CompoundSelect] for more details.
+ * same index. This provides for CompoundSelect results being indexed by the result columns of the
+ * first simple select of the compound select. See CompoundSelect for more details.
  */
 public interface ExpressionToIndexMap {
   public operator fun get(expression: Expression<*>): Int

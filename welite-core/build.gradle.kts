@@ -79,8 +79,8 @@ android {
 
   kotlinOptions {
     jvmTarget = "1.8"
-    languageVersion = "1.5"
-    apiVersion = "1.5"
+    languageVersion = "1.6"
+    apiVersion = "1.6"
     suppressWarnings = false
     verbose = true
     freeCompilerArgs = listOf(
@@ -104,8 +104,7 @@ dependencies {
   implementation(Libs.Result.RESULT)
   implementation(Libs.Result.COROUTINES)
 
-  implementation(Libs.Kotlin.Serialization.CORE)
-  androidTestImplementation(Libs.Kotlin.Serialization.JSON)
+  implementation(Libs.Kotlinx.Serialization.CORE)
 
   testImplementation(Libs.JUnit.JUNIT)
   testImplementation(Libs.AndroidX.Test.CORE) {
@@ -127,4 +126,5 @@ dependencies {
   androidTestImplementation(Libs.JUnit.JUNIT)
   androidTestImplementation(Libs.Expect.EXPECT)
   androidTestImplementation(Libs.Coroutines.TEST)
+  androidTestImplementation(Libs.Kotlinx.Serialization.JSON)
 }

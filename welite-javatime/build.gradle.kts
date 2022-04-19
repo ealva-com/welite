@@ -19,7 +19,7 @@ version = WeLiteJavaTimeCoordinates.VERSION
 plugins {
   id("com.android.library")
   kotlin("android")
-  kotlin("plugin.serialization")
+//  kotlin("plugin.serialization")
   id("org.jetbrains.dokka")
   id("com.vanniktech.maven.publish")
 }
@@ -44,12 +44,13 @@ android {
   }
 
   buildTypes {
-    getByName("debug") {
+    debug {
       isTestCoverageEnabled = false
     }
 
-    getByName("release") {
+    release {
       isMinifyEnabled = false
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
 
@@ -64,8 +65,8 @@ android {
 
   kotlinOptions {
     jvmTarget = "1.8"
-    languageVersion = "1.5"
-    apiVersion = "1.5"
+    languageVersion = "1.6"
+    apiVersion = "1.6"
     suppressWarnings = false
     verbose = true
     freeCompilerArgs = listOf(
@@ -82,7 +83,6 @@ dependencies {
   implementation(Libs.AndroidX.Ktx.CORE)
   implementation(Libs.Log.EALVALOG)
   implementation(Libs.Log.CORE)
-  implementation(Libs.Fastutil.FASTUTIL)
   implementation(Libs.Coroutines.CORE)
   implementation(Libs.Coroutines.ANDROID)
 

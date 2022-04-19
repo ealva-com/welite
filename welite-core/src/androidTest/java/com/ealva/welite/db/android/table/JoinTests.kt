@@ -37,7 +37,7 @@ import com.ealva.welite.test.db.table.CommonJoinTests as Common
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class JoinTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule internal var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()

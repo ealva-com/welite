@@ -27,7 +27,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.ealva.welite.db.expr.Op
 import com.ealva.welite.db.expr.and
 import com.ealva.welite.db.expr.eq
-import com.ealva.welite.db.type.SqlBuilder
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import org.junit.Before
@@ -52,7 +51,7 @@ class CompositeColumnTest {
     val account = object : Table("AccountTable") {
       val instant = instant("created_instant")
     }
-    val descriptions = account.instant.descriptionDdl()
+    val descriptions = account.instant.columns.map { it.descriptionDdl() }
     expect(descriptions).toHaveSize(2)
     descriptions.forEachIndexed { index, col ->
       when (index) {
@@ -64,29 +63,17 @@ class CompositeColumnTest {
   }
 }
 
-fun Table.instant(name: String): CompositeColumn<Instant> {
-  return makeComposite { InstantComposite(it.long(name + "_epoch"), it.integer(name + "_nanos")) }
+fun Table.instant(name: String): CompositeColumn<Instant> = makeComposite { columnFactory ->
+  InstantComposite(columnFactory.long(name + "_epoch"), columnFactory.integer(name + "_nanos"))
 }
 
 class InstantComposite(
-  private val epochSeconds: Column<Long>,
-  private val nanos: Column<Int>
+  val epochSeconds: Column<Long>,
+  val nanos: Column<Int>
 ) : BaseCompositeColumn<Instant>() {
   override val columns: List<Column<*>> = listOf(epochSeconds, nanos)
 
   override fun eq(t: Instant): Op<Boolean> {
     return epochSeconds eq t.epochSecond and (nanos eq t.nano)
-  }
-
-  override fun descriptionDdl(): List<String> {
-    return columns.mapTo(ArrayList(2)) { it.descriptionDdl() }
-  }
-
-  override fun asDefaultValue(): String {
-    TODO("Not yet implemented")
-  }
-
-  override fun appendTo(sqlBuilder: SqlBuilder): SqlBuilder = sqlBuilder.apply {
-    columns.forEach { column -> append(column) }
   }
 }

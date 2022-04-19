@@ -38,7 +38,7 @@ import com.ealva.welite.test.db.table.CommonNaturalJoinTests as Common
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class NaturalJoinTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule internal var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

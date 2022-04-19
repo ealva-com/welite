@@ -40,7 +40,7 @@ import com.ealva.welite.test.db.trigger.CommonTriggerTests as Common
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class TriggerTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule internal var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()

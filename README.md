@@ -182,8 +182,9 @@ query {
 
 Gradle:
 ```gradle
-implementation("com.ealva:welite-core:0.2.11-0")
-implementation("com.ealva:welite-javatime:0.2.11-0")
+implementation("com.ealva:welite-core:0.5.2-0")
+implementation("com.ealva:welite-javatime:0.5.2-0")
+implementation("com.ealva:welite-ktime:0.5.2-0")
 ```
 
 Maven:
@@ -191,20 +192,29 @@ Maven:
 <dependency>
     <groupId>com.ealva</groupId>
     <artifactId>welite-core</artifactId>
-    <version>0.2.11-0</version>
+    <version>0.5.2-0</version>
 </dependency>
 ```
 ```xml
 <dependency>
     <groupId>com.ealva</groupId>
     <artifactId>welite-javatime</artifactId>
-    <version>0.2.11-0</version>
+    <version>0.5.2-0</version>
+</dependency>
+```
+```xml
+<dependency>
+    <groupId>com.ealva</groupId>
+    <artifactId>welite-ktime</artifactId>
+    <version>0.5.2-0</version>
 </dependency>
 ```
 
-Ensure you have the most recent version by checking [here][maven-welite-core] and [here][maven-welite-javatime]
+Ensure you have the most recent version by checking [here][maven-welite-core],
+[here][maven-welite-ktime], and [here][maven-welite-javatime] 
 
-For the latest SNAPSHOT check [here][core-snapshot] and [here][javatime-snapshot] 
+For the latest SNAPSHOT check [here][core-snapshot], [here][javatime-snapshot], and 
+[here][javatime-snapshot] 
 ### Why this library?
 For WeLite the desire is to push all SQL down into the library and treat it as an implementation 
 detail of interfacing with the persistence layer. Clients should use a Kotlin DSL to describe 
@@ -216,7 +226,7 @@ rows and converting them to POJOs efficiently using RDBMS features, primarily su
 types, and putting few lines of the Relational-OO mapping in the client code (specifying which 
 columns are needed to construct a POJO).   
 
-Both the [Squash] and [Exposed] libraries influence this library, primarily the DSL code. 
+Both the [Squash] and [Exposed] libraries influenced this library, primarily the DSL code. 
 However, WeLite calls directly into the Android SQLite API and does not go through a JDBC driver, 
 which alleviates the need (and code) to deal with variations in SQL and RDBMS features. Also, the 
 WeLite design philosophy differs from these other libraries in specific areas. Pre 1.0 versions 
@@ -250,5 +260,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 [ealvalog]: https://github.com/ealva-com/ealvalog
 [maven-welite-core]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-core%22
 [maven-welite-javatime]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-javatime%22
+[maven-welite-ktime]: https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.ealva%22%20AND%20a%3A%22welite-ktime%22
 [core-snapshot]: https://oss.sonatype.org/content/repositories/snapshots/com/ealva/welite-core/
 [javatime-snapshot]: https://oss.sonatype.org/content/repositories/snapshots/com/ealva/welite-javatime/
+[ktime-snapshot]: https://oss.sonatype.org/content/repositories/snapshots/com/ealva/welite-ktime/

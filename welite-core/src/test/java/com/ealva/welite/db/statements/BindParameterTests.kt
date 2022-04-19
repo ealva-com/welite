@@ -46,7 +46,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class BindParameterTests {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

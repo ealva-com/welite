@@ -48,7 +48,7 @@ import com.ealva.welite.test.db.CommonDatabaseTests as Common
 @Config(sdk = [LOLLIPOP])
 class DatabaseTests {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule

@@ -58,7 +58,7 @@ import java.io.File
 @Config(sdk = [LOLLIPOP])
 class UpdateTests {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

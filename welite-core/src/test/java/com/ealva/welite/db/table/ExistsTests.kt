@@ -38,7 +38,7 @@ import com.ealva.welite.test.db.table.CommonExistsTests as Common
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class ExistsTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule internal var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

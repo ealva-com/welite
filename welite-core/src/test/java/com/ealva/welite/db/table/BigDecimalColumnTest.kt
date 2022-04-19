@@ -52,7 +52,7 @@ private const val scale = 5
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class BigDecimalColumnTest {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule

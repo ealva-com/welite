@@ -62,7 +62,7 @@ import java.io.File
 @Config(sdk = [LOLLIPOP])
 class QueryTests {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule

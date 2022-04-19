@@ -21,11 +21,11 @@ object SdkVersion {
 }
 
 object PluginsVersion {
-  const val AGP = "7.1.1"
+  const val AGP = "7.1.3"
   const val DETEKT = "1.19.0"
   const val DOKKA = "1.6.10"
   const val KOTLIN = "1.6.10"
-  const val PUBLISH = "0.18.0"
+  const val PUBLISH = "0.19.0"
   const val SERIALIZATION = "1.6.10"
   const val VERSIONS = "0.42.0"
 }
@@ -84,9 +84,8 @@ object Libs {
     const val ANDROID = "io.insert-koin:koin-android:$VERSION"
   }
 
-  object Kotlin {
-    private const val VERSION = "1.5.31"
-    const val KGP = "org.jetbrains.kotlin:kotlin-gradle-plugin:$VERSION"
+  object Kotlinx {
+    const val DATETIME = "org.jetbrains.kotlinx:kotlinx-datetime:0.3.2"
 
     object Serialization {
       private const val VERSION = "1.3.2"

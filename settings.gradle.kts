@@ -32,8 +32,8 @@ pluginManagement {
     gradlePluginPortal()
     google()
     mavenCentral()
-    jcenter()
   }
 }
 
 rootProject.name = ("welite")
+include(":welite-ktime")

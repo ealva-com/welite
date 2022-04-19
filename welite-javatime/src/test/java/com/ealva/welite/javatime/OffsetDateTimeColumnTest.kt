@@ -37,11 +37,12 @@ import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
 import com.ealva.welite.javatime.OffsetDt.offsetDate
 import com.ealva.welite.javatime.OffsetDt.optOffsetDate
-import com.ealva.welite.test.common.CoroutineRule
+import com.ealva.welite.test.common.MainCoroutineRule
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.CoreMatchers
 import org.junit.Before
 import org.junit.Rule
@@ -74,7 +75,7 @@ public object HasOffsetDtRef : Table() {
 public class OffsetDateTimeColumnTest {
   @ExperimentalCoroutinesApi
   @get:Rule
-  public var coroutineRule = CoroutineRule()
+  internal var coroutineRule = MainCoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule
@@ -89,12 +90,12 @@ public class OffsetDateTimeColumnTest {
 
   @Test
   fun `test local date time column`() {
-    expect(offsetDate.descriptionDdl()).toBe(""""date" TEXT NOT NULL""")
-    expect(optOffsetDate.descriptionDdl()).toBe(""""opt_date" TEXT""")
+    expect(offsetDate.descriptionDdl()).toBe("""date TEXT NOT NULL""")
+    expect(optOffsetDate.descriptionDdl()).toBe("""opt_date TEXT""")
   }
 
   @Test
-  fun `test offset date time insert and query`() = coroutineRule.runBlockingTest {
+  fun `test offset date time insert and query`() = runTest {
     withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       val noonSomewhere = OffsetDateTime.of(
         LocalDateTime.of(2018, 6, 12, 12, 0),
@@ -132,9 +133,20 @@ public class OffsetDateTimeColumnTest {
       )
       query {
         val results = OffsetDt.select()
-          .where { offsetDate greaterEq noonSomewhere.plusYears(2) }
+          .where {
+            offsetDate greaterEq noonSomewhere.plusYears(
+              2
+            )
+          }
           .orderByAsc { optOffsetDate }
-          .sequence { OffsetVisit(it[offsetDate], it[optOffsetDate], it[name], it[other]) }
+          .sequence {
+            OffsetVisit(
+              it[offsetDate],
+              it[optOffsetDate],
+              it[name],
+              it[other]
+            )
+          }
           .toList()
         expect(results).toHaveSize(2)
         expect(results[0].name).toBe("Motel 6")
@@ -146,7 +158,7 @@ public class OffsetDateTimeColumnTest {
   }
 
   @Test
-  fun `test bind other than OffsetDateTime`() = coroutineRule.runBlockingTest {
+  fun `test bind other than OffsetDateTime`() = runTest {
     withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
@@ -161,13 +173,16 @@ public class OffsetDateTimeColumnTest {
         }
       }
       query {
-        expect(OffsetDt.selectAll().count()).toBe(1)
+        expect(
+          OffsetDt.selectAll()
+            .count()
+        ).toBe(1)
       }
     }
   }
 
   @Test
-  fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
+  fun `test bind null to non-nullable`() = runTest {
     thrown.expect(WeLiteException::class.java)
     withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
@@ -187,8 +202,10 @@ public class OffsetDateTimeColumnTest {
   }
 
   @Test
-  fun `test bind malformed OffsetDateTime string`() = coroutineRule.runBlockingTest {
+  fun `test bind malformed OffsetDateTime string`() = runTest {
+    // bad date format
     thrown.expectCause(CoreMatchers.isA(DateTimeParseException::class.java))
+    // bad date format
     withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = OffsetDt.insertValues {
@@ -207,28 +224,31 @@ public class OffsetDateTimeColumnTest {
   }
 
   @Test
-  fun `test bind bad type`() = coroutineRule.runBlockingTest {
-    thrown.expectCause(CoreMatchers.isA(DateTimeParseException::class.java))
-    withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
-      transaction {
-        val visitInsert = OffsetDt.insertValues {
-          it[offsetDate].bindArg()
-          it[optOffsetDate].bindArg()
-          it[name] = "name"
-          it[other] = "other"
+  fun `test bind bad type`() = // doesn't accept
+    runTest {
+      // doesn't accept
+      thrown.expectCause(CoreMatchers.isA(DateTimeParseException::class.java))
+      // doesn't accept
+      withTestDatabase(appCtx, setOf(OffsetDt), coroutineRule.testDispatcher, true) {
+        transaction {
+          val visitInsert = OffsetDt.insertValues {
+            it[offsetDate].bindArg()
+            it[optOffsetDate].bindArg()
+            it[name] = "name"
+            it[other] = "other"
+          }
+          visitInsert.insert {
+            it[0] = OffsetDateTime.now()
+            it[1] = Date() // doesn't accept
+          }
         }
-        visitInsert.insert {
-          it[0] = OffsetDateTime.now()
-          it[1] = Date() // doesn't accept
-        }
+        fail("bind of Date should be exceptional")
       }
-      fail("bind of Date should be exceptional")
     }
-  }
 
   @Test
-  fun `test opt reference`() = coroutineRule.runBlockingTest {
-    expect(HasOffsetDtRef.ref.descriptionDdl()).toBe(""""ref" TEXT""")
+  fun `test opt reference`() = runTest {
+    expect(HasOffsetDtRef.ref.descriptionDdl()).toBe("""ref TEXT""")
     withTestDatabase(appCtx, setOf(OffsetDt, HasOffsetDtRef), coroutineRule.testDispatcher, true) {
       query {
         HasOffsetDtRef.foreignKeyList.let { list ->

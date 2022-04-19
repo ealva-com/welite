@@ -35,11 +35,12 @@ import com.ealva.welite.db.table.orderByAsc
 import com.ealva.welite.db.table.select
 import com.ealva.welite.db.table.selectAll
 import com.ealva.welite.db.table.where
-import com.ealva.welite.test.common.CoroutineRule
+import com.ealva.welite.test.common.MainCoroutineRule
 import com.ealva.welite.test.common.withTestDatabase
 import com.nhaarman.expect.expect
 import com.nhaarman.expect.fail
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.CoreMatchers.isA
 import org.junit.Before
 import org.junit.Rule
@@ -75,7 +76,7 @@ object HasVisitTimeRef : Table() {
 class LocalDateTimeColumnTest {
   @ExperimentalCoroutinesApi
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = MainCoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule
@@ -90,12 +91,12 @@ class LocalDateTimeColumnTest {
 
   @Test
   fun `test local date time column`() {
-    expect(VisitTime.localDate.descriptionDdl()).toBe(""""date" TEXT NOT NULL""")
-    expect(VisitTime.optLocalDate.descriptionDdl()).toBe(""""opt_date" TEXT""")
+    expect(VisitTime.localDate.descriptionDdl()).toBe("""date TEXT NOT NULL""")
+    expect(VisitTime.optLocalDate.descriptionDdl()).toBe("""opt_date TEXT""")
   }
 
   @Test
-  fun `test local date time query`() = coroutineRule.runBlockingTest {
+  fun `test local date time query`() = runTest {
     withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       val noon = LocalDateTime.of(LocalDate.now(), LocalTime.NOON)
 
@@ -138,7 +139,14 @@ class LocalDateTimeColumnTest {
         val results = VisitTime.select()
           .where { optLocalDate greaterEq noon.plusYears(2) }
           .orderByAsc { optLocalDate }
-          .sequence { AccomVisit(it[localDate], it[optLocalDate], it[name], it[other]) }
+          .sequence {
+            AccomVisit(
+              it[localDate],
+              it[optLocalDate],
+              it[name],
+              it[other]
+            )
+          }
           .toList()
         expect(results).toHaveSize(2)
         results.forEachIndexed { i, visit ->
@@ -158,7 +166,7 @@ class LocalDateTimeColumnTest {
   }
 
   @Test
-  fun `test bind other than LocalDateTime`() = coroutineRule.runBlockingTest {
+  fun `test bind other than LocalDateTime`() = runTest {
     withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = VisitTime.insertValues {
@@ -173,13 +181,16 @@ class LocalDateTimeColumnTest {
         }
       }
       query {
-        expect(VisitTime.selectAll().count()).toBe(1)
+        expect(
+          VisitTime.selectAll()
+            .count()
+        ).toBe(1)
       }
     }
   }
 
   @Test
-  fun `test bind null to non-nullable`() = coroutineRule.runBlockingTest {
+  fun `test bind null to non-nullable`() = runTest {
     thrown.expect(WeLiteException::class.java)
     withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       transaction {
@@ -199,8 +210,10 @@ class LocalDateTimeColumnTest {
   }
 
   @Test
-  fun `test bind malformed LocalDateTime string`() = coroutineRule.runBlockingTest {
+  fun `test bind malformed LocalDateTime string`() = runTest {
+    // bad date format
     thrown.expectCause(isA(DateTimeParseException::class.java))
+    // bad date format
     withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
       transaction {
         val visitInsert = VisitTime.insertValues {
@@ -219,28 +232,31 @@ class LocalDateTimeColumnTest {
   }
 
   @Test
-  fun `test bind bad type`() = coroutineRule.runBlockingTest {
-    thrown.expectCause(isA(DateTimeParseException::class.java))
-    withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
-      transaction {
-        val visitInsert = VisitTime.insertValues {
-          it[localDate].bindArg()
-          it[optLocalDate].bindArg()
-          it[name] = "name"
-          it[other] = "other"
+  fun `test bind bad type`() = // doesn't accept
+    runTest {
+      // doesn't accept
+      thrown.expectCause(isA(DateTimeParseException::class.java))
+      // doesn't accept
+      withTestDatabase(appCtx, setOf(VisitTime), coroutineRule.testDispatcher, true) {
+        transaction {
+          val visitInsert = VisitTime.insertValues {
+            it[localDate].bindArg()
+            it[optLocalDate].bindArg()
+            it[name] = "name"
+            it[other] = "other"
+          }
+          visitInsert.insert {
+            it[0] = LocalDate.now()
+            it[1] = Date() // doesn't accept
+          }
         }
-        visitInsert.insert {
-          it[0] = LocalDate.now()
-          it[1] = Date() // doesn't accept
-        }
+        fail("bind of Date should be exceptional")
       }
-      fail("bind of Date should be exceptional")
     }
-  }
 
   @Test
-  fun `test opt reference`() = coroutineRule.runBlockingTest {
-    expect(HasVisitTimeRef.ref.descriptionDdl()).toBe(""""ref" TEXT""")
+  fun `test opt reference`() = runTest {
+    expect(HasVisitTimeRef.ref.descriptionDdl()).toBe("""ref TEXT""")
     withTestDatabase(
       appCtx,
       setOf(VisitTime, HasVisitTimeRef),

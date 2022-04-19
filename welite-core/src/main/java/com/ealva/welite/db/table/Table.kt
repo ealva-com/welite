@@ -652,8 +652,7 @@ public abstract class Table(
     override fun optShort(
       name: String,
       block: ColumnConstraints<Short?>.() -> Unit
-    ): Column<Short?> =
-      table.optShort(name, block)
+    ): Column<Short?> = table.optShort(name, block)
 
     override fun integer(name: String, block: ColumnConstraints<Int>.() -> Unit): Column<Int> =
       table.integer(name, block)
@@ -679,8 +678,7 @@ public abstract class Table(
     override fun optDouble(
       name: String,
       block: ColumnConstraints<Double?>.() -> Unit
-    ): Column<Double?> =
-      table.optDouble(name, block)
+    ): Column<Double?> = table.optDouble(name, block)
 
     override fun text(name: String, block: ColumnConstraints<String>.() -> Unit): Column<String> =
       table.text(name, block)
@@ -702,8 +700,7 @@ public abstract class Table(
     override fun optUbyte(
       name: String,
       block: ColumnConstraints<UByte?>.() -> Unit
-    ): Column<UByte?> =
-      table.optUByte(name, block)
+    ): Column<UByte?> = table.optUByte(name, block)
 
     @ExperimentalUnsignedTypes
     override fun uShort(name: String, block: ColumnConstraints<UShort>.() -> Unit): Column<UShort> =
@@ -713,8 +710,7 @@ public abstract class Table(
     override fun optUshort(
       name: String,
       block: ColumnConstraints<UShort?>.() -> Unit
-    ): Column<UShort?> =
-      table.optUShort(name, block)
+    ): Column<UShort?> = table.optUShort(name, block)
 
     @ExperimentalUnsignedTypes
     override fun ulong(name: String, block: ColumnConstraints<ULong>.() -> Unit): Column<ULong> =
@@ -724,8 +720,7 @@ public abstract class Table(
     override fun optUlong(
       name: String,
       block: ColumnConstraints<ULong?>.() -> Unit
-    ): Column<ULong?> =
-      table.optULong(name, block)
+    ): Column<ULong?> = table.optULong(name, block)
 
     override fun bool(name: String, block: ColumnConstraints<Boolean>.() -> Unit): Column<Boolean> =
       table.bool(name, block)
@@ -733,8 +728,7 @@ public abstract class Table(
     override fun optBool(
       name: String,
       block: ColumnConstraints<Boolean?>.() -> Unit
-    ): Column<Boolean?> =
-      table.optBool(name, block)
+    ): Column<Boolean?> = table.optBool(name, block)
 
     override fun <T : Enum<T>> enumeration(
       name: String,

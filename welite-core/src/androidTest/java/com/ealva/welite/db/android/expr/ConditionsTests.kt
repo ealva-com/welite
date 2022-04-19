@@ -36,7 +36,7 @@ import com.ealva.welite.test.db.expr.CommonConditionsTests as Common
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class ConditionsTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule internal var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule var thrown: ExpectedException = ExpectedException.none()

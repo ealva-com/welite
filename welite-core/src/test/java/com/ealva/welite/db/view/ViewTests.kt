@@ -39,7 +39,7 @@ import com.ealva.welite.test.db.view.CommonViewTests as Common
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class ViewTests {
-  @get:Rule var coroutineRule = CoroutineRule()
+  @get:Rule internal var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 eAlva.com
+ * Copyright 2022 eAlva.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,16 @@ package com.ealva.welite.test.common
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.setMain
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 @ExperimentalCoroutinesApi
-public class CoroutineRule(
-  public val testDispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()
+internal class MainCoroutineRule(
+  internal val testDispatcher: TestDispatcher = StandardTestDispatcher()
 ) : TestWatcher() {
 
   override fun starting(description: Description?) {
@@ -38,11 +38,5 @@ public class CoroutineRule(
   override fun finished(description: Description?) {
     super.finished(description)
     Dispatchers.resetMain()
-    testDispatcher.cleanupTestCoroutines()
-  }
-
-  @ExperimentalCoroutinesApi
-  public fun runBlockingTest(block: suspend () -> Unit): Unit = testDispatcher.runBlockingTest {
-    block()
   }
 }

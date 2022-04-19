@@ -57,7 +57,7 @@ public val IdTriple.mediaId: Long
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class TriggerTests {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   @Suppress("DEPRECATION")
   @get:Rule

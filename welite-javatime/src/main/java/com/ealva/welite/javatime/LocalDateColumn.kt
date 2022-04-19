@@ -30,8 +30,7 @@ import java.time.LocalDateTime
 public fun Table.localDate(
   name: String,
   block: ColumnConstraints<LocalDate>.() -> Unit = {}
-): Column<LocalDate> =
-  registerColumn(name, LocalDateAsTextType(), block)
+): Column<LocalDate> = registerColumn(name, LocalDateAsTextType(), block)
 
 public fun Table.optLocalDate(
   name: String,
@@ -52,27 +51,24 @@ private fun Any.valueToLocalDate(): LocalDate = when (this) {
  */
 public class LocalDateAsTextType<T : LocalDate?>(
   private val textColumn: StringPersistentType<String?>
-) : BasePersistentType<T>(textColumn.sqlType) {
-  override fun doBind(bindable: Bindable, index: Int, value: Any) {
+) : BasePersistentType<T, String>(textColumn.sqlType) {
+  override fun doBind(bindable: Bindable, index: Int, value: Any): Unit =
     textColumn.bind(bindable, index, value.valueToLocalDate().toString())
-  }
 
   @Suppress("UNCHECKED_CAST")
   override fun Row.readColumnValue(index: Int): T = LocalDate.parse(getString(index)) as T
 
-  override fun notNullValueToDB(value: Any): Any {
-    return value.valueToLocalDate()
-  }
+  override fun notNullValueToDB(value: Any): String = value.valueToLocalDate().toString()
 
   override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
     if (quoteAsLiteral) "'${value.valueToLocalDate()}'" else "${value.valueToLocalDate()}"
 
+  override fun clone(): PersistentType<T?> {
+    return LocalDateAsTextType()
+  }
+
   public companion object {
     public operator fun <T : LocalDate?> invoke(): LocalDateAsTextType<T> =
       LocalDateAsTextType(StringPersistentType())
-  }
-
-  override fun clone(): PersistentType<T?> {
-    return LocalDateAsTextType()
   }
 }

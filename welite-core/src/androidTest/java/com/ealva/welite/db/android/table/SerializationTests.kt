@@ -43,7 +43,7 @@ import java.lang.IllegalArgumentException
 @RunWith(AndroidJUnit4::class)
 class SerializationTests {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

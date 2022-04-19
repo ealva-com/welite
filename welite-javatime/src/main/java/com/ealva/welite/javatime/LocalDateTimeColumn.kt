@@ -51,7 +51,7 @@ private fun Any.valueToLocalDateTime(): LocalDateTime = when (this) {
  */
 public class LocalDateTimeAsTextType<T : LocalDateTime?>(
   private val textColumn: StringPersistentType<String?>
-) : BasePersistentType<T>(textColumn.sqlType) {
+) : BasePersistentType<T, String>(textColumn.sqlType) {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     textColumn.bind(bindable, index, value.valueToLocalDateTime().toString())
   }
@@ -59,9 +59,7 @@ public class LocalDateTimeAsTextType<T : LocalDateTime?>(
   @Suppress("UNCHECKED_CAST")
   override fun Row.readColumnValue(index: Int): T = LocalDateTime.parse(getString(index)) as T
 
-  override fun notNullValueToDB(value: Any): Any {
-    return value.valueToLocalDateTime()
-  }
+  override fun notNullValueToDB(value: Any): String = value.valueToLocalDateTime().toString()
 
   override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
     if (quoteAsLiteral) "'${value.valueToLocalDateTime()}'" else "${value.valueToLocalDateTime()}"

@@ -50,7 +50,7 @@ private fun Any.valueToOffsetDateTime(): OffsetDateTime = when (this) {
  */
 public open class OffsetDateTimeAsTextType<T : OffsetDateTime?>(
   private val textColumn: StringPersistentType<String?>
-) : BasePersistentType<T>(textColumn.sqlType) {
+) : BasePersistentType<T, String>(textColumn.sqlType) {
   override fun doBind(bindable: Bindable, index: Int, value: Any) {
     textColumn.bind(bindable, index, value.valueToOffsetDateTime().toString())
   }
@@ -58,7 +58,7 @@ public open class OffsetDateTimeAsTextType<T : OffsetDateTime?>(
   @Suppress("UNCHECKED_CAST")
   override fun Row.readColumnValue(index: Int): T = OffsetDateTime.parse(getString(index)) as T
 
-  override fun notNullValueToDB(value: Any): Any = value.valueToOffsetDateTime()
+  override fun notNullValueToDB(value: Any): String = value.valueToOffsetDateTime().toString()
 
   override fun nonNullValueToString(value: Any, quoteAsLiteral: Boolean): String =
     if (quoteAsLiteral) "'${value.valueToOffsetDateTime()}'" else "${value.valueToOffsetDateTime()}"

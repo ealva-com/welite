@@ -62,7 +62,9 @@ public class CompoundQueryBuilder<C : ColumnSet>(
     if (orderBy !== OrderBy.NONE) {
       val exp = orderBy.expression
       original.addOrderBy(
-        selectToResultMap[exp]?.let { OrderBy(it, orderBy.ascDesc, orderBy.collate) } ?: orderBy
+        selectToResultMap[exp]?.let { expression ->
+          OrderBy(expression, orderBy.ascDesc, orderBy.collate)
+        } ?: orderBy
       )
     }
   }

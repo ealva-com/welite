@@ -39,7 +39,7 @@ import com.ealva.welite.test.db.compound.CommonCompoundSelectTests as Common
 @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
 class CompoundSelectTests {
   @get:Rule
-  var coroutineRule = CoroutineRule()
+  internal var coroutineRule = CoroutineRule()
 
   private lateinit var appCtx: Context
 

@@ -16,16 +16,13 @@
 
 package com.ealva.welite.db.table
 
-import com.ealva.welite.db.expr.Expression
 import com.ealva.welite.db.expr.Op
 
 /**
  * NOT READY - DON'T USE
  */
-public interface CompositeColumn<T> : Expression<T> {
+public interface CompositeColumn<T> {
   public val columns: List<Column<*>>
-
-  public fun descriptionDdl(): List<String>
 
   public infix fun eq(t: T): Op<Boolean>
 }
